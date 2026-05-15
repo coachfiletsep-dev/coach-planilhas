@@ -20,26 +20,17 @@
     --radius: 8px;
     --radius-lg: 12px;
     --red: #E24B4A;
-    --red-bg: #FCEBEB;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #1c1c1a;
-      --bg2: #252523;
-      --bg3: #2e2e2b;
-      --text: #f0f0ec;
-      --text2: #a0a09a;
-      --text3: #6b6b66;
-      --border: rgba(255,255,255,0.10);
-      --border2: rgba(255,255,255,0.18);
+      --bg: #1c1c1a; --bg2: #252523; --bg3: #2e2e2b;
+      --text: #f0f0ec; --text2: #a0a09a; --text3: #6b6b66;
+      --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.18);
       --green-light: #0a3d2a;
-      --red-bg: #3a1515;
     }
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-  /* HEADER */
   .header { display: flex; align-items: center; justify-content: space-between; padding: 0 1.25rem; height: 52px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; background: var(--bg); }
   .logo { display: flex; align-items: center; gap: 10px; }
   .logo-icon { width: 30px; height: 30px; border-radius: var(--radius); background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 16px; }
@@ -52,11 +43,7 @@
   .auth-pill.on { background: var(--green-light); color: var(--green-dark); border-color: transparent; }
   .auth-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); }
   .auth-dot.on { background: var(--green); }
-
-  /* LAYOUT */
   .main { display: flex; flex: 1; min-height: 0; }
-
-  /* SIDEBAR */
   .sidebar { width: 220px; flex-shrink: 0; border-right: 0.5px solid var(--border); display: flex; flex-direction: column; background: var(--bg); }
   .sidebar-top { padding: .75rem; border-bottom: 0.5px solid var(--border); }
   .search { display: flex; align-items: center; gap: 6px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 6px 8px; }
@@ -70,14 +57,12 @@
   .si-av { width: 28px; height: 28px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--green-dark); flex-shrink: 0; }
   .si-av.off { background: var(--bg3); color: var(--text3); }
   .si-name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .si-meta { font-size: 10px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .si-meta { font-size: 10px; color: var(--text3); }
   .si-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; margin-left: auto; }
   .si-dot.off { background: var(--border2); }
   .add-btn { margin: .5rem; padding: 7px; border-radius: var(--radius); border: 0.5px dashed var(--border2); background: transparent; color: var(--text3); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all .15s; }
   .add-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-light); }
   .sidebar-footer { padding: .5rem .75rem; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--text3); }
-
-  /* PANEL */
   .panel { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   .panel-header { padding: .875rem 1.25rem; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
   .ph-left { display: flex; align-items: center; gap: 10px; }
@@ -91,24 +76,16 @@
   .btn-green:hover { opacity: .88; }
   .btn-ghost { padding: 6px 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); font-size: 12px; cursor: pointer; transition: all .15s; }
   .btn-ghost:hover { background: var(--bg2); }
-
-  /* TABS */
   .tabs { display: flex; border-bottom: 0.5px solid var(--border); padding: 0 1.25rem; flex-shrink: 0; }
   .tab { padding: 8px 12px; font-size: 12px; color: var(--text2); border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; margin-bottom: -.5px; }
   .tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 600; }
-
-  /* TAB CONTENT */
   .tab-body { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; }
-
-  /* ACTIONS GRID */
   .ag { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
   .ac { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .875rem; cursor: pointer; text-align: left; transition: all .15s; }
   .ac:hover { border-color: var(--green); background: var(--green-light); }
   .ac-icon { font-size: 22px; margin-bottom: 6px; }
   .ac-label { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
   .ac-desc { font-size: 11px; color: var(--text2); line-height: 1.4; }
-
-  /* AI BOX */
   .ai-box { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; }
   .ai-top { padding: .75rem 1rem; border-bottom: 0.5px solid var(--border); background: var(--bg2); display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
   .ai-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--green); color: #fff; }
@@ -129,8 +106,6 @@
   .send-btn { padding: 7px 14px; background: var(--green); border: none; color: #fff; border-radius: var(--radius); cursor: pointer; font-size: 12px; font-weight: 600; flex-shrink: 0; transition: opacity .15s; }
   .send-btn:hover { opacity: .88; }
   .send-btn:disabled { opacity: .35; cursor: not-allowed; }
-
-  /* MODAL */
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
   .modal { background: var(--bg); border-radius: var(--radius-lg); border: 0.5px solid var(--border); width: 380px; max-height: 90vh; overflow-y: auto; }
   .modal-header { padding: .875rem 1rem; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--bg); }
@@ -141,8 +116,6 @@
   .fl input, .fl select, .fl textarea { padding: 7px 9px; font-size: 13px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); font-family: inherit; outline: none; }
   .fl input:focus, .fl select:focus, .fl textarea:focus { border-color: var(--green); }
   .modal-footer { padding: .75rem 1rem; border-top: 0.5px solid var(--border); display: flex; gap: 7px; justify-content: flex-end; position: sticky; bottom: 0; background: var(--bg); }
-
-  /* AUTH MODAL */
   .auth-modal { background: var(--bg); border-radius: var(--radius-lg); border: 0.5px solid var(--border); width: 420px; padding: 1.5rem; }
   .auth-modal h2 { font-size: 16px; font-weight: 600; margin-bottom: .5rem; }
   .auth-modal p { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 1rem; }
@@ -151,14 +124,9 @@
   .auth-step-text { font-size: 12px; color: var(--text); line-height: 1.5; }
   .auth-step-text strong { font-weight: 600; }
   .token-field { width: 100%; padding: 8px 10px; font-size: 12px; font-family: monospace; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); margin: .5rem 0; outline: none; }
-  .token-field:focus { border-color: var(--green); }
-
-  /* EMPTY */
   .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 8px; color: var(--text3); text-align: center; padding: 2rem; }
   .empty-icon { font-size: 36px; }
   .empty p { font-size: 13px; }
-
-  /* CONFIG PAGE */
   .config-page { padding: 1.25rem; max-width: 560px; }
   .config-section { margin-bottom: 1.5rem; }
   .config-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .75rem; }
@@ -167,23 +135,14 @@
   .config-step-label { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
   .config-step-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
   .config-input { width: 100%; padding: 7px 9px; font-size: 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-family: inherit; margin-top: 8px; outline: none; }
-  .config-input:focus { border-color: var(--green); }
-
-  /* NOTICE */
   .notice { padding: .625rem 1rem; font-size: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 0.5px solid var(--border); }
   .notice.warn { background: #fef9ec; color: #92600a; }
   .notice.ok { background: var(--green-light); color: var(--green-dark); }
-  @media (prefers-color-scheme: dark) {
-    .notice.warn { background: #2d2410; color: #e8b84b; }
-  }
-
-  /* TOAST */
+  @media (prefers-color-scheme: dark) { .notice.warn { background: #2d2410; color: #e8b84b; } }
   .toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 999; animation: fadeup .25s ease; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
   .toast.ok { background: var(--green); color: #fff; }
   .toast.err { background: var(--red); color: #fff; }
   @keyframes fadeup { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-  /* SCROLLBAR */
   ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
 </style>
 </head>
@@ -211,7 +170,6 @@
   ⚠️ Google não conectado — clique em "Conectar Google" para liberar as ações nas planilhas.
 </div>
 
-<!-- PÁGINAS -->
 <div id="page-alunos" class="main">
   <div class="sidebar">
     <div class="sidebar-top">
@@ -230,7 +188,6 @@
       <div class="empty-icon">👥</div>
       <p>Selecione um aluno ou adicione um novo</p>
     </div>
-
     <div id="student-view" style="display:none;flex-direction:column;flex:1;">
       <div class="panel-header">
         <div class="ph-left">
@@ -250,31 +207,29 @@
         <button class="tab active" onclick="switchTab('treino',this)">Ações</button>
         <button class="tab" onclick="switchTab('ia',this)">Assistente IA</button>
       </div>
-
       <div class="tab-body" id="tab-treino">
         <div class="ag">
           <button class="ac" onclick="runSheetAction('seg_qui')">
             <div class="ac-icon">📅</div>
             <div class="ac-label">Semana seg → qui</div>
-            <div class="ac-desc">Avança cargas e reps de segunda a quinta para a semana seguinte</div>
+            <div class="ac-desc">Avança cargas e reps de segunda a quinta</div>
           </button>
           <button class="ac" onclick="runSheetAction('qui_dom')">
             <div class="ac-icon">📆</div>
             <div class="ac-label">Semana qui → dom</div>
-            <div class="ac-desc">Avança cargas e reps de quinta a domingo para a semana seguinte</div>
+            <div class="ac-desc">Avança cargas e reps de quinta a domingo</div>
           </button>
           <button class="ac" onclick="runSheetAction('semana_completa')">
             <div class="ac-icon">🗓️</div>
             <div class="ac-label">Semana completa</div>
-            <div class="ac-desc">Avança toda a semana de uma vez (segunda ao domingo)</div>
+            <div class="ac-desc">Avança toda a semana de uma vez</div>
           </button>
           <button class="ac" onclick="runSheetAction('planilha_zero')">
             <div class="ac-icon">📄</div>
             <div class="ac-label">Planilha do zero</div>
-            <div class="ac-desc">Cria nova planilha zerada para início de mesociclo</div>
+            <div class="ac-desc">Cria nova aba zerada para novo mesociclo</div>
           </button>
         </div>
-
         <div class="ai-box">
           <div class="ai-top">
             <span style="font-size:14px;">✨</span>
@@ -285,7 +240,6 @@
           <div class="chips">
             <button class="chip" onclick="useChip(this)">Analisar mesociclo</button>
             <button class="chip" onclick="useChip(this)">Sugerir progressão de carga</button>
-            <button class="chip" onclick="useChip(this)">+20% volume ombros</button>
             <button class="chip" onclick="useChip(this)">Montar novo meso completo</button>
           </div>
           <div class="input-row">
@@ -295,7 +249,6 @@
           </div>
         </div>
       </div>
-
       <div class="tab-body" id="tab-ia" style="display:none;">
         <div class="ai-box" style="height:100%;">
           <div class="ai-top">
@@ -307,7 +260,6 @@
           <div class="chips">
             <button class="chip" onclick="useChip2(this)">Criar meso do zero</button>
             <button class="chip" onclick="useChip2(this)">Exercícios alternativos</button>
-            <button class="chip" onclick="useChip2(this)">Comparar progressão</button>
             <button class="chip" onclick="useChip2(this)">Deload — quando e como?</button>
           </div>
           <div class="input-row">
@@ -324,56 +276,45 @@
 <div id="page-config" style="display:none;overflow-y:auto;flex:1;">
   <div class="config-page">
     <div class="config-section">
-      <div class="config-label">Chave da API Claude (Anthropic)</div>
+      <div class="config-label">API Claude (Anthropic)</div>
       <div class="config-step">
         <div class="config-step-num">1</div>
         <div style="flex:1;">
-          <div class="config-step-label">Obter API Key em console.anthropic.com</div>
-          <div class="config-step-desc">Acesse console.anthropic.com → API Keys → criar nova chave</div>
+          <div class="config-step-label">API Key</div>
+          <div class="config-step-desc">console.anthropic.com → API Keys → criar nova chave</div>
           <input class="config-input" type="password" id="anthropic-key" placeholder="sk-ant-..." />
-          <button class="btn-green" style="margin-top:8px;" onclick="saveAnthropicKey()">Salvar chave</button>
+          <button class="btn-green" style="margin-top:8px;" onclick="saveAnthropicKey()">Salvar</button>
         </div>
       </div>
     </div>
-
     <div class="config-section">
       <div class="config-label">Google OAuth</div>
       <div class="config-step">
         <div class="config-step-num">2</div>
         <div style="flex:1;">
-          <div class="config-step-label">Client ID do Google Cloud Console</div>
-          <div class="config-step-desc">Já configurado durante o setup inicial</div>
-          <input class="config-input" type="text" id="client-id-input" placeholder="xxxxx.apps.googleusercontent.com" />
-          <button class="btn-green" style="margin-top:8px;" onclick="saveClientId()">Salvar Client ID</button>
+          <div class="config-step-label">Refresh Token (renovação automática)</div>
+          <div class="config-step-desc">Cole o refresh_token do OAuth Playground para conectar automaticamente.</div>
+          <input class="config-input" type="password" id="refresh-token-input" placeholder="1//04A1..." />
+          <button class="btn-green" style="margin-top:8px;" onclick="saveRefreshToken()">Salvar e conectar</button>
         </div>
       </div>
       <div class="config-step">
         <div class="config-step-num">3</div>
         <div style="flex:1;">
-          <div class="config-step-label">Refresh Token (renovação automática)</div>
-          <div class="config-step-desc">Cole o refresh_token gerado no OAuth Playground. O app renova o acesso automaticamente sem precisar gerar token toda hora.</div>
-          <input class="config-input" type="password" id="refresh-token-input" placeholder="1//04A1..." />
-          <button class="btn-green" style="margin-top:8px;" onclick="saveRefreshToken()">Salvar refresh token</button>
-        </div>
-      </div>
-      <div class="config-step">
-        <div class="config-step-num">4</div>
-        <div style="flex:1;">
           <div class="config-step-label">Access Token manual (opcional)</div>
-          <div class="config-step-desc">Se preferir, cole um access token gerado manualmente no OAuth Playground.</div>
+          <div class="config-step-desc">Alternativa ao refresh token para conexão manual.</div>
           <input class="config-input" type="text" id="token-config-input" placeholder="ya29.xxxxxxx" />
-          <button class="btn-green" style="margin-top:8px;" onclick="applyTokenFromConfig()">Ativar token manual</button>
+          <button class="btn-green" style="margin-top:8px;" onclick="applyTokenFromConfig()">Ativar</button>
         </div>
       </div>
     </div>
-
     <div style="font-size:11px;color:var(--text3);margin-top:1rem;">
-      Status: Client ID — <span id="cid-status">não configurado</span> &nbsp;|&nbsp; Token — <span id="token-status">não conectado</span> &nbsp;|&nbsp; API Claude — <span id="claude-status">não configurada</span>
+      Token — <span id="token-status">não conectado</span> &nbsp;|&nbsp; API Claude — <span id="claude-status">não configurada</span>
     </div>
   </div>
 </div>
 
-<!-- MODAL ALUNO -->
+<!-- MODAL ALUNO (simplificado) -->
 <div class="overlay" id="modal" style="display:none;">
   <div class="modal">
     <div class="modal-header">
@@ -382,16 +323,12 @@
     </div>
     <div class="modal-body">
       <div class="fl"><label>Nome completo</label><input type="text" id="f-name" placeholder="Ex: Caian Maroni" /></div>
-      <div class="fl"><label>Divisão de treino</label><input type="text" id="f-split" placeholder="Ex: Upper/Lower A/B/C" /></div>
-      <div class="fl"><label>Objetivo</label>
-        <select id="f-goal"><option>Hipertrofia</option><option>Força</option><option>Emagrecimento</option><option>Resistência</option><option>Recomposição corporal</option></select>
-      </div>
       <div class="fl"><label>Link da planilha Google Sheets</label><input type="text" id="f-sheet" placeholder="https://docs.google.com/spreadsheets/d/..." /></div>
       <div class="fl"><label>Status</label>
         <select id="f-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
       </div>
-      <div class="fl"><label>Observações (lesões, restrições, equipamentos, metas do próximo meso)</label>
-        <textarea id="f-obs" rows="3" placeholder="Ex: Próximo meso: +20% séries de ombros. Sem leg press por dor no joelho."></textarea>
+      <div class="fl"><label>Observações (lesões, restrições, metas do próximo meso)</label>
+        <textarea id="f-obs" rows="3" placeholder="Ex: +20% séries de ombros no próximo meso. Sem leg press."></textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -405,24 +342,20 @@
 <div class="overlay" id="auth-modal" style="display:none;">
   <div class="auth-modal">
     <h2>🔗 Conectar Google</h2>
-    <p>Siga os passos para gerar o access token via OAuth Playground e cole aqui.</p>
+    <p>Gere um access token via OAuth Playground e cole aqui, ou configure o Refresh Token na aba Configuração para conexão automática.</p>
     <div class="auth-step">
       <div class="auth-step-num">1</div>
       <div class="auth-step-text">Acesse <strong>developers.google.com/oauthplayground</strong></div>
     </div>
     <div class="auth-step">
       <div class="auth-step-num">2</div>
-      <div class="auth-step-text">Clique na ⚙️ engrenagem → marque <strong>"Use your own OAuth credentials"</strong> → cole o Client ID e Client Secret</div>
+      <div class="auth-step-text">⚙️ → <strong>"Use your own OAuth credentials"</strong> → Client ID e Secret</div>
     </div>
     <div class="auth-step">
       <div class="auth-step-num">3</div>
-      <div class="auth-step-text">No campo de escopos, cole: <strong>https://www.googleapis.com/auth/spreadsheets</strong> → clique <strong>"Authorize APIs"</strong></div>
+      <div class="auth-step-text">Escopo: <strong>https://www.googleapis.com/auth/spreadsheets</strong> → Authorize → Exchange → copie o Access token</div>
     </div>
-    <div class="auth-step">
-      <div class="auth-step-num">4</div>
-      <div class="auth-step-text">Clique <strong>"Exchange authorization code for tokens"</strong> → copie o <strong>Access token</strong> (começa com ya29.)</div>
-    </div>
-    <label style="font-size:12px;color:var(--text2);">Cole o Access token aqui:</label>
+    <label style="font-size:12px;color:var(--text2);">Access token:</label>
     <input class="token-field" type="text" id="token-input" placeholder="ya29.xxxxxxx" />
     <div style="display:flex;gap:8px;margin-top:.5rem;">
       <button class="btn-green" onclick="applyToken()">✓ Ativar token</button>
@@ -432,17 +365,17 @@
 </div>
 
 <script>
-const SHEETS_BASE = 'https://sheets.googleapis.com/v4/spreadsheets';
-const DEFAULT_CLIENT_ID = '1064899047986-lousa06c8ofa4cbmaofsr1a8mclh1jbk.apps.googleusercontent.com';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTcezZ5a2i8GyIAdUhnIksaMXM3eMHf6vOSaV9SsAdMgZ13kPWtn5dBc_gtkevf_VUXw/exec';
+const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 
 let students = [], selectedId = null, msgHistory = [], msgHistory2 = [], isLoading = false, editingId = null;
-let accessToken = null, clientId = DEFAULT_CLIENT_ID, anthropicKey = '';
+let accessToken = null, anthropicKey = '';
 let refreshToken = localStorage.getItem('coach_refresh_token') || '';
 
 async function renovarToken() {
+  if (!refreshToken) return false;
   try {
-    const res = await fetch('https://coach-proxy.coachfiletsep.workers.dev/refresh', {
+    const res = await fetch(PROXY_URL + '/refresh', {
       method: 'POST',
       headers: { 'x-refresh-token': refreshToken, 'Content-Type': 'application/json' },
       body: JSON.stringify({})
@@ -455,27 +388,22 @@ async function renovarToken() {
       return true;
     }
     return false;
-  } catch(e) {
-    return false;
-  }
+  } catch(e) { return false; }
 }
 
 async function init() {
-  clientId = localStorage.getItem('coach_client_id') || DEFAULT_CLIENT_ID;
   accessToken = localStorage.getItem('coach_token') || null;
   anthropicKey = localStorage.getItem('coach_anthropic_key') || '';
   const raw = localStorage.getItem('coach_students_v2');
   if (raw) { try { students = JSON.parse(raw); } catch(e) { students = []; } }
   if (students.length === 0) {
-    students = [{id:'caian',name:'Caian Maroni',split:'Upper/Lower A/B/C',goal:'Hipertrofia',sheet:'https://docs.google.com/spreadsheets/d/1vVoFG7dTgZ6Z7wTSxmeMhDDxdu-rX4zy0LTSqg_47F8/edit',status:'ativo',obs:'Proximo meso: +20% series semanais de ombros sem aumentar total por sessao'}];
+    students = [{id:'caian',name:'Caian Maroni',sheet:'https://docs.google.com/spreadsheets/d/1vVoFG7dTgZ6Z7wTSxmeMhDDxdu-rX4zy0LTSqg_47F8/edit',status:'ativo',obs:'Proximo meso: +20% series semanais de ombros sem aumentar total por sessao'}];
     saveAll();
   }
   if (accessToken) {
     setAuthConnected();
   } else if (refreshToken) {
-    renovarToken().then(function(ok) {
-      if (ok) showToast('Conectado automaticamente!', 'ok');
-    });
+    renovarToken().then(function(ok) { if (ok) showToast('Conectado automaticamente!', 'ok'); });
   }
   updateConfigStatus();
   renderList();
@@ -488,22 +416,18 @@ function setAuthConnected() {
   document.getElementById('auth-dot').className = 'auth-dot on';
   document.getElementById('auth-label').textContent = 'Google conectado';
   const n = document.getElementById('notice-bar');
-  if (n) { n.className = 'notice ok'; n.textContent = 'Google conectado - todas as acoes estao disponiveis.'; }
+  if (n) { n.className = 'notice ok'; n.textContent = 'Google conectado — todas as ações disponíveis.'; }
 }
 
 function updateConfigStatus() {
-  const cid = document.getElementById('cid-status');
   const tok = document.getElementById('token-status');
   const cl = document.getElementById('claude-status');
-  if (cid) cid.textContent = clientId ? clientId.slice(0,20)+'...' : 'nao configurado';
-  if (tok) tok.textContent = accessToken ? 'conectado' : 'nao conectado';
-  if (cl) cl.textContent = anthropicKey ? 'configurada' : 'nao configurada';
-  const ci = document.getElementById('client-id-input');
-  const ak = document.getElementById('anthropic-key');
   const rt = document.getElementById('refresh-token-input');
-  if (ci) ci.value = clientId || '';
-  if (ak) ak.value = anthropicKey || '';
+  const ak = document.getElementById('anthropic-key');
+  if (tok) tok.textContent = accessToken ? 'conectado ✓' : 'não conectado';
+  if (cl) cl.textContent = anthropicKey ? 'configurada ✓' : 'não configurada';
   if (rt && refreshToken) rt.value = '••••••••••••••••';
+  if (ak) ak.value = anthropicKey || '';
 }
 
 function initials(n) { return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
@@ -521,7 +445,7 @@ function renderList(filter) {
     list.appendChild(d);
   });
   const active = students.filter(s=>s.status==='ativo').length;
-  document.getElementById('counter').textContent = students.length + ' alunos - ' + active + ' ativos';
+  document.getElementById('counter').textContent = students.length + ' alunos · ' + active + ' ativos';
 }
 
 function filterStudents() { renderList(document.getElementById('search-input').value); }
@@ -530,8 +454,8 @@ function selectStudent(id) {
   selectedId = id;
   const s = students.find(function(x){return x.id===id;}); if (!s) return;
   msgHistory = []; msgHistory2 = [];
-  document.getElementById('msgs').innerHTML = '<div class="msg msg-ai">Pronto para trabalhar com <strong>' + s.name + '</strong> (' + s.split + ' - ' + s.goal + '). ' + (s.obs||'') + ' Como posso ajudar?</div>';
-  document.getElementById('msgs2').innerHTML = '<div class="msg msg-ai">Chat aberto para ' + s.name + '. Pode perguntar sobre programacao, progressao ou qualquer ajuste.</div>';
+  document.getElementById('msgs').innerHTML = '<div class="msg msg-ai">Pronto para trabalhar com <strong>' + s.name + '</strong>. ' + (s.obs||'') + ' Como posso ajudar?</div>';
+  document.getElementById('msgs2').innerHTML = '<div class="msg msg-ai">Chat aberto para ' + s.name + '. Pergunte sobre programação, progressão ou qualquer ajuste.</div>';
   document.getElementById('ph-av').textContent = initials(s.name);
   document.getElementById('ph-name').textContent = s.name;
   document.getElementById('ph-meta').textContent = s.status==='ativo' ? 'Ativo' : 'Inativo';
@@ -546,102 +470,60 @@ function openSheet() {
   if (s && s.sheet) window.open(s.sheet, '_blank');
 }
 
-function getSheetId(url) {
-  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  return m ? m[1] : null;
-}
-
 async function runSheetAction(type) {
   const s = students.find(function(x){return x.id===selectedId;});
   if (!s) { showToast('Selecione um aluno', 'err'); return; }
-
-  const labels = {
-    seg_qui: 'Criando semana seg → qui...',
-    qui_dom: 'Criando semana qui → dom...',
-    semana_completa: 'Criando semana completa...',
-    planilha_zero: 'Criando planilha do zero...'
-  };
-
+  const labels = { seg_qui:'Criando semana seg → qui...', qui_dom:'Criando semana qui → dom...', semana_completa:'Criando semana completa...', planilha_zero:'Criando planilha do zero...' };
   addMsg('msgs', labels[type] || 'Executando...', true);
   addLoading('msgs');
-
   try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ acao: type })
-    });
+    const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body:JSON.stringify({acao:type}) });
     const data = await res.json();
     removeLoading('msgs');
-
     if (data.sucesso) {
-      const msgs = {
-        seg_qui: 'Semana seg → qui criada! Abra a planilha para conferir.',
-        qui_dom: 'Semana qui → dom criada! Abra a planilha para conferir.',
-        semana_completa: 'Semana completa criada! Abra a planilha para conferir.',
-        planilha_zero: 'Nova aba criada e zerada! Use o botao "Novo meso IA" para preencher a programacao.'
-      };
-      addMsg('msgs', msgs[type] || 'Acao executada com sucesso!', false);
+      const msgs = { seg_qui:'Semana seg → qui criada!', qui_dom:'Semana qui → dom criada!', semana_completa:'Semana completa criada!', planilha_zero:'Nova aba criada! Use "Novo meso IA" para preencher.' };
+      addMsg('msgs', (msgs[type]||'Feito!') + ' Abra a planilha para conferir.', false);
       showToast('Feito!', 'ok');
     } else {
-      addMsg('msgs', 'Erro: ' + (data.erro || 'desconhecido'), false);
+      addMsg('msgs', 'Erro: ' + (data.erro||'desconhecido'), false);
     }
   } catch(e) {
     removeLoading('msgs');
-    if (e.message && e.message.includes('401')) {
-      addMsg('msgs', 'Token expirado, renovando...', false);
-      const ok = await renovarToken();
-      if (ok) {
-        addMsg('msgs', 'Token renovado! Tente novamente.', false);
-      }
-    } else {
-      addMsg('msgs', 'Erro: ' + e.message, false);
-    }
+    addMsg('msgs', 'Erro: ' + e.message, false);
   }
 }
 
 async function escreverNaPlanilha(exercicios, nomeAba) {
-  const s = students.find(function(x){return x.id===selectedId;});
-  if (!s) return;
-  addMsg('msgs', 'Escrevendo programacao na planilha...', false);
+  addMsg('msgs', 'Escrevendo na planilha...', false);
   addLoading('msgs');
   try {
-    const payload = JSON.stringify({ aba: nomeAba, exercicios: exercicios });
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: payload
-    });
+    const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body:JSON.stringify({aba:nomeAba, exercicios:exercicios}) });
     const data = await res.json();
     removeLoading('msgs');
     if (data.sucesso) {
-      addMsg('msgs', 'Programacao escrita com sucesso! ' + data.escritos + ' exercicios atualizados na aba ' + nomeAba + '. Abra a planilha para conferir.', false);
+      addMsg('msgs', data.escritos + ' exercícios escritos na aba ' + nomeAba + '! Abra a planilha para conferir.', false);
       showToast('Planilha atualizada!', 'ok');
     } else {
-      addMsg('msgs', 'Erro ao escrever: ' + (data.erro || 'desconhecido'), false);
+      addMsg('msgs', 'Erro: ' + (data.erro||'desconhecido'), false);
     }
-  } catch(e) {
-    removeLoading('msgs');
-    addMsg('msgs', 'Erro ao escrever na planilha: ' + e.message, false);
-  }
+  } catch(e) { removeLoading('msgs'); addMsg('msgs', 'Erro: ' + e.message, false); }
 }
 
 function getSystemPrompt() {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return '';
-  return 'Voce e o assistente do Coach Felipe, personal trainer brasileiro especializado em hipertrofia.\n\nAluno atual: ' + s.name + '\nDivisao: ' + s.split + '\nObjetivo: ' + s.goal + '\n' + (s.obs ? 'Observacoes: ' + s.obs : '') + '\nPlanilha: ' + (s.sheet||'nao informada') + '\n\nBiblioteca de exercicios disponivel (use os nomes EXATAMENTE como estao):\nPEITO: SUPINO RETO BARRA, SUPINO INCLINADO BARRA, SUPINO RETO COM HALTER, SUPINO INCLINADO COM HALTER, SUPINO INCLINADO ARTICULADO, SUPINO RETO ARTICULADO, CRUCIFIXO RETO COM HALTER, CRUCIFIXO INCLINADO COM HALTER, PEC DECK, CRUCIFIXO MAQUINA\nCOSTAS: PUXADA FRENTE ABERTA, PUXADA UNILATERAL MAQUINA, PUXADA FRENTE SUPINADA, REMADA ALTERNADA COM HALTERES BANCO, REMADA ABERTA COM BARRA LIVRE, REMADA FECHADA ARTICULADA, REMADA SERROTE APOIO BAIXO, FACEPULL, DUMBBELL SCAPTION 120, PULL DOWN EM PE\nOMBRO: DESENVOLVIMENTO SENTADO COM HALTERES, DESENVOLVIMENTO ARTICULADO ABERTO, ELEVACAO LATERAL EM PE COM HALTER, ELEVACAO LATERAL NA POLIA UNI, ELEVACAO LATERAL MAQUINA, ELEVACAO FRONTAL COM BARRA, MANGUITO ROTACAO EXTERNA CABO, FACEPULL COM ROTACAO EXTERNA, CRUCIFIXO INVERSO NA POLIA UNI, YTW COM HALTERES\nTRICEPS: TRICEPS NA CORDA, TRICEPS TESTA BARRA W, TRICEPS FRANCES EM PE POLIA, TRICEPS NO CABO POLIA ALTA\nBICEPS: ROSCA DIRETA EM PE COM HALTERES, BICEPS MARTELO COM HALTERES EM PE, ROSCA SCOTT BARRA W, BICEPS MARTELO COM CORDA BAIXA, ROSCA INVERSA EM PE COM BARRA W\nCOXA: AGACHAMENTO BARRA LIVRE, BULGARO COM HALTERES, LEG PRESS 45, CADEIRA EXTENSORA, AFUNDO COM HALTERES, HACK ANGULAR, FLEXAO NORDICA REVERSA, AGACHAMENTO NO SMITH\nPOSTERIOR: STIFF COM HALTERES, MESA FLEXORA, CADEIRA FLEXORA, RDL COM HALTERES, SINGLE LEG DEADLIFT, FLEXAO NORDICA\nGMAX: ELEVACAO PELVICA COM BARRA, ELEVACAO PELVICA NA MAQUINA, ELEVACAO PELVICA UNI COM HALTER, PONTE GLUTEO SOLO\nGMEDIO: CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA, ABDUCAO COM CANELEIRA\nABDOME: PRANCHA FRONTAL NO SOLO, PRANCHA LATERAL, CRUNCH NA POLIA, INFRA SUSPENSO, DEAD BUG\n\nEstrutura de cada sessao: cada exercicio tem nome (exato da biblioteca), objetivo (Ativacao/Forca tecnica/Hipertrofia), series (numero), repeticoes (ex: 12-15), cadencia (4 digitos: ex 3131), RiR (ex: 1), criterio tecnico.\n\nQuando o usuario pedir para montar ou escrever uma programacao, responda APENAS com um JSON valido neste formato exato (sem markdown, sem explicacao, apenas o JSON):\n{"aba":"S17","exercicios":[{"nome":"NOME EXATO","objetivo":"Hipertrofia","series":4,"repeticoes":"12-15","cadencia":"3131","rir":"1","criterio":"criterio tecnico aqui"}]}\n\nPara outros tipos de pergunta, responda normalmente em texto.';
+  return 'Voce e o assistente do Coach Felipe, personal trainer brasileiro especializado em hipertrofia.\n\nAluno: ' + s.name + '\n' + (s.obs?'Obs: '+s.obs:'') + '\nPlanilha: ' + (s.sheet||'nao informada') + '\n\nBiblioteca (nomes EXATOS):\nPEITO: SUPINO RETO BARRA, SUPINO INCLINADO BARRA, SUPINO RETO COM HALTER, SUPINO INCLINADO COM HALTER, SUPINO INCLINADO ARTICULADO, CRUCIFIXO RETO COM HALTER, PEC DECK\nCOSTAS: PUXADA FRENTE ABERTA, PUXADA UNILATERAL MAQUINA, REMADA ALTERNADA COM HALTERES BANCO, REMADA SERROTE APOIO BAIXO, FACEPULL, DUMBBELL SCAPTION 120\nOMBRO: DESENVOLVIMENTO SENTADO COM HALTERES, DESENVOLVIMENTO ARTICULADO ABERTO, ELEVACAO LATERAL EM PE COM HALTER, ELEVACAO LATERAL NA POLIA UNI, MANGUITO ROTACAO EXTERNA CABO, FACEPULL COM ROTACAO EXTERNA, YTW COM HALTERES\nTRICEPS: TRICEPS NA CORDA, TRICEPS TESTA BARRA W, TRICEPS FRANCES EM PE POLIA\nBICEPS: ROSCA DIRETA EM PE COM HALTERES, BICEPS MARTELO COM HALTERES EM PE, ROSCA SCOTT BARRA W, BICEPS MARTELO COM CORDA BAIXA\nCOXA: AGACHAMENTO BARRA LIVRE, BULGARO COM HALTERES, LEG PRESS 45, CADEIRA EXTENSORA, HACK ANGULAR, FLEXAO NORDICA REVERSA\nPOSTERIOR: STIFF COM HALTERES, MESA FLEXORA, CADEIRA FLEXORA, RDL COM HALTERES, SINGLE LEG DEADLIFT\nGMAX: ELEVACAO PELVICA COM BARRA, ELEVACAO PELVICA NA MAQUINA, ELEVACAO PELVICA UNI COM HALTER\nGMEDIO: CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA\nABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n\nQuando pedir programacao, responda APENAS com JSON:\n{"aba":"S18","exercicios":[{"nome":"NOME EXATO","objetivo":"Hipertrofia","series":4,"repeticoes":"12-15","cadencia":"3131","rir":"1","criterio":"criterio aqui"}]}\n\nPara outras perguntas, responda em texto normalmente.';
 }
 
 function tryParseJSON(text) {
-  try {
-    const match = text.match(/\{[\s\S]*\}/);
-    if (match) return JSON.parse(match[0]);
-  } catch(e) {}
+  try { const m = text.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); } catch(e) {}
   return null;
 }
 
 function addMsg(id, text, isUser) {
   const c = document.getElementById(id);
   const d = document.createElement('div');
-  d.className = 'msg ' + (isUser ? 'msg-user' : 'msg-ai');
-  d.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  d.className = 'msg '+(isUser?'msg-user':'msg-ai');
+  d.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
   c.appendChild(d); c.scrollTop = c.scrollHeight;
 }
 
@@ -653,15 +535,14 @@ function addLoading(id) {
   c.appendChild(d); c.scrollTop = c.scrollHeight;
 }
 
-function removeLoading(id) { const el = document.getElementById('ld-'+id); if(el) el.remove(); }
+function removeLoading(id) { const el=document.getElementById('ld-'+id); if(el) el.remove(); }
 
 async function callClaude(history, system) {
-  const key = anthropicKey || '';
-  if (!key) return 'Configure a API Key do Claude na aba Configuracao para usar o assistente.';
-  const res = await fetch('https://coach-proxy.coachfiletsep.workers.dev', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-allow-browser': 'true' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 2000, system: system, messages: history })
+  if (!anthropicKey) return 'Configure a API Key do Claude na aba Configuração.';
+  const res = await fetch(PROXY_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2000,system:system,messages:history})
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
@@ -675,60 +556,43 @@ async function sendMsg() {
   inp.value = ''; isLoading = true;
   document.getElementById('send-btn').disabled = true;
   addMsg('msgs', text, true); addLoading('msgs');
-  msgHistory.push({role:'user', content:text});
+  msgHistory.push({role:'user',content:text});
   try {
     const reply = await callClaude(msgHistory, getSystemPrompt());
     removeLoading('msgs');
     const parsed = tryParseJSON(reply);
     if (parsed && parsed.exercicios && parsed.aba) {
-      addMsg('msgs', 'Programacao gerada! Escrevendo na aba ' + parsed.aba + ' com ' + parsed.exercicios.length + ' exercicios...', false);
-      msgHistory.push({role:'assistant', content:reply});
+      addMsg('msgs', 'Programação gerada! Escrevendo ' + parsed.exercicios.length + ' exercícios na aba ' + parsed.aba + '...', false);
+      msgHistory.push({role:'assistant',content:reply});
       await escreverNaPlanilha(parsed.exercicios, parsed.aba);
     } else {
       addMsg('msgs', reply, false);
-      msgHistory.push({role:'assistant', content:reply});
+      msgHistory.push({role:'assistant',content:reply});
     }
-  } catch(e) { removeLoading('msgs'); addMsg('msgs', 'Erro: ' + e.message, false); }
+  } catch(e) { removeLoading('msgs'); addMsg('msgs','Erro: '+e.message,false); }
   isLoading = false; document.getElementById('send-btn').disabled = false;
-}
-
-async function sendAutoMsg(text) {
-  msgHistory.push({role:'user', content:text}); addLoading('msgs');
-  try {
-    const reply = await callClaude(msgHistory, getSystemPrompt());
-    removeLoading('msgs');
-    const parsed = tryParseJSON(reply);
-    if (parsed && parsed.exercicios && parsed.aba) {
-      addMsg('msgs', 'Programacao gerada! Escrevendo na aba ' + parsed.aba + '...', false);
-      msgHistory.push({role:'assistant', content:reply});
-      await escreverNaPlanilha(parsed.exercicios, parsed.aba);
-    } else {
-      addMsg('msgs', reply, false);
-      msgHistory.push({role:'assistant', content:reply});
-    }
-  } catch(e) { removeLoading('msgs'); addMsg('msgs', 'Erro: ' + e.message, false); }
 }
 
 async function sendMsg2() {
   const inp = document.getElementById('ai-input2');
   const text = inp.value.trim(); if (!text) return;
-  inp.value = ''; addMsg('msgs2', text, true); addLoading('msgs2');
-  msgHistory2.push({role:'user', content:text});
+  inp.value = ''; addMsg('msgs2',text,true); addLoading('msgs2');
+  msgHistory2.push({role:'user',content:text});
   try {
     const reply = await callClaude(msgHistory2, getSystemPrompt());
-    removeLoading('msgs2'); addMsg('msgs2', reply, false);
-    msgHistory2.push({role:'assistant', content:reply});
-  } catch(e) { removeLoading('msgs2'); addMsg('msgs2', 'Erro: ' + e.message, false); }
+    removeLoading('msgs2'); addMsg('msgs2',reply,false);
+    msgHistory2.push({role:'assistant',content:reply});
+  } catch(e) { removeLoading('msgs2'); addMsg('msgs2','Erro: '+e.message,false); }
 }
 
-function useChip(el) { document.getElementById('ai-input').value = el.textContent; sendMsg(); }
-function useChip2(el) { document.getElementById('ai-input2').value = el.textContent; sendMsg2(); }
+function useChip(el) { document.getElementById('ai-input').value=el.textContent; sendMsg(); }
+function useChip2(el) { document.getElementById('ai-input2').value=el.textContent; sendMsg2(); }
 
 function runAction(type) {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
-  document.getElementById('ai-input').value = 'Monte o novo mesociclo completo para ' + s.name + '. Divisao: ' + s.split + '. ' + (s.obs||'') + ' Gere o JSON com todos os exercicios para escrever na planilha. Qual e a aba atual do Caian? Use a aba mais recente da planilha.';
-  document.getElementById('tab-treino').style.display = 'block';
-  document.getElementById('tab-ia').style.display = 'none';
+  document.getElementById('ai-input').value = 'Monte o novo mesociclo completo para ' + s.name + '. ' + (s.obs||'') + ' Gere o JSON completo para escrever na planilha na aba mais recente.';
+  document.getElementById('tab-treino').style.display='block';
+  document.getElementById('tab-ia').style.display='none';
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.tab')[0].classList.add('active');
   sendMsg();
@@ -737,99 +601,87 @@ function runAction(type) {
 function switchTab(tab, el) {
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   el.classList.add('active');
-  document.getElementById('tab-treino').style.display = tab==='treino' ? 'block' : 'none';
-  document.getElementById('tab-ia').style.display = tab==='ia' ? 'block' : 'none';
+  document.getElementById('tab-treino').style.display=tab==='treino'?'block':'none';
+  document.getElementById('tab-ia').style.display=tab==='ia'?'block':'none';
 }
 
 function showPage(page, el) {
   document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
   el.classList.add('active');
-  document.getElementById('page-alunos').style.display = page==='alunos' ? 'block' : 'none';
-  document.getElementById('page-config').style.display = page==='config' ? 'flex' : 'none';
+  document.getElementById('page-alunos').style.display=page==='alunos'?'block':'none';
+  document.getElementById('page-config').style.display=page==='config'?'flex':'none';
   if (page==='config') updateConfigStatus();
 }
 
-function showAuthModal() { document.getElementById('auth-modal').style.display = 'flex'; }
-function closeAuthModal() { document.getElementById('auth-modal').style.display = 'none'; }
+function showAuthModal() { document.getElementById('auth-modal').style.display='flex'; }
+function closeAuthModal() { document.getElementById('auth-modal').style.display='none'; }
 
 function applyToken() {
   const val = document.getElementById('token-input').value.trim();
-  if (!val) { showToast('Cole o token primeiro', 'err'); return; }
-  accessToken = val; localStorage.setItem('coach_token', val);
-  setAuthConnected(); closeAuthModal();
-  showToast('Google conectado!', 'ok');
-  updateConfigStatus();
+  if (!val) { showToast('Cole o token primeiro','err'); return; }
+  accessToken=val; localStorage.setItem('coach_token',val);
+  setAuthConnected(); closeAuthModal(); showToast('Google conectado!','ok'); updateConfigStatus();
 }
 
 function applyTokenFromConfig() {
-  const val = document.getElementById('token-config-input').value.trim();
-  if (!val) return;
-  accessToken = val; localStorage.setItem('coach_token', val);
-  setAuthConnected(); showToast('Token ativado!', 'ok'); updateConfigStatus();
-}
-
-function saveClientId() {
-  const val = document.getElementById('client-id-input').value.trim(); if (!val) return;
-  clientId = val; localStorage.setItem('coach_client_id', val);
-  showToast('Client ID salvo!', 'ok'); updateConfigStatus();
+  const val = document.getElementById('token-config-input').value.trim(); if (!val) return;
+  accessToken=val; localStorage.setItem('coach_token',val);
+  setAuthConnected(); showToast('Token ativado!','ok'); updateConfigStatus();
 }
 
 function saveRefreshToken() {
-  const val = document.getElementById('refresh-token-input').value.trim();
-  if (!val) return;
-  localStorage.setItem('coach_refresh_token', val);
-  refreshToken = val;
-  showToast('Refresh token salvo!', 'ok');
-  renovarToken().then(function(ok) {
-    if (ok) showToast('Google conectado automaticamente!', 'ok');
-    else showToast('Erro ao conectar. Verifique o token.', 'err');
+  const val = document.getElementById('refresh-token-input').value.trim(); if (!val) return;
+  localStorage.setItem('coach_refresh_token',val); refreshToken=val;
+  showToast('Refresh token salvo!','ok');
+  renovarToken().then(function(ok){
+    if (ok) showToast('Google conectado automaticamente!','ok');
+    else showToast('Erro ao conectar. Verifique o token.','err');
   });
 }
 
 function saveAnthropicKey() {
   const val = document.getElementById('anthropic-key').value.trim(); if (!val) return;
-  anthropicKey = val; localStorage.setItem('coach_anthropic_key', val);
-  showToast('API Key salva!', 'ok'); updateConfigStatus();
+  anthropicKey=val; localStorage.setItem('coach_anthropic_key',val);
+  showToast('API Key salva!','ok'); updateConfigStatus();
 }
 
 function openModal() {
-  editingId = null;
-  document.getElementById('modal-title').textContent = 'Novo aluno';
-  ['f-name','f-split','f-sheet','f-obs'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('f-goal').value = 'Hipertrofia';
-  document.getElementById('f-status').value = 'ativo';
-  document.getElementById('modal').style.display = 'flex';
+  editingId=null;
+  document.getElementById('modal-title').textContent='Novo aluno';
+  ['f-name','f-sheet','f-obs'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('f-status').value='ativo';
+  document.getElementById('modal').style.display='flex';
 }
 
 function openEditModal() {
-  const s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
-  editingId = s.id;
-  document.getElementById('modal-title').textContent = 'Editar aluno';
-  document.getElementById('f-name').value = s.name;
-  document.getElementById('f-sheet').value = s.sheet || '';
-  document.getElementById('f-status').value = s.status || 'ativo';
-  document.getElementById('f-obs').value = s.obs || '';
-  document.getElementById('modal').style.display = 'flex';
+  const s=students.find(function(x){return x.id===selectedId;}); if (!s) return;
+  editingId=s.id;
+  document.getElementById('modal-title').textContent='Editar aluno';
+  document.getElementById('f-name').value=s.name;
+  document.getElementById('f-sheet').value=s.sheet||'';
+  document.getElementById('f-status').value=s.status||'ativo';
+  document.getElementById('f-obs').value=s.obs||'';
+  document.getElementById('modal').style.display='flex';
 }
 
-function closeModal() { document.getElementById('modal').style.display = 'none'; editingId = null; }
+function closeModal() { document.getElementById('modal').style.display='none'; editingId=null; }
 
 function saveStudent() {
-  const name = document.getElementById('f-name').value.trim(); if (!name) return;
-  const data = {name:name, split:'', goal:'', sheet:document.getElementById('f-sheet').value.trim(), status:document.getElementById('f-status').value, obs:document.getElementById('f-obs').value.trim()};
-  if (editingId) { const idx = students.findIndex(function(s){return s.id===editingId;}); if(idx>=0) students[idx] = Object.assign({}, students[idx], data); }
-  else { data.id = 'st_' + Date.now(); students.push(data); }
+  const name=document.getElementById('f-name').value.trim(); if (!name) return;
+  const data={name:name,sheet:document.getElementById('f-sheet').value.trim(),status:document.getElementById('f-status').value,obs:document.getElementById('f-obs').value.trim()};
+  if (editingId) { const idx=students.findIndex(function(s){return s.id===editingId;}); if(idx>=0) students[idx]=Object.assign({},students[idx],data); }
+  else { data.id='st_'+Date.now(); students.push(data); }
   saveAll(); closeModal();
   renderList(document.getElementById('search-input').value);
-  selectStudent(editingId || data.id);
-  showToast('Aluno salvo!', 'ok');
+  selectStudent(editingId||data.id);
+  showToast('Aluno salvo!','ok');
 }
 
 function showToast(msg, type) {
-  const t = document.createElement('div');
-  t.className = 'toast ' + type; t.textContent = msg;
+  const t=document.createElement('div');
+  t.className='toast '+type; t.textContent=msg;
   document.body.appendChild(t);
-  setTimeout(function(){t.remove();}, 3500);
+  setTimeout(function(){t.remove();},3500);
 }
 
 init();

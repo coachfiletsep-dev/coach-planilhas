@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0056)file:///C:/Users/Lenovo/Downloads/coach_planilhas_2.html -->
+<!-- saved from url=(0057)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v2.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -391,7 +391,7 @@
 </div>
 
 <!-- MODAL AUTH -->
-<div class="overlay" id="auth-modal" style="display: none;">
+<div class="overlay" id="auth-modal" style="display:none;">
   <div class="auth-modal">
     <h2>🔗 Conectar Google</h2>
     <p>Siga os passos para gerar o access token via OAuth Playground e cole aqui.</p>
@@ -589,7 +589,7 @@ function removeLoading(id) { const el = document.getElementById('ld-'+id); if(el
 async function callClaude(history, system) {
   const key = anthropicKey || '';
   if (!key) return 'Configure a API Key do Claude na aba Configuração para usar o assistente.';
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://coach-proxy.coachfiletsep.workers.dev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-allow-browser': 'true' },
     body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, system, messages: history })

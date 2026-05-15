@@ -592,7 +592,7 @@ async function callClaude(history, system) {
   const res = await fetch('https://coach-proxy.coachfiletsep.workers.dev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-allow-browser': 'true' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, system, messages: history })
+    body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 1500, system, messages: history })
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);

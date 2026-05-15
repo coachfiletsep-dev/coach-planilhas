@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0054)file:///C:/Users/Lenovo/Downloads/coach_planilhas.html -->
+<!-- saved from url=(0056)file:///C:/Users/Lenovo/Downloads/coach_planilhas_1.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,104 +7,78 @@
 <link href="./Coach — Planilhas dos Alunos_files/css2" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f0f0f;
-    --surface: #1a1a1a;
-    --surface2: #242424;
-    --border: #2e2e2e;
-    --border2: #3a3a3a;
-    --text: #f0f0f0;
-    --text2: #888;
-    --text3: #555;
-    --accent: #c8f060;
-    --accent2: #a8d040;
-    --danger: #ff5c5c;
-    --success: #4ade80;
-    --mono: 'DM Mono', monospace;
-    --sans: 'Syne', sans-serif;
+    --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;
+    --border:#2e2e2e;--border2:#3a3a3a;
+    --text:#f0f0f0;--text2:#888;--text3:#555;
+    --accent:#c8f060;--accent2:#a8d040;
+    --danger:#ff5c5c;--success:#4ade80;
+    --mono:'DM Mono',monospace;--sans:'Syne',sans-serif;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
-
-  .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-
-  /* Sidebar */
-  .sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 0; display: flex; flex-direction: column; }
-  .sidebar-header { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); }
-  .sidebar-header .logo { font-size: 18px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
-  .sidebar-header .sub { font-size: 11px; color: var(--text3); margin-top: 3px; font-family: var(--mono); }
-  .sidebar-status { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
-  .dot.ok { background: var(--success); box-shadow: 0 0 8px var(--success); }
-  .dot.loading { background: var(--accent); animation: pulse 1s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-  .status-text { font-size: 12px; color: var(--text2); font-family: var(--mono); }
-
-  .sidebar-section { padding: 16px 20px 8px; }
-  .sidebar-section-label { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
-  .sheet-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 11px; font-family: var(--mono); color: var(--text); margin-bottom: 8px; }
-  .sheet-input:focus { outline: none; border-color: var(--accent); }
-  .btn { padding: 8px 14px; font-size: 12px; font-family: var(--sans); font-weight: 600; border-radius: 6px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); cursor: pointer; transition: all 0.15s; width: 100%; text-align: left; }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn.primary { background: var(--accent); color: #0f0f0f; border-color: var(--accent); }
-  .btn.primary:hover { background: var(--accent2); }
-  .btn.small { padding: 6px 10px; font-size: 11px; width: auto; }
-
-  .tabs-list { padding: 8px 12px; flex: 1; overflow-y: auto; }
-  .tab-btn { width: 100%; text-align: left; padding: 8px 10px; font-size: 12px; font-family: var(--mono); color: var(--text2); background: none; border: none; border-radius: 5px; cursor: pointer; transition: all 0.1s; margin-bottom: 2px; }
-  .tab-btn:hover { background: var(--surface2); color: var(--text); }
-  .tab-btn.active { background: var(--accent); color: #0f0f0f; font-weight: 500; }
-
-  /* Main */
-  .main { display: flex; flex-direction: column; }
-  .topbar { padding: 16px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface); }
-  .topbar-title { font-size: 14px; font-weight: 600; color: var(--text); }
-  .topbar-meta { font-size: 11px; color: var(--text3); font-family: var(--mono); }
-  .topbar-actions { display: flex; gap: 8px; }
-
-  .content { flex: 1; padding: 24px 28px; overflow-y: auto; }
-
-  /* Table */
-  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--mono); }
-  thead tr { background: var(--surface2); }
-  th { padding: 10px 14px; text-align: left; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
-  td:first-child { color: var(--text); }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--surface2); }
-  td.editable { cursor: pointer; }
-  td.editable:hover { color: var(--accent); }
-  td input.cell-input { background: var(--surface); border: 1px solid var(--accent); border-radius: 4px; padding: 3px 6px; color: var(--accent); font-family: var(--mono); font-size: 12px; width: 100%; min-width: 80px; }
-
-  /* Edit panel */
-  .edit-panel { background: var(--surface); border-top: 1px solid var(--border); padding: 20px 28px; }
-  .edit-panel-title { font-size: 13px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
-  .edit-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
-  .edit-label { font-size: 11px; color: var(--text3); font-family: var(--mono); min-width: 80px; padding-top: 9px; }
-  .edit-input { flex: 1; background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 8px 10px; font-size: 12px; font-family: var(--mono); color: var(--text); }
-  .edit-input:focus { outline: none; border-color: var(--accent); }
-  textarea.edit-input { resize: vertical; min-height: 80px; }
-  .edit-actions { display: flex; gap: 8px; }
-  .btn-save { background: var(--accent); color: #0f0f0f; border: none; border-radius: 6px; padding: 9px 20px; font-family: var(--sans); font-weight: 700; font-size: 13px; cursor: pointer; transition: background 0.15s; }
-  .btn-save:hover { background: var(--accent2); }
-  .btn-cancel { background: none; border: 1px solid var(--border2); border-radius: 6px; padding: 9px 16px; font-family: var(--sans); font-size: 13px; color: var(--text2); cursor: pointer; }
-  .btn-cancel:hover { color: var(--text); }
-
-  /* Empty / loading states */
-  .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; gap: 12px; }
-  .empty-icon { font-size: 40px; opacity: 0.2; }
-  .empty-text { font-size: 13px; color: var(--text3); }
-  .loading-bar { width: 200px; height: 2px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
-  .loading-bar-fill { height: 100%; background: var(--accent); border-radius: 2px; animation: load 1.2s ease-in-out infinite; }
-  @keyframes load { 0%{width:0;margin-left:0} 50%{width:60%;margin-left:20%} 100%{width:0;margin-left:100%} }
-
-  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 12px 18px; font-size: 13px; font-family: var(--mono); color: var(--text); display: none; z-index: 999; }
-  .toast.ok { border-color: var(--success); color: var(--success); }
-  .toast.err { border-color: var(--danger); color: var(--danger); }
-
-  .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-family: var(--mono); font-weight: 500; }
-  .badge-green { background: rgba(74,222,128,0.1); color: var(--success); }
-  .badge-yellow { background: rgba(200,240,96,0.1); color: var(--accent); }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;}
+  .app{display:grid;grid-template-columns:270px 1fr;min-height:100vh;}
+  .sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+  .sidebar-header{padding:24px 20px 16px;border-bottom:1px solid var(--border);}
+  .logo{font-size:18px;font-weight:700;color:var(--accent);}
+  .sub{font-size:11px;color:var(--text3);margin-top:3px;font-family:var(--mono);}
+  .status-bar{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:all .3s;}
+  .dot.ok{background:var(--success);box-shadow:0 0 8px var(--success);}
+  .dot.loading{background:var(--accent);animation:pulse 1s infinite;}
+  .dot.err{background:var(--danger);}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .status-text{font-size:11px;color:var(--text2);font-family:var(--mono);}
+  .sidebar-body{padding:16px 20px;border-bottom:1px solid var(--border);}
+  .label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;display:block;}
+  input.field{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:11px;font-family:var(--mono);color:var(--text);margin-bottom:8px;outline:none;transition:border .2s;}
+  input.field:focus{border-color:var(--accent);}
+  .btn{width:100%;padding:9px 14px;font-size:12px;font-family:var(--sans);font-weight:600;border-radius:6px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s;text-align:left;}
+  .btn:hover{border-color:var(--accent);color:var(--accent);}
+  .btn.primary{background:var(--accent);color:#0f0f0f;border-color:var(--accent);text-align:center;}
+  .btn.primary:hover{background:var(--accent2);}
+  .btn.sm{padding:6px 10px;font-size:11px;width:auto;}
+  .tabs-section{padding:12px 20px 8px;}
+  .tabs-list{flex:1;overflow-y:auto;padding:4px 12px 12px;}
+  .tab-btn{width:100%;text-align:left;padding:7px 10px;font-size:12px;font-family:var(--mono);color:var(--text2);background:none;border:none;border-radius:5px;cursor:pointer;transition:all .1s;margin-bottom:2px;}
+  .tab-btn:hover{background:var(--surface2);color:var(--text);}
+  .tab-btn.active{background:var(--accent);color:#0f0f0f;font-weight:500;}
+  .main{display:flex;flex-direction:column;overflow:hidden;}
+  .topbar{padding:14px 24px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+  .topbar-left h2{font-size:14px;font-weight:600;}
+  .topbar-left p{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;}
+  .topbar-right{display:flex;gap:8px;}
+  .content{flex:1;overflow-y:auto;padding:20px 24px;}
+  .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:12px;}
+  .empty-icon{font-size:36px;opacity:.15;}
+  .empty-text{font-size:13px;color:var(--text3);}
+  .loading-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:80px 0;}
+  .loading-bar{width:180px;height:2px;background:var(--surface2);border-radius:2px;overflow:hidden;}
+  .loading-fill{height:100%;background:var(--accent);animation:load 1.2s ease-in-out infinite;}
+  @keyframes load{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
+  .table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);}
+  table{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--mono);}
+  thead tr{background:var(--surface2);}
+  th{padding:9px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);white-space:nowrap;}
+  td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:top;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  td:first-child{color:var(--text3);width:36px;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:rgba(255,255,255,.02);}
+  .edit-panel{border-top:1px solid var(--border);padding:18px 24px;background:var(--surface);flex-shrink:0;}
+  .edit-panel h3{font-size:13px;font-weight:600;margin-bottom:12px;}
+  .ep-row{display:flex;gap:10px;margin-bottom:8px;align-items:center;}
+  .ep-label{font-size:11px;color:var(--text3);font-family:var(--mono);min-width:70px;}
+  .ep-input{flex:1;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:7px 10px;font-size:12px;font-family:var(--mono);color:var(--text);outline:none;}
+  .ep-input:focus{border-color:var(--accent);}
+  textarea.ep-input{resize:vertical;min-height:70px;}
+  .ep-actions{display:flex;gap:8px;margin-top:4px;}
+  .btn-save{background:var(--accent);color:#0f0f0f;border:none;border-radius:6px;padding:8px 20px;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;}
+  .btn-save:hover{background:var(--accent2);}
+  .btn-cancel{background:none;border:1px solid var(--border2);border-radius:6px;padding:8px 14px;color:var(--text2);font-family:var(--sans);font-size:13px;cursor:pointer;}
+  .ep-status{font-size:11px;font-family:var(--mono);color:var(--text3);margin-top:6px;}
+  .toast{position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:8px;font-size:12px;font-family:var(--mono);display:none;z-index:999;border:1px solid;}
+  .toast.ok{background:var(--surface2);border-color:var(--success);color:var(--success);}
+  .toast.err{background:var(--surface2);border-color:var(--danger);color:var(--danger);}
+  .err-box{background:rgba(255,92,92,.08);border:1px solid rgba(255,92,92,.3);border-radius:8px;padding:12px 16px;margin-top:10px;font-size:11px;font-family:var(--mono);color:var(--danger);line-height:1.6;}
 </style>
 </head>
 <body>
@@ -114,263 +88,243 @@
       <div class="logo">COACH</div>
       <div class="sub">gerenciador de planilhas</div>
     </div>
-    <div class="sidebar-status">
-      <div class="dot" id="conn-dot"></div>
-      <span class="status-text" id="conn-text">desconectado</span>
+    <div class="status-bar">
+      <div class="dot" id="dot"></div>
+      <span class="status-text" id="status-text">desconectado</span>
     </div>
-    <div class="sidebar-section">
-      <div class="sidebar-section-label">Planilha</div>
-      <input class="sheet-input" id="sheet-id-input" placeholder="ID da planilha..." value="1vVoFG7dTgZ6Z7wTSxmeMhDDxdu-rX4zy0LTSqg_47F8">
-      <button class="btn primary" onclick="conectarECarregar()">Conectar e carregar abas</button>
+    <div class="sidebar-body">
+      <span class="label">ID da planilha</span>
+      <input class="field" id="sheet-id" value="1vVoFG7dTgZ6Z7wTSxmeMhDDxdu-rX4zy0LTSqg_47F8">
+      <button class="btn primary" onclick="conectar()">Conectar e carregar abas</button>
+      <div id="err-box"></div>
     </div>
-    <div class="sidebar-section" style="padding-top:12px;">
-      <div class="sidebar-section-label">Abas</div>
-    </div>
+    <div class="tabs-section"><span class="label">Abas</span></div>
     <div class="tabs-list" id="tabs-list">
-      <div style="font-size:11px; color:var(--text3); font-family:var(--mono); padding:4px 0;">nenhuma aba carregada</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">nenhuma aba carregada</div>
     </div>
   </aside>
-
   <div class="main">
     <div class="topbar">
-      <div>
-        <div class="topbar-title" id="topbar-title">Selecione uma aba</div>
-        <div class="topbar-meta" id="topbar-meta"></div>
+      <div class="topbar-left">
+        <h2 id="topbar-title">Selecione uma aba</h2>
+        <p id="topbar-meta"></p>
       </div>
-      <div class="topbar-actions" id="topbar-actions"></div>
+      <div class="topbar-right" id="topbar-actions"></div>
     </div>
-
-    <div class="content" id="main-content">
+    <div class="content" id="content">
       <div class="empty">
         <div class="empty-icon">📋</div>
-        <div class="empty-text">Conecte uma planilha e selecione uma aba para começar</div>
+        <div class="empty-text">Conecte uma planilha e selecione uma aba</div>
       </div>
     </div>
-
     <div class="edit-panel" id="edit-panel" style="display:none;">
-      <div class="edit-panel-title">✏️ Editar células</div>
-      <div class="edit-row">
-        <span class="edit-label">aba</span>
-        <input class="edit-input" id="ep-tab" placeholder="ex: S17" style="max-width:120px;">
-        <span class="edit-label" style="padding-left:8px;">range</span>
-        <input class="edit-input" id="ep-range" placeholder="ex: B5:D10" style="max-width:120px;">
+      <h3>✏️ Editar células</h3>
+      <div class="ep-row">
+        <span class="ep-label">aba</span>
+        <input class="ep-input" id="ep-tab" style="max-width:120px;" placeholder="ex: S18">
+        <span class="ep-label" style="padding-left:8px;">range</span>
+        <input class="ep-input" id="ep-range" style="max-width:130px;" placeholder="ex: B5:D10">
       </div>
-      <div class="edit-row">
-        <span class="edit-label">valores</span>
-        <textarea class="edit-input" id="ep-values" placeholder="Linha por linha, colunas separadas por vírgula:
-Supino,4,8-10
-Remada,4,8-10"></textarea>
+      <div class="ep-row">
+        <span class="ep-label">valores</span>
+        <textarea class="ep-input" id="ep-values" placeholder="Linha por linha, colunas separadas por vírgula:
+Supino Reto,4,8-12,3131,1
+Crucifixo,3,10-15,3131,1"></textarea>
       </div>
-      <div class="edit-actions">
-        <button class="btn-save" onclick="salvarCelulas()">Salvar na planilha</button>
-        <button class="btn-cancel" onclick="fecharEditPanel()">Cancelar</button>
+      <div class="ep-actions">
+        <button class="btn-save" onclick="salvar()">Salvar na planilha</button>
+        <button class="btn-cancel" onclick="fecharEdit()">Cancelar</button>
       </div>
-      <div id="ep-status" style="margin-top:8px; font-size:12px; font-family:var(--mono); color:var(--text3);"></div>
+      <div class="ep-status" id="ep-status"></div>
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
-
-<script src="./Coach — Planilhas dos Alunos_files/jsrsasign-all-min.js.transferir"></script>
 <script>
-const CREDS = {
-  client_email: "claude-planilhas@claude-personal-trainer.iam.gserviceaccount.com",
-  token_uri: "https://oauth2.googleapis.com/token",
-  private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC0PZLl7QWhHi7f\nIDMahHvwry8QCuDgtjLvife470FuIQNrM/l7+1sMsZkHWTlDhJzXjguC+9XU46lb\nP6t7VddeL/YykrGu9+rQwhRkIYLqnV2TKskZOc4i/RouWfZmV7eM3om0tzAAqRU2\nGzjwo6Q+cFL7v1O4H3su0lm0no0WluCYQVeRRf5/jRkalxuddCTBccQWuCjlL59j\nNF2Eufigjj49OZ+/SitSjpjEZ40nf5NUdLjtwdKmtXEeeVAe7LllJa4gjlC8QJW1\nDHfxNCR5/g54+q0OTN1SU6WHKnUByFSaub3Dxbos/CrBPKH346BBJD018COwotNc\nJhprUCaLAgMBAAECggEAF7gcq05oVb4jm/BgWUaDCvb64gkUc+32QQiuhXNS8Hu+\nt+5kkBjRcBe1FD79JrH+c+14/VlH2BbHtD7qQbZXu8jjBN/CK0zr5WINDepNELP5\n2wKf6UZuprMZLW1gXDKB8LNeet46nnOh23d0pFJcrGzats+EZHAcJVrAPGE7HvQu\nTbBSfaMhA4UsGs35dgHh8wUhXT+DdjM6aPbjlqI4GCjhWpdTM8qQ0gUWZMNDjuce\n8ihXi0FVfQMV93f+xSPvea7uVgHN1d7dvaYa/0cpXbUx0yP7LnzEdRkPzcRuCFiQ\nFbMiZjKO4P5w2W79OTGHgK6T2mmR70lAzTL05umtWQKBgQDorAv4l4r2PILnb6sG\nO1hs6QOfTUQJWHpGDOEpLD2pjgDR5ADTVfu5kWgpSNFPU8n7FVrAAXvQ+36utxCo\nDTEH47GQFHtyJhPnMfJ0YFudp/abo9GCVAGQhioNhzYVRBclCRIf5Xd7a9GBu1RZ\nI8o1TT42DLP9Vf1BZiCRv3yqWQKBgQDGT8amBc7XU0GItqE3Jea0r+VahDycKrg1\nyUcm0w1Jw0j5X2uXjrqEMyoxY//IyE5JtlBvOJ8XqxuZpdF1rbXqqBLj+XVY3Cz1\n2r6wsdVn2afiMWBeFHyxpir2SuWc2Y/ABxp4vXZ6Xv7xJ/z0NkhilznpJug53CmV\nCNzSIBdzgwKBgQDA1M37EkV1/AKVosPAH3ESmi+JWDT59d0or0XwpJzaKDlfurJA\ndHNygSMtjA8EyrGMKU+T7+bY9YYxcMEaNgybuEaR3ZfNq+c05f1GHBHx4KGOrj9V\n3x+I0tiJa7UT/OGdrR3bV4clv97bwRCP7AyLDmBv1Sla3WhOSkDV6jh8yQKBgCqC\n9YGnoxSTu2u0QtEQpek7/72stVWA7uZQ1JjlC2cxntYed3EQ3rjyQuw9lJqVHfs9\nQvbku24Wdx8z5bgFWgcIqqwGUPqQkG7PyqsUJDxT82JQ1Wi1mZl3lqQfoCNEnEU9\nAJa7fsdyz9IgkWBEtrWz1208svGcWamiMbw1tvFDAoGBAI82oCpW83GnkqXHMo6c\npEdhpCG72sbBet9MbuM5xZsQsLLsKDAT3XSYyHBz4Q/d6tNdcsLXYJ/OxqSHnz+h\nDyjoHftv7N432mygznPcO8UWyD7iYxveyQJLAQpNNCYR1C2LDAJNoUakYPi+QCpe\nYsKX5MtauO5AFHX+eVs2yKU0\n-----END PRIVATE KEY-----\n"
-};
+const CLIENT_EMAIL="claude-planilhas@claude-personal-trainer.iam.gserviceaccount.com";
+const TOKEN_URI="https://oauth2.googleapis.com/token";
+const PEM=`-----BEGIN PRIVATE KEY-----
+MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC0PZLl7QWhHi7f
+IDMahHvwry8QCuDgtjLvife470FuIQNrM/l7+1sMsZkHWTlDhJzXjguC+9XU46lb
+P6t7VddeL/YykrGu9+rQwhRkIYLqnV2TKskZOc4i/RouWfZmV7eM3om0tzAAqRU2
+Gzjwo6Q+cFL7v1O4H3su0lm0no0WluCYQVeRRf5/jRkalxuddCTBccQWuCjlL59j
+NF2Eufigjj49OZ+/SitSjpjEZ40nf5NUdLjtwdKmtXEeeVAe7LllJa4gjlC8QJW1
+DHfxNCR5/g54+q0OTN1SU6WHKnUByFSaub3Dxbos/CrBPKH346BBJD018COwotNc
+JhprUCaLAgMBAAECggEAF7gcq05oVb4jm/BgWUaDCvb64gkUc+32QQiuhXNS8Hu+
+t+5kkBjRcBe1FD79JrH+c+14/VlH2BbHtD7qQbZXu8jjBN/CK0zr5WINDepNELP5
+2wKf6UZuprMZLW1gXDKB8LNeet46nnOh23d0pFJcrGzats+EZHAcJVrAPGE7HvQu
+TbBSfaMhA4UsGs35dgHh8wUhXT+DdjM6aPbjlqI4GCjhWpdTM8qQ0gUWZMNDjuce
+8ihXi0FVfQMV93f+xSPvea7uVgHN1d7dvaYa/0cpXbUx0yP7LnzEdRkPzcRuCFiQ
+FbMiZjKO4P5w2W79OTGHgK6T2mmR70lAzTL05umtWQKBgQDorAv4l4r2PILnb6sG
+O1hs6QOfTUQJWHpGDOEpLD2pjgDR5ADTVfu5kWgpSNFPU8n7FVrAAXvQ+36utxCo
+DTEH47GQFHtyJhPnMfJ0YFudp/abo9GCVAGQhioNhzYVRBclCRIf5Xd7a9GBu1RZ
+I8o1TT42DLP9Vf1BZiCRv3yqWQKBgQDGT8amBc7XU0GItqE3Jea0r+VahDycKrg1
+yUcm0w1Jw0j5X2uXjrqEMyoxY//IyE5JtlBvOJ8XqxuZpdF1rbXqqBLj+XVY3Cz1
+2r6wsdVn2afiMWBeFHyxpir2SuWc2Y/ABxp4vXZ6Xv7xJ/z0NkhilznpJug53CmV
+CNzSIBdzgwKBgQDA1M37EkV1/AKVosPAH3ESmi+JWDT59d0or0XwpJzaKDlfurJA
+dHNygSMtjA8EyrGMKU+T7+bY9YYxcMEaNgybuEaR3ZfNq+c05f1GHBHx4KGOrj9V
+3x+I0tiJa7UT/OGdrR3bV4clv97bwRCP7AyLDmBv1Sla3WhOSkDV6jh8yQKBgCqC
+9YGnoxSTu2u0QtEQpek7/72stVWA7uZQ1JjlC2cxntYed3EQ3rjyQuw9lJqVHfs9
+Qvbku24Wdx8z5bgFWgcIqqwGUPqQkG7PyqsUJDxT82JQ1Wi1mZl3lqQfoCNEnEU9
+AJa7fsdyz9IgkWBEtrWz1208svGcWamiMbw1tvFDAoGBAI82oCpW83GnkqXHMo6c
+pEdhpCG72sbBet9MbuM5xZsQsLLsKDAT3XSYyHBz4Q/d6tNdcsLXYJ/OxqSHnz+h
+DyjoHftv7N432mygznPcO8UWyD7iYxveyQJLAQpNNCYR1C2LDAJNoUakYPi+QCpe
+YsKX5MtauO5AFHX+eVs2yKU0
+-----END PRIVATE KEY-----`;
 
-let accessToken = null;
-let tokenExpiry = 0;
-let currentSheetId = '';
-let currentTab = '';
-let currentData = [];
+let accessToken=null,tokenExpiry=0,currentSheetId='',currentTab='',currentData=[];
 
-async function getToken() {
-  if (accessToken && Date.now() < tokenExpiry - 30000) return accessToken;
-  setStatus('loading', 'obtendo token...');
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg: 'RS256', typ: 'JWT' };
-  const payload = {
-    iss: CREDS.client_email,
-    scope: 'https://www.googleapis.com/auth/spreadsheets',
-    aud: CREDS.token_uri,
-    exp: now + 3600,
-    iat: now
-  };
-  const sHeader = JSON.stringify(header);
-  const sPayload = JSON.stringify(payload);
-  const jwt = KJUR.jws.JWS.sign('RS256', sHeader, sPayload, CREDS.private_key);
-  const r = await fetch(CREDS.token_uri, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
+function b64url(buf){
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+function pemToBuffer(pem){
+  const b64=pem.replace(/-----[^-]+-----/g,'').replace(/\s/g,'');
+  const bin=atob(b64);
+  return Uint8Array.from(bin,c=>c.charCodeAt(0)).buffer;
+}
+async function getToken(){
+  if(accessToken&&Date.now()<tokenExpiry-30000)return accessToken;
+  setStatus('loading','autenticando...');
+  const now=Math.floor(Date.now()/1000);
+  const enc=new TextEncoder();
+  const header=b64url(enc.encode(JSON.stringify({alg:'RS256',typ:'JWT'})));
+  const payload=b64url(enc.encode(JSON.stringify({
+    iss:CLIENT_EMAIL,scope:'https://www.googleapis.com/auth/spreadsheets',
+    aud:TOKEN_URI,exp:now+3600,iat:now
+  })));
+  const sigInput=`${header}.${payload}`;
+  const key=await crypto.subtle.importKey('pkcs8',pemToBuffer(PEM),
+    {name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
+  const sig=await crypto.subtle.sign('RSASSA-PKCS1-v1_5',key,enc.encode(sigInput));
+  const jwt=`${sigInput}.${b64url(sig)}`;
+  const r=await fetch(TOKEN_URI,{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
   });
-  const d = await r.json();
-  if (d.access_token) {
-    accessToken = d.access_token;
-    tokenExpiry = Date.now() + (d.expires_in * 1000);
-    setStatus('ok', CREDS.client_email.split('@')[0]);
+  const d=await r.json();
+  if(d.access_token){
+    accessToken=d.access_token;
+    tokenExpiry=Date.now()+d.expires_in*1000;
+    setStatus('ok','conectado');
     return accessToken;
   }
-  setStatus('', 'erro ao autenticar');
-  throw new Error('Auth failed: ' + JSON.stringify(d));
+  throw new Error(d.error_description||JSON.stringify(d));
 }
-
-function setStatus(type, text) {
-  const dot = document.getElementById('conn-dot');
-  const txt = document.getElementById('conn-text');
-  dot.className = 'dot' + (type ? ' ' + type : '');
-  txt.textContent = text;
+function setStatus(t,txt){
+  document.getElementById('dot').className='dot'+(t?' '+t:'');
+  document.getElementById('status-text').textContent=txt;
 }
-
-async function conectarECarregar() {
-  currentSheetId = document.getElementById('sheet-id-input').value.trim();
-  if (!currentSheetId) return;
-  try {
-    const token = await getToken();
-    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${currentSheetId}?fields=sheets.properties.title,properties.title`, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-    const d = await r.json();
-    if (!d.sheets) { toast('Erro ao carregar planilha. Verifique o ID e o compartilhamento.', 'err'); return; }
-    document.getElementById('topbar-title').textContent = d.properties?.title || 'Planilha';
-    renderTabs(d.sheets.map(s => s.properties.title));
-    toast('Planilha carregada com sucesso!', 'ok');
-  } catch(e) {
-    toast('Erro: ' + e.message, 'err');
-  }
+function showErr(msg){
+  document.getElementById('err-box').innerHTML=`<div class="err-box">⚠️ ${msg}</div>`;
 }
-
-function renderTabs(tabs) {
-  const list = document.getElementById('tabs-list');
-  list.innerHTML = '';
-  tabs.forEach(name => {
-    const btn = document.createElement('button');
-    btn.className = 'tab-btn';
-    btn.textContent = name;
-    btn.onclick = () => carregarAba(name, btn);
+async function conectar(){
+  document.getElementById('err-box').innerHTML='';
+  currentSheetId=document.getElementById('sheet-id').value.trim();
+  if(!currentSheetId)return;
+  try{
+    const token=await getToken();
+    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${currentSheetId}?fields=sheets.properties.title,properties.title`,
+      {headers:{Authorization:'Bearer '+token}});
+    if(!r.ok)throw new Error(`HTTP ${r.status}: ${await r.text()}`);
+    const d=await r.json();
+    if(!d.sheets)throw new Error('Planilha não encontrada. Verifique se foi compartilhada com: '+CLIENT_EMAIL);
+    document.getElementById('topbar-title').textContent=d.properties?.title||'Planilha';
+    renderTabs(d.sheets.map(s=>s.properties.title));
+    toast('Planilha carregada!','ok');
+  }catch(e){setStatus('err','erro');showErr(e.message);}
+}
+function renderTabs(tabs){
+  const list=document.getElementById('tabs-list');
+  list.innerHTML='';
+  tabs.forEach(name=>{
+    const btn=document.createElement('button');
+    btn.className='tab-btn';btn.textContent=name;
+    btn.onclick=()=>carregarAba(name,btn);
     list.appendChild(btn);
   });
 }
-
-async function carregarAba(name, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+async function carregarAba(name,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  currentTab = name;
-  document.getElementById('topbar-title').textContent = name;
-  document.getElementById('topbar-meta').textContent = 'carregando...';
-  mostrarLoading();
-  try {
-    const token = await getToken();
-    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${currentSheetId}/values/${encodeURIComponent(name)}`, {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-    const d = await r.json();
-    currentData = d.values || [];
-    document.getElementById('topbar-meta').textContent = `${currentData.length} linhas · ${currentData[0]?.length || 0} colunas`;
-    document.getElementById('topbar-actions').innerHTML = `
-      <button class="btn small" onclick="abrirEditPanel()">✏️ Editar</button>
-      <button class="btn small" onclick="copiarDados()">📋 Copiar tudo</button>
-    `;
-    renderTabela(currentData);
-  } catch(e) {
-    toast('Erro ao carregar aba: ' + e.message, 'err');
-  }
-}
-
-function mostrarLoading() {
-  document.getElementById('main-content').innerHTML = `
-    <div class="empty">
-      <div class="loading-bar"><div class="loading-bar-fill"></div></div>
-      <div class="empty-text">carregando dados...</div>
-    </div>`;
-}
-
-function renderTabela(data) {
-  if (!data || data.length === 0) {
-    document.getElementById('main-content').innerHTML = '<div class="empty"><div class="empty-text">aba vazia</div></div>';
-    return;
-  }
-  const maxCols = Math.max(...data.map(r => r.length));
-  let html = '<div class="table-wrap"><table><thead><tr><th>#</th>';
-  for (let c = 0; c < Math.min(maxCols, 20); c++) {
-    const col = String.fromCharCode(65 + c);
-    html += `<th>${col}</th>`;
-  }
-  html += '</tr></thead><tbody>';
-  data.forEach((row, ri) => {
-    html += `<tr><td style="color:var(--text3);user-select:none;">${ri + 1}</td>`;
-    for (let c = 0; c < Math.min(maxCols, 20); c++) {
-      const val = row[c] || '';
-      const display = val.length > 40 ? val.substring(0, 40) + '…' : val;
-      html += `<td class="editable" title="${val.replace(/"/g,'&quot;')}" onclick="editarCelula(${ri},${c},this)">${display}</td>`;
+  currentTab=name;
+  document.getElementById('topbar-title').textContent=name;
+  document.getElementById('topbar-meta').textContent='';
+  document.getElementById('topbar-actions').innerHTML='';
+  document.getElementById('content').innerHTML=`<div class="loading-wrap"><div class="loading-bar"><div class="loading-fill"></div></div><div style="font-size:12px;color:var(--text3);font-family:var(--mono);">carregando ${name}...</div></div>`;
+  try{
+    const token=await getToken();
+    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${currentSheetId}/values/${encodeURIComponent(name)}`,
+      {headers:{Authorization:'Bearer '+token}});
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    const d=await r.json();
+    currentData=d.values||[];
+    if(!currentData.length){
+      document.getElementById('content').innerHTML='<div class="empty"><div class="empty-text">aba vazia ou sem dados</div></div>';
+      return;
     }
-    html += '</tr>';
+    const maxCols=Math.max(...currentData.map(r=>r.length));
+    document.getElementById('topbar-meta').textContent=`${currentData.length} linhas · ${maxCols} colunas`;
+    document.getElementById('topbar-actions').innerHTML=
+      `<button class="btn sm" onclick="abrirEdit()">✏️ Editar</button>
+       <button class="btn sm" onclick="copiar()">📋 Copiar</button>`;
+    renderTabela(currentData,maxCols);
+  }catch(e){
+    document.getElementById('content').innerHTML=`<div class="empty"><div class="err-box" style="max-width:400px;">⚠️ Erro: ${e.message}</div></div>`;
+  }
+}
+function renderTabela(data,maxCols){
+  const cols=Math.min(maxCols,15);
+  let html='<div class="table-wrap"><table><thead><tr><th>#</th>';
+  for(let c=0;c<cols;c++)html+=`<th>${String.fromCharCode(65+c)}</th>`;
+  html+='</tr></thead><tbody>';
+  data.forEach((row,ri)=>{
+    html+=`<tr><td>${ri+1}</td>`;
+    for(let c=0;c<cols;c++){const v=row[c]||'';html+=`<td title="${v.replace(/"/g,'&quot;')}">${v}</td>`;}
+    html+='</tr>';
   });
-  html += '</tbody></table></div>';
-  document.getElementById('main-content').innerHTML = html;
+  html+='</tbody></table></div>';
+  document.getElementById('content').innerHTML=html;
 }
-
-function editarCelula(row, col, td) {
-  const colLetter = String.fromCharCode(65 + col);
-  const range = `${colLetter}${row + 1}`;
-  document.getElementById('ep-tab').value = currentTab;
-  document.getElementById('ep-range').value = range;
-  document.getElementById('ep-values').value = currentData[row]?.[col] || '';
-  document.getElementById('edit-panel').style.display = 'block';
-  document.getElementById('ep-values').focus();
+function abrirEdit(){
+  document.getElementById('ep-tab').value=currentTab;
+  document.getElementById('ep-range').value='';
+  document.getElementById('ep-values').value='';
+  document.getElementById('ep-status').textContent='';
+  document.getElementById('edit-panel').style.display='block';
 }
-
-function abrirEditPanel() {
-  document.getElementById('ep-tab').value = currentTab;
-  document.getElementById('ep-range').value = '';
-  document.getElementById('ep-values').value = '';
-  document.getElementById('edit-panel').style.display = 'block';
-}
-
-function fecharEditPanel() {
-  document.getElementById('edit-panel').style.display = 'none';
-}
-
-async function salvarCelulas() {
-  const tab = document.getElementById('ep-tab').value.trim();
-  const range = document.getElementById('ep-range').value.trim();
-  const raw = document.getElementById('ep-values').value;
-  if (!tab || !range || !raw) { document.getElementById('ep-status').textContent = 'Preencha aba, range e valores.'; return; }
-  const values = raw.split('\n').map(line => line.split(',').map(v => v.trim()));
-  document.getElementById('ep-status').textContent = 'Salvando...';
-  try {
-    const token = await getToken();
-    const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${currentSheetId}/values/${encodeURIComponent(tab + '!' + range)}?valueInputOption=USER_ENTERED`, {
-      method: 'PUT',
-      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ values })
-    });
-    const d = await r.json();
-    if (d.updatedCells) {
-      document.getElementById('ep-status').textContent = `✓ ${d.updatedCells} células salvas`;
-      toast(`${d.updatedCells} células atualizadas`, 'ok');
-      if (currentTab === tab) carregarAba(currentTab, document.querySelector('.tab-btn.active'));
-    } else {
-      document.getElementById('ep-status').textContent = 'Erro: ' + (d.error?.message || JSON.stringify(d));
+function fecharEdit(){document.getElementById('edit-panel').style.display='none';}
+async function salvar(){
+  const tab=document.getElementById('ep-tab').value.trim();
+  const range=document.getElementById('ep-range').value.trim();
+  const raw=document.getElementById('ep-values').value.trim();
+  if(!tab||!range||!raw){document.getElementById('ep-status').textContent='Preencha todos os campos.';return;}
+  const values=raw.split('\n').map(l=>l.split(',').map(v=>v.trim()));
+  document.getElementById('ep-status').textContent='Salvando...';
+  try{
+    const token=await getToken();
+    const r=await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${currentSheetId}/values/${encodeURIComponent(tab+'!'+range)}?valueInputOption=USER_ENTERED`,
+      {method:'PUT',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+       body:JSON.stringify({values})});
+    const d=await r.json();
+    if(d.updatedCells){
+      document.getElementById('ep-status').textContent=`✓ ${d.updatedCells} células salvas`;
+      toast(`${d.updatedCells} células atualizadas`,'ok');
+      carregarAba(currentTab,document.querySelector('.tab-btn.active'));
+    }else{
+      document.getElementById('ep-status').textContent='Erro: '+(d.error?.message||JSON.stringify(d));
     }
-  } catch(e) {
-    document.getElementById('ep-status').textContent = 'Erro: ' + e.message;
-  }
+  }catch(e){document.getElementById('ep-status').textContent='Erro: '+e.message;}
 }
-
-function copiarDados() {
-  const text = currentData.map(r => r.join('\t')).join('\n');
-  navigator.clipboard.writeText(text).then(() => toast('Dados copiados!', 'ok'));
+function copiar(){
+  navigator.clipboard.writeText(currentData.map(r=>r.join('\t')).join('\n'));
+  toast('Dados copiados!','ok');
 }
-
-function toast(msg, type) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'toast ' + (type || '');
-  el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 3000);
+function toast(msg,type){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast '+type;el.style.display='block';
+  setTimeout(()=>el.style.display='none',3000);
 }
 </script>
 

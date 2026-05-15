@@ -350,10 +350,19 @@
       <div class="config-step">
         <div class="config-step-num">3</div>
         <div style="flex:1;">
-          <div class="config-step-label">Conectar conta Google</div>
-          <div class="config-step-desc">Use o OAuth Playground para gerar o access token e cole abaixo</div>
+          <div class="config-step-label">Refresh Token (renovação automática)</div>
+          <div class="config-step-desc">Cole o refresh_token gerado no OAuth Playground. O app renova o acesso automaticamente sem precisar gerar token toda hora.</div>
+          <input class="config-input" type="password" id="refresh-token-input" placeholder="1//04A1..." />
+          <button class="btn-green" style="margin-top:8px;" onclick="saveRefreshToken()">Salvar refresh token</button>
+        </div>
+      </div>
+      <div class="config-step">
+        <div class="config-step-num">4</div>
+        <div style="flex:1;">
+          <div class="config-step-label">Access Token manual (opcional)</div>
+          <div class="config-step-desc">Se preferir, cole um access token gerado manualmente no OAuth Playground.</div>
           <input class="config-input" type="text" id="token-config-input" placeholder="ya29.xxxxxxx" />
-          <button class="btn-green" style="margin-top:8px;" onclick="applyTokenFromConfig()">Ativar token</button>
+          <button class="btn-green" style="margin-top:8px;" onclick="applyTokenFromConfig()">Ativar token manual</button>
         </div>
       </div>
     </div>
@@ -491,8 +500,10 @@ function updateConfigStatus() {
   if (cl) cl.textContent = anthropicKey ? 'configurada' : 'nao configurada';
   const ci = document.getElementById('client-id-input');
   const ak = document.getElementById('anthropic-key');
+  const rt = document.getElementById('refresh-token-input');
   if (ci) ci.value = clientId || '';
   if (ak) ak.value = anthropicKey || '';
+  if (rt && refreshToken) rt.value = '••••••••••••••••';
 }
 
 function initials(n) { return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
@@ -761,6 +772,18 @@ function saveClientId() {
   const val = document.getElementById('client-id-input').value.trim(); if (!val) return;
   clientId = val; localStorage.setItem('coach_client_id', val);
   showToast('Client ID salvo!', 'ok'); updateConfigStatus();
+}
+
+function saveRefreshToken() {
+  const val = document.getElementById('refresh-token-input').value.trim();
+  if (!val) return;
+  localStorage.setItem('coach_refresh_token', val);
+  refreshToken = val;
+  showToast('Refresh token salvo!', 'ok');
+  renovarToken().then(function(ok) {
+    if (ok) showToast('Google conectado automaticamente!', 'ok');
+    else showToast('Erro ao conectar. Verifique o token.', 'err');
+  });
 }
 
 function saveAnthropicKey() {

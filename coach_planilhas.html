@@ -517,7 +517,7 @@ function renderList(filter) {
     const d = document.createElement('div');
     d.className = 'si' + (s.id === selectedId ? ' active' : '');
     d.onclick = function() { selectStudent(s.id); };
-    d.innerHTML = '<div class="si-av' + (s.status==='inativo'?' off':'') + '">' + initials(s.name) + '</div><div style="flex:1;min-width:0;"><div class="si-name">' + s.name + '</div><div class="si-meta">' + (s.split||'--') + '</div></div><div class="si-dot' + (s.status==='inativo'?' off':'') + '"></div>';
+    d.innerHTML = '<div class="si-av' + (s.status==='inativo'?' off':'') + '">' + initials(s.name) + '</div><div style="flex:1;min-width:0;"><div class="si-name">' + s.name + '</div><div class="si-meta">' + (s.status==='ativo'?'Ativo':'Inativo') + '</div></div><div class="si-dot' + (s.status==='inativo'?' off':'') + '"></div>';
     list.appendChild(d);
   });
   const active = students.filter(s=>s.status==='ativo').length;
@@ -534,7 +534,7 @@ function selectStudent(id) {
   document.getElementById('msgs2').innerHTML = '<div class="msg msg-ai">Chat aberto para ' + s.name + '. Pode perguntar sobre programacao, progressao ou qualquer ajuste.</div>';
   document.getElementById('ph-av').textContent = initials(s.name);
   document.getElementById('ph-name').textContent = s.name;
-  document.getElementById('ph-meta').textContent = s.split + ' - ' + s.goal + ' - ' + (s.status==='ativo'?'Ativo':'Inativo');
+  document.getElementById('ph-meta').textContent = s.status==='ativo' ? 'Ativo' : 'Inativo';
   document.getElementById('empty-state').style.display = 'none';
   const sv = document.getElementById('student-view');
   sv.style.display = 'flex'; sv.style.flexDirection = 'column'; sv.style.flex = '1';
@@ -806,8 +806,6 @@ function openEditModal() {
   editingId = s.id;
   document.getElementById('modal-title').textContent = 'Editar aluno';
   document.getElementById('f-name').value = s.name;
-  document.getElementById('f-split').value = s.split || '';
-  document.getElementById('f-goal').value = s.goal || 'Hipertrofia';
   document.getElementById('f-sheet').value = s.sheet || '';
   document.getElementById('f-status').value = s.status || 'ativo';
   document.getElementById('f-obs').value = s.obs || '';
@@ -818,7 +816,7 @@ function closeModal() { document.getElementById('modal').style.display = 'none';
 
 function saveStudent() {
   const name = document.getElementById('f-name').value.trim(); if (!name) return;
-  const data = {name:name, split:document.getElementById('f-split').value.trim(), goal:document.getElementById('f-goal').value, sheet:document.getElementById('f-sheet').value.trim(), status:document.getElementById('f-status').value, obs:document.getElementById('f-obs').value.trim()};
+  const data = {name:name, split:'', goal:'', sheet:document.getElementById('f-sheet').value.trim(), status:document.getElementById('f-status').value, obs:document.getElementById('f-obs').value.trim()};
   if (editingId) { const idx = students.findIndex(function(s){return s.id===editingId;}); if(idx>=0) students[idx] = Object.assign({}, students[idx], data); }
   else { data.id = 'st_' + Date.now(); students.push(data); }
   saveAll(); closeModal();

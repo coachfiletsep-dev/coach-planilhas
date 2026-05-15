@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<!-- saved from url=(0059)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v4_2.html -->
-<html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Coach Planilhas</title>
 <style>
   :root {
@@ -198,8 +198,8 @@
     </div>
   </div>
   <div class="nav">
-    <button class="nav-btn active" onclick="showPage(&#39;alunos&#39;,this)">Alunos</button>
-    <button class="nav-btn" onclick="showPage(&#39;config&#39;,this)">Configuração</button>
+    <button class="nav-btn active" onclick="showPage('alunos',this)">Alunos</button>
+    <button class="nav-btn" onclick="showPage('config',this)">Configuração</button>
     <button class="auth-pill" id="auth-pill" onclick="showAuthModal()">
       <div class="auth-dot" id="auth-dot"></div>
       <span id="auth-label">Conectar Google</span>
@@ -217,12 +217,12 @@
     <div class="sidebar-top">
       <div class="search">
         <span style="color:var(--text3);font-size:13px;">🔍</span>
-        <input type="text" placeholder="Buscar aluno..." id="search-input" oninput="filterStudents()">
+        <input type="text" placeholder="Buscar aluno..." id="search-input" oninput="filterStudents()" />
       </div>
     </div>
-    <div class="student-list" id="student-list"><div class="si"><div class="si-av">CM</div><div style="flex:1;min-width:0;"><div class="si-name">Caian Maroni</div><div class="si-meta">Upper/Lower A/B/C</div></div><div class="si-dot"></div></div></div>
+    <div class="student-list" id="student-list"></div>
     <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
-    <div class="sidebar-footer" id="counter">1 alunos - 1 ativos</div>
+    <div class="sidebar-footer" id="counter">0 alunos</div>
   </div>
 
   <div class="panel">
@@ -243,32 +243,32 @@
         <div class="ph-actions">
           <button class="icon-btn" onclick="openEditModal()" title="Editar aluno">✏️</button>
           <button class="icon-btn" onclick="openSheet()" title="Abrir planilha">↗️</button>
-          <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
+          <button class="btn-green" onclick="runAction('zero')">🔄 Novo meso IA</button>
         </div>
       </div>
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(&#39;treino&#39;,this)">Ações</button>
-        <button class="tab" onclick="switchTab(&#39;ia&#39;,this)">Assistente IA</button>
+        <button class="tab active" onclick="switchTab('treino',this)">Ações</button>
+        <button class="tab" onclick="switchTab('ia',this)">Assistente IA</button>
       </div>
 
       <div class="tab-body" id="tab-treino">
         <div class="ag">
-          <button class="ac" onclick="runSheetAction(&#39;seg_qui&#39;)">
+          <button class="ac" onclick="runSheetAction('seg_qui')">
             <div class="ac-icon">📅</div>
             <div class="ac-label">Semana seg → qui</div>
             <div class="ac-desc">Avança cargas e reps de segunda a quinta para a semana seguinte</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;qui_dom&#39;)">
+          <button class="ac" onclick="runSheetAction('qui_dom')">
             <div class="ac-icon">📆</div>
             <div class="ac-label">Semana qui → dom</div>
             <div class="ac-desc">Avança cargas e reps de quinta a domingo para a semana seguinte</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;semana_completa&#39;)">
+          <button class="ac" onclick="runSheetAction('semana_completa')">
             <div class="ac-icon">🗓️</div>
             <div class="ac-label">Semana completa</div>
             <div class="ac-desc">Avança toda a semana de uma vez (segunda ao domingo)</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;planilha_zero&#39;)">
+          <button class="ac" onclick="runSheetAction('planilha_zero')">
             <div class="ac-icon">📄</div>
             <div class="ac-label">Planilha do zero</div>
             <div class="ac-desc">Cria nova planilha zerada para início de mesociclo</div>
@@ -289,7 +289,8 @@
             <button class="chip" onclick="useChip(this)">Montar novo meso completo</button>
           </div>
           <div class="input-row">
-            <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+            <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
             <button class="send-btn" id="send-btn" onclick="sendMsg()">Enviar ↗</button>
           </div>
         </div>
@@ -310,7 +311,8 @@
             <button class="chip" onclick="useChip2(this)">Deload — quando e como?</button>
           </div>
           <div class="input-row">
-            <textarea class="ai-input" id="ai-input2" placeholder="Converse livremente sobre treino..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg2();}"></textarea>
+            <textarea class="ai-input" id="ai-input2" placeholder="Converse livremente sobre treino..." rows="1"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg2();}"></textarea>
             <button class="send-btn" onclick="sendMsg2()">Enviar ↗</button>
           </div>
         </div>
@@ -328,7 +330,7 @@
         <div style="flex:1;">
           <div class="config-step-label">Obter API Key em console.anthropic.com</div>
           <div class="config-step-desc">Acesse console.anthropic.com → API Keys → criar nova chave</div>
-          <input class="config-input" type="password" id="anthropic-key" placeholder="sk-ant-...">
+          <input class="config-input" type="password" id="anthropic-key" placeholder="sk-ant-..." />
           <button class="btn-green" style="margin-top:8px;" onclick="saveAnthropicKey()">Salvar chave</button>
         </div>
       </div>
@@ -341,7 +343,7 @@
         <div style="flex:1;">
           <div class="config-step-label">Client ID do Google Cloud Console</div>
           <div class="config-step-desc">Já configurado durante o setup inicial</div>
-          <input class="config-input" type="text" id="client-id-input" placeholder="xxxxx.apps.googleusercontent.com">
+          <input class="config-input" type="text" id="client-id-input" placeholder="xxxxx.apps.googleusercontent.com" />
           <button class="btn-green" style="margin-top:8px;" onclick="saveClientId()">Salvar Client ID</button>
         </div>
       </div>
@@ -350,14 +352,14 @@
         <div style="flex:1;">
           <div class="config-step-label">Conectar conta Google</div>
           <div class="config-step-desc">Use o OAuth Playground para gerar o access token e cole abaixo</div>
-          <input class="config-input" type="text" id="token-config-input" placeholder="ya29.xxxxxxx">
+          <input class="config-input" type="text" id="token-config-input" placeholder="ya29.xxxxxxx" />
           <button class="btn-green" style="margin-top:8px;" onclick="applyTokenFromConfig()">Ativar token</button>
         </div>
       </div>
     </div>
 
     <div style="font-size:11px;color:var(--text3);margin-top:1rem;">
-      Status: Client ID — <span id="cid-status">1064899047986-lousa0...</span> &nbsp;|&nbsp; Token — <span id="token-status">nao conectado</span> &nbsp;|&nbsp; API Claude — <span id="claude-status">nao configurada</span>
+      Status: Client ID — <span id="cid-status">não configurado</span> &nbsp;|&nbsp; Token — <span id="token-status">não conectado</span> &nbsp;|&nbsp; API Claude — <span id="claude-status">não configurada</span>
     </div>
   </div>
 </div>
@@ -370,12 +372,12 @@
       <button class="icon-btn" onclick="closeModal()" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
-      <div class="fl"><label>Nome completo</label><input type="text" id="f-name" placeholder="Ex: Caian Maroni"></div>
-      <div class="fl"><label>Divisão de treino</label><input type="text" id="f-split" placeholder="Ex: Upper/Lower A/B/C"></div>
+      <div class="fl"><label>Nome completo</label><input type="text" id="f-name" placeholder="Ex: Caian Maroni" /></div>
+      <div class="fl"><label>Divisão de treino</label><input type="text" id="f-split" placeholder="Ex: Upper/Lower A/B/C" /></div>
       <div class="fl"><label>Objetivo</label>
         <select id="f-goal"><option>Hipertrofia</option><option>Força</option><option>Emagrecimento</option><option>Resistência</option><option>Recomposição corporal</option></select>
       </div>
-      <div class="fl"><label>Link da planilha Google Sheets</label><input type="text" id="f-sheet" placeholder="https://docs.google.com/spreadsheets/d/..."></div>
+      <div class="fl"><label>Link da planilha Google Sheets</label><input type="text" id="f-sheet" placeholder="https://docs.google.com/spreadsheets/d/..." /></div>
       <div class="fl"><label>Status</label>
         <select id="f-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
       </div>
@@ -412,7 +414,7 @@
       <div class="auth-step-text">Clique <strong>"Exchange authorization code for tokens"</strong> → copie o <strong>Access token</strong> (começa com ya29.)</div>
     </div>
     <label style="font-size:12px;color:var(--text2);">Cole o Access token aqui:</label>
-    <input class="token-field" type="text" id="token-input" placeholder="ya29.xxxxxxx">
+    <input class="token-field" type="text" id="token-input" placeholder="ya29.xxxxxxx" />
     <div style="display:flex;gap:8px;margin-top:.5rem;">
       <button class="btn-green" onclick="applyToken()">✓ Ativar token</button>
       <button class="btn-ghost" onclick="closeAuthModal()">Cancelar</button>
@@ -427,6 +429,27 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTcezZ5a2i8GyI
 
 let students = [], selectedId = null, msgHistory = [], msgHistory2 = [], isLoading = false, editingId = null;
 let accessToken = null, clientId = DEFAULT_CLIENT_ID, anthropicKey = '';
+let refreshToken = localStorage.getItem('coach_refresh_token') || '';
+
+async function renovarToken() {
+  try {
+    const res = await fetch('https://coach-proxy.coachfiletsep.workers.dev/refresh', {
+      method: 'POST',
+      headers: { 'x-refresh-token': refreshToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    if (data.access_token) {
+      accessToken = data.access_token;
+      localStorage.setItem('coach_token', accessToken);
+      setAuthConnected();
+      return true;
+    }
+    return false;
+  } catch(e) {
+    return false;
+  }
+}
 
 async function init() {
   clientId = localStorage.getItem('coach_client_id') || DEFAULT_CLIENT_ID;
@@ -438,7 +461,13 @@ async function init() {
     students = [{id:'caian',name:'Caian Maroni',split:'Upper/Lower A/B/C',goal:'Hipertrofia',sheet:'https://docs.google.com/spreadsheets/d/1vVoFG7dTgZ6Z7wTSxmeMhDDxdu-rX4zy0LTSqg_47F8/edit',status:'ativo',obs:'Proximo meso: +20% series semanais de ombros sem aumentar total por sessao'}];
     saveAll();
   }
-  if (accessToken) setAuthConnected();
+  if (accessToken) {
+    setAuthConnected();
+  } else if (refreshToken) {
+    renovarToken().then(function(ok) {
+      if (ok) showToast('Conectado automaticamente!', 'ok');
+    });
+  }
   updateConfigStatus();
   renderList();
 }
@@ -547,7 +576,15 @@ async function runSheetAction(type) {
     }
   } catch(e) {
     removeLoading('msgs');
-    addMsg('msgs', 'Erro: ' + e.message, false);
+    if (e.message && e.message.includes('401')) {
+      addMsg('msgs', 'Token expirado, renovando...', false);
+      const ok = await renovarToken();
+      if (ok) {
+        addMsg('msgs', 'Token renovado! Tente novamente.', false);
+      }
+    } else {
+      addMsg('msgs', 'Erro: ' + e.message, false);
+    }
   }
 }
 
@@ -776,6 +813,5 @@ function showToast(msg, type) {
 
 init();
 </script>
-
-
-</body></html>
+</body>
+</html>

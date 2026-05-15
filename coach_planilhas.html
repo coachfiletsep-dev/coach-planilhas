@@ -180,6 +180,12 @@
     </div>
     <div class="student-list" id="student-list"></div>
     <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
+    <div style="padding:.5rem;display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--border);">
+      <div style="font-size:10px;color:var(--text3);padding:2px 4px;font-weight:600;">ATUALIZAR TODOS</div>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('seg_qui')">📅 Seg → qui</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('qui_dom')">📆 Qui → dom</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('semana_completa')">🗓️ Semana completa</button>
+    </div>
     <div class="sidebar-footer" id="counter">0 alunos</div>
   </div>
 
@@ -334,6 +340,27 @@
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn-green" onclick="saveStudent()">Salvar aluno</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PROGRESSO -->
+<div class="overlay" id="progress-modal" style="display:none;">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <span class="modal-title" id="progress-title">Atualizando todos os alunos...</span>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">
+        <span id="progress-count">0</span> de <span id="progress-total">0</span> alunos processados
+      </div>
+      <div style="background:var(--bg2);border-radius:var(--radius);height:6px;overflow:hidden;">
+        <div id="progress-bar" style="background:var(--green);height:100%;width:0%;transition:width .3s;"></div>
+      </div>
+      <div id="progress-log" style="margin-top:12px;max-height:200px;overflow-y:auto;font-size:11px;color:var(--text2);display:flex;flex-direction:column;gap:4px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" id="progress-close-btn" onclick="closeProgressModal()" style="display:none;">Fechar</button>
     </div>
   </div>
 </div>
@@ -682,6 +709,69 @@ function showToast(msg, type) {
   t.className='toast '+type; t.textContent=msg;
   document.body.appendChild(t);
   setTimeout(function(){t.remove();},3500);
+}
+
+async function atualizarTodos(tipo) {
+  const ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet; });
+  if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha cadastrada', 'err'); return; }
+
+  const labels = { seg_qui:'Seg → qui', qui_dom:'Qui → dom', semana_completa:'Semana completa' };
+  document.getElementById('progress-title').textContent = 'Atualizando todos — ' + (labels[tipo]||tipo);
+  document.getElementById('progress-count').textContent = '0';
+  document.getElementById('progress-total').textContent = ativos.length;
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('progress-log').innerHTML = '';
+  document.getElementById('progress-close-btn').style.display = 'none';
+  document.getElementById('progress-modal').style.display = 'flex';
+
+  var erros = [];
+  for (var i = 0; i < ativos.length; i++) {
+    var s = ativos[i];
+    var sheetId = getSheetId(s.sheet);
+    var logEl = document.createElement('div');
+    logEl.textContent = '⏳ ' + s.name + '...';
+    document.getElementById('progress-log').appendChild(logEl);
+
+    try {
+      var res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ acao: tipo, spreadsheetId: sheetId })
+      });
+      var data = await res.json();
+      if (data.sucesso) {
+        logEl.textContent = '✅ ' + s.name + (data.novaAba ? ' → ' + data.novaAba : '');
+        logEl.style.color = 'var(--green)';
+      } else {
+        logEl.textContent = '❌ ' + s.name + ': ' + (data.erro||'erro');
+        logEl.style.color = 'var(--red)';
+        erros.push(s.name);
+      }
+    } catch(e) {
+      logEl.textContent = '❌ ' + s.name + ': ' + e.message;
+      logEl.style.color = 'var(--red)';
+      erros.push(s.name);
+    }
+
+    document.getElementById('progress-count').textContent = i + 1;
+    document.getElementById('progress-bar').style.width = Math.round(((i+1)/ativos.length)*100) + '%';
+    document.getElementById('progress-log').scrollTop = document.getElementById('progress-log').scrollHeight;
+
+    if (i < ativos.length - 1) await new Promise(function(r){ setTimeout(r, 1500); });
+  }
+
+  document.getElementById('progress-title').textContent = erros.length === 0
+    ? '✅ Todos atualizados!'
+    : '⚠️ Concluído com ' + erros.length + ' erro(s)';
+  document.getElementById('progress-close-btn').style.display = 'block';
+}
+
+function closeProgressModal() {
+  document.getElementById('progress-modal').style.display = 'none';
+}
+
+function getSheetId(url) {
+  var m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? m[1] : null;
 }
 
 init();

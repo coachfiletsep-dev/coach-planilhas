@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0057)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v4.html -->
+<!-- saved from url=(0059)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v4_1.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -512,34 +512,42 @@ function getSheetId(url) {
 }
 
 async function runSheetAction(type) {
-  if (!accessToken) { showToast('Conecte o Google primeiro', 'err'); showAuthModal(); return; }
   const s = students.find(function(x){return x.id===selectedId;});
-  if (!s || !s.sheet) { showToast('Aluno sem planilha configurada', 'err'); return; }
-  const sheetId = getSheetId(s.sheet);
-  if (!sheetId) { showToast('Link da planilha invalido', 'err'); return; }
-  addMsg('msgs', 'Acessando planilha de ' + s.name + '...', true);
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+
+  const labels = {
+    seg_qui: 'Criando semana seg → qui...',
+    qui_dom: 'Criando semana qui → dom...',
+    semana_completa: 'Criando semana completa...',
+    planilha_zero: 'Criando planilha do zero...'
+  };
+
+  addMsg('msgs', labels[type] || 'Executando...', true);
   addLoading('msgs');
+
   try {
-    const res = await fetch(SHEETS_BASE + '/' + sheetId + '?fields=sheets.properties', {
-      headers: { 'Authorization': 'Bearer ' + accessToken }
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ acao: type })
     });
     const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    const names = data.sheets.map(function(s){return s.properties.title;});
     removeLoading('msgs');
-    addMsg('msgs', 'Planilha acessada! Abas: ' + names.slice(0,8).join(', ') + (names.length>8?'...':''), false);
-    await sendAutoMsg('A planilha do ' + s.name + ' tem as abas: ' + names.join(', ') + '. Acao: ' + type + '. ' + (s.obs||'') + ' Descreva o que fazer considerando a estrutura com tracking S1-S10.');
+
+    if (data.sucesso) {
+      const msgs = {
+        seg_qui: 'Semana seg → qui criada! Abra a planilha para conferir.',
+        qui_dom: 'Semana qui → dom criada! Abra a planilha para conferir.',
+        semana_completa: 'Semana completa criada! Abra a planilha para conferir.',
+        planilha_zero: 'Nova aba criada e zerada! Use o botao "Novo meso IA" para preencher a programacao.'
+      };
+      addMsg('msgs', msgs[type] || 'Acao executada com sucesso!', false);
+      showToast('Feito!', 'ok');
+    } else {
+      addMsg('msgs', 'Erro: ' + (data.erro || 'desconhecido'), false);
+    }
   } catch(e) {
     removeLoading('msgs');
-    if (e.message.includes('401') || e.message.includes('invalid_token')) {
-      accessToken = null; localStorage.removeItem('coach_token');
-      document.getElementById('auth-pill').className = 'auth-pill';
-      document.getElementById('auth-label').textContent = 'Conectar Google';
-      addMsg('msgs', 'Token expirado - reconecte o Google.', false);
-      showAuthModal();
-    } else {
-      addMsg('msgs', 'Erro: ' + e.message, false);
-    }
+    addMsg('msgs', 'Erro: ' + e.message, false);
   }
 }
 

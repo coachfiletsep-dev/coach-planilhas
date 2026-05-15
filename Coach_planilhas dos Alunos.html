@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<!-- saved from url=(0056)file:///C:/Users/Lenovo/Downloads/coach_planilhas_2.html -->
+<html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coach Planilhas</title>
+<style>
+  :root {
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #0F6E56;
+    --bg: #ffffff;
+    --bg2: #f7f7f5;
+    --bg3: #f0f0ec;
+    --text: #1a1a18;
+    --text2: #6b6b66;
+    --text3: #9b9b96;
+    --border: rgba(0,0,0,0.10);
+    --border2: rgba(0,0,0,0.18);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --red: #E24B4A;
+    --red-bg: #FCEBEB;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg2: #252523;
+      --bg3: #2e2e2b;
+      --text: #f0f0ec;
+      --text2: #a0a09a;
+      --text3: #6b6b66;
+      --border: rgba(255,255,255,0.10);
+      --border2: rgba(255,255,255,0.18);
+      --green-light: #0a3d2a;
+      --red-bg: #3a1515;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* HEADER */
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 0 1.25rem; height: 52px; border-bottom: 0.5px solid var(--border); flex-shrink: 0; background: var(--bg); }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 30px; height: 30px; border-radius: var(--radius); background: var(--green); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .logo-text { font-size: 14px; font-weight: 600; }
+  .logo-sub { font-size: 11px; color: var(--text2); }
+  .nav { display: flex; align-items: center; gap: 4px; }
+  .nav-btn { padding: 5px 12px; border-radius: var(--radius); border: none; background: transparent; font-size: 12px; color: var(--text2); cursor: pointer; transition: all .15s; }
+  .nav-btn:hover, .nav-btn.active { background: var(--bg2); color: var(--text); font-weight: 500; }
+  .auth-pill { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; font-size: 11px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--border2); background: var(--bg2); color: var(--text2); transition: all .15s; }
+  .auth-pill.on { background: var(--green-light); color: var(--green-dark); border-color: transparent; }
+  .auth-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); }
+  .auth-dot.on { background: var(--green); }
+
+  /* LAYOUT */
+  .main { display: flex; flex: 1; min-height: 0; }
+
+  /* SIDEBAR */
+  .sidebar { width: 220px; flex-shrink: 0; border-right: 0.5px solid var(--border); display: flex; flex-direction: column; background: var(--bg); }
+  .sidebar-top { padding: .75rem; border-bottom: 0.5px solid var(--border); }
+  .search { display: flex; align-items: center; gap: 6px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 6px 8px; }
+  .search input { border: none; background: transparent; font-size: 12px; color: var(--text); width: 100%; outline: none; }
+  .search input::placeholder { color: var(--text3); }
+  .student-list { flex: 1; overflow-y: auto; padding: .5rem; }
+  .si { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: var(--radius); cursor: pointer; transition: background .12s; }
+  .si:hover { background: var(--bg2); }
+  .si.active { background: var(--bg2); }
+  .si.active .si-name { color: var(--green); font-weight: 600; }
+  .si-av { width: 28px; height: 28px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--green-dark); flex-shrink: 0; }
+  .si-av.off { background: var(--bg3); color: var(--text3); }
+  .si-name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .si-meta { font-size: 10px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .si-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; margin-left: auto; }
+  .si-dot.off { background: var(--border2); }
+  .add-btn { margin: .5rem; padding: 7px; border-radius: var(--radius); border: 0.5px dashed var(--border2); background: transparent; color: var(--text3); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all .15s; }
+  .add-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-light); }
+  .sidebar-footer { padding: .5rem .75rem; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--text3); }
+
+  /* PANEL */
+  .panel { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .panel-header { padding: .875rem 1.25rem; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .ph-left { display: flex; align-items: center; gap: 10px; }
+  .ph-av { width: 36px; height: 36px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--green-dark); }
+  .ph-name { font-size: 14px; font-weight: 600; }
+  .ph-meta { font-size: 11px; color: var(--text2); }
+  .ph-actions { display: flex; gap: 6px; }
+  .icon-btn { padding: 6px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; cursor: pointer; color: var(--text2); display: flex; align-items: center; transition: all .15s; font-size: 15px; }
+  .icon-btn:hover { background: var(--bg2); }
+  .btn-green { padding: 6px 12px; border-radius: var(--radius); border: none; background: var(--green); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: opacity .15s; }
+  .btn-green:hover { opacity: .88; }
+  .btn-ghost { padding: 6px 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); font-size: 12px; cursor: pointer; transition: all .15s; }
+  .btn-ghost:hover { background: var(--bg2); }
+
+  /* TABS */
+  .tabs { display: flex; border-bottom: 0.5px solid var(--border); padding: 0 1.25rem; flex-shrink: 0; }
+  .tab { padding: 8px 12px; font-size: 12px; color: var(--text2); border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; margin-bottom: -.5px; }
+  .tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 600; }
+
+  /* TAB CONTENT */
+  .tab-body { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; }
+
+  /* ACTIONS GRID */
+  .ag { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+  .ac { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .875rem; cursor: pointer; text-align: left; transition: all .15s; }
+  .ac:hover { border-color: var(--green); background: var(--green-light); }
+  .ac-icon { font-size: 22px; margin-bottom: 6px; }
+  .ac-label { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .ac-desc { font-size: 11px; color: var(--text2); line-height: 1.4; }
+
+  /* AI BOX */
+  .ai-box { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; }
+  .ai-top { padding: .75rem 1rem; border-bottom: 0.5px solid var(--border); background: var(--bg2); display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+  .ai-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--green); color: #fff; }
+  .messages { padding: .875rem; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; min-height: 120px; max-height: 260px; }
+  .msg { padding: 8px 12px; border-radius: var(--radius); font-size: 12px; line-height: 1.6; max-width: 88%; }
+  .msg-ai { background: var(--bg2); color: var(--text); align-self: flex-start; }
+  .msg-user { background: var(--green); color: #fff; align-self: flex-end; }
+  .msg-loading { align-self: flex-start; display: flex; align-items: center; gap: 4px; padding: 8px 12px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--text3); animation: bop 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: .2s; } .dot:nth-child(3) { animation-delay: .4s; }
+  @keyframes bop { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+  .chips { padding: 0 .875rem .625rem; display: flex; flex-wrap: wrap; gap: 5px; flex-shrink: 0; }
+  .chip { padding: 3px 10px; font-size: 11px; border-radius: 99px; border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; transition: all .12s; }
+  .chip:hover { background: var(--green-light); color: var(--green-dark); border-color: var(--green); }
+  .input-row { padding: .625rem .875rem; border-top: 0.5px solid var(--border); display: flex; gap: 7px; flex-shrink: 0; }
+  .ai-input { flex: 1; padding: 7px 10px; font-size: 12px; font-family: inherit; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); resize: none; min-height: 34px; max-height: 80px; outline: none; }
+  .ai-input:focus { border-color: var(--green); }
+  .send-btn { padding: 7px 14px; background: var(--green); border: none; color: #fff; border-radius: var(--radius); cursor: pointer; font-size: 12px; font-weight: 600; flex-shrink: 0; transition: opacity .15s; }
+  .send-btn:hover { opacity: .88; }
+  .send-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+  /* MODAL */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .modal { background: var(--bg); border-radius: var(--radius-lg); border: 0.5px solid var(--border); width: 380px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { padding: .875rem 1rem; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--bg); }
+  .modal-title { font-size: 14px; font-weight: 600; }
+  .modal-body { padding: 1rem; display: flex; flex-direction: column; gap: 10px; }
+  .fl { display: flex; flex-direction: column; gap: 3px; }
+  .fl label { font-size: 11px; color: var(--text2); }
+  .fl input, .fl select, .fl textarea { padding: 7px 9px; font-size: 13px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); font-family: inherit; outline: none; }
+  .fl input:focus, .fl select:focus, .fl textarea:focus { border-color: var(--green); }
+  .modal-footer { padding: .75rem 1rem; border-top: 0.5px solid var(--border); display: flex; gap: 7px; justify-content: flex-end; position: sticky; bottom: 0; background: var(--bg); }
+
+  /* AUTH MODAL */
+  .auth-modal { background: var(--bg); border-radius: var(--radius-lg); border: 0.5px solid var(--border); width: 420px; padding: 1.5rem; }
+  .auth-modal h2 { font-size: 16px; font-weight: 600; margin-bottom: .5rem; }
+  .auth-modal p { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 1rem; }
+  .auth-step { display: flex; align-items: flex-start; gap: 10px; padding: 10px; background: var(--bg2); border-radius: var(--radius); margin-bottom: 8px; }
+  .auth-step-num { width: 20px; height: 20px; border-radius: 50%; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+  .auth-step-text { font-size: 12px; color: var(--text); line-height: 1.5; }
+  .auth-step-text strong { font-weight: 600; }
+  .token-field { width: 100%; padding: 8px 10px; font-size: 12px; font-family: monospace; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); margin: .5rem 0; outline: none; }
+  .token-field:focus { border-color: var(--green); }
+
+  /* EMPTY */
+  .empty { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 8px; color: var(--text3); text-align: center; padding: 2rem; }
+  .empty-icon { font-size: 36px; }
+  .empty p { font-size: 13px; }
+
+  /* CONFIG PAGE */
+  .config-page { padding: 1.25rem; max-width: 560px; }
+  .config-section { margin-bottom: 1.5rem; }
+  .config-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .75rem; }
+  .config-step { display: flex; align-items: flex-start; gap: 10px; padding: 12px; background: var(--bg2); border-radius: var(--radius); margin-bottom: 8px; border: 0.5px solid var(--border); }
+  .config-step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--green); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; margin-top: 1px; }
+  .config-step-label { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .config-step-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .config-input { width: 100%; padding: 7px 9px; font-size: 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg); color: var(--text); font-family: inherit; margin-top: 8px; outline: none; }
+  .config-input:focus { border-color: var(--green); }
+
+  /* NOTICE */
+  .notice { padding: .625rem 1rem; font-size: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 0.5px solid var(--border); }
+  .notice.warn { background: #fef9ec; color: #92600a; }
+  .notice.ok { background: var(--green-light); color: var(--green-dark); }
+  @media (prefers-color-scheme: dark) {
+    .notice.warn { background: #2d2410; color: #e8b84b; }
+  }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 999; animation: fadeup .25s ease; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+  .toast.ok { background: var(--green); color: #fff; }
+  .toast.err { background: var(--red); color: #fff; }
+  @keyframes fadeup { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🏋️</div>
+    <div>
+      <div class="logo-text">Coach Planilhas</div>
+      <div class="logo-sub">Gestão inteligente de treinos</div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showPage(&#39;alunos&#39;,this)">Alunos</button>
+    <button class="nav-btn" onclick="showPage(&#39;config&#39;,this)">Configuração</button>
+    <button class="auth-pill" id="auth-pill" onclick="showAuthModal()">
+      <div class="auth-dot" id="auth-dot"></div>
+      <span id="auth-label">Conectar Google</span>
+    </button>
+  </div>
+</div>
+
+<div id="notice-bar" class="notice warn">
+  ⚠️ Google não conectado — clique em "Conectar Google" para liberar as ações nas planilhas.
+</div>
+
+<!-- PÁGINAS -->
+<div id="page-alunos" class="main">
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <div class="search">
+        <span style="color:var(--text3);font-size:13px;">🔍</span>
+        <input type="text" placeholder="Buscar aluno..." id="search-input" oninput="filterStudents()">
+      </div>
+    </div>
+    <div class="student-list" id="student-list"><div class="si"><div class="si-av">CM</div><div style="flex:1;min-width:0;"><div class="si-name">Caian Maroni</div><div class="si-meta">Upper/Lower A/B/C</div></div><div class="si-dot"></div></div></div>
+    <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
+    <div class="sidebar-footer" id="counter">1 alunos · 1 ativos</div>
+  </div>
+
+  <div class="panel">
+    <div class="empty" id="empty-state">
+      <div class="empty-icon">👥</div>
+      <p>Selecione um aluno ou adicione um novo</p>
+    </div>
+
+    <div id="student-view" style="display:none;flex-direction:column;flex:1;">
+      <div class="panel-header">
+        <div class="ph-left">
+          <div class="ph-av" id="ph-av">—</div>
+          <div>
+            <div class="ph-name" id="ph-name">—</div>
+            <div class="ph-meta" id="ph-meta">—</div>
+          </div>
+        </div>
+        <div class="ph-actions">
+          <button class="icon-btn" onclick="openEditModal()" title="Editar aluno">✏️</button>
+          <button class="icon-btn" onclick="openSheet()" title="Abrir planilha">↗️</button>
+          <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(&#39;treino&#39;,this)">Ações</button>
+        <button class="tab" onclick="switchTab(&#39;ia&#39;,this)">Assistente IA</button>
+      </div>
+
+      <div class="tab-body" id="tab-treino">
+        <div class="ag">
+          <button class="ac" onclick="runSheetAction(&#39;seg_qui&#39;)">
+            <div class="ac-icon">📅</div>
+            <div class="ac-label">Semana seg → qui</div>
+            <div class="ac-desc">Avança cargas e reps de segunda a quinta para a semana seguinte</div>
+          </button>
+          <button class="ac" onclick="runSheetAction(&#39;qui_dom&#39;)">
+            <div class="ac-icon">📆</div>
+            <div class="ac-label">Semana qui → dom</div>
+            <div class="ac-desc">Avança cargas e reps de quinta a domingo para a semana seguinte</div>
+          </button>
+          <button class="ac" onclick="runSheetAction(&#39;semana_completa&#39;)">
+            <div class="ac-icon">🗓️</div>
+            <div class="ac-label">Semana completa</div>
+            <div class="ac-desc">Avança toda a semana de uma vez (segunda ao domingo)</div>
+          </button>
+          <button class="ac" onclick="runSheetAction(&#39;planilha_zero&#39;)">
+            <div class="ac-icon">📄</div>
+            <div class="ac-label">Planilha do zero</div>
+            <div class="ac-desc">Cria nova planilha zerada para início de mesociclo</div>
+          </button>
+        </div>
+
+        <div class="ai-box">
+          <div class="ai-top">
+            <span style="font-size:14px;">✨</span>
+            <span style="font-size:12px;font-weight:600;">Assistente IA</span>
+            <span class="ai-badge">Claude</span>
+          </div>
+          <div class="messages" id="msgs"></div>
+          <div class="chips">
+            <button class="chip" onclick="useChip(this)">Analisar mesociclo</button>
+            <button class="chip" onclick="useChip(this)">Sugerir progressão de carga</button>
+            <button class="chip" onclick="useChip(this)">+20% volume ombros</button>
+            <button class="chip" onclick="useChip(this)">Montar novo meso completo</button>
+          </div>
+          <div class="input-row">
+            <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+            <button class="send-btn" id="send-btn" onclick="sendMsg()">Enviar ↗</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-body" id="tab-ia" style="display:none;">
+        <div class="ai-box" style="height:100%;">
+          <div class="ai-top">
+            <span style="font-size:14px;">✨</span>
+            <span style="font-size:12px;font-weight:600;">Chat completo</span>
+            <span class="ai-badge">Claude</span>
+          </div>
+          <div class="messages" id="msgs2" style="max-height:400px;"></div>
+          <div class="chips">
+            <button class="chip" onclick="useChip2(this)">Criar meso do zero</button>
+            <button class="chip" onclick="useChip2(this)">Exercícios alternativos</button>
+            <button class="chip" onclick="useChip2(this)">Comparar progressão</button>
+            <button class="chip" onclick="useChip2(this)">Deload — quando e como?</button>
+          </div>
+          <div class="input-row">
+            <textarea class="ai-input" id="ai-input2" placeholder="Converse livremente sobre treino..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg2();}"></textarea>
+            <button class="send-btn" onclick="sendMsg2()">Enviar ↗</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="page-config" style="display:none;overflow-y:auto;flex:1;">
+  <div class="config-page">
+    <div class="config-section">
+      <div class="config-label">Chave da API Claude (Anthropic)</div>
+      <div class="config-step">
+        <div class="config-step-num">1</div>
+        <div style="flex:1;">
+          <div class="config-step-label">Obter API Key em console.anthropic.com</div>
+          <div class="config-step-desc">Acesse console.anthropic.com → API Keys → criar nova chave</div>
+          <input class="config-input" type="password" id="anthropic-key" placeholder="sk-ant-...">
+          <button class="btn-green" style="margin-top:8px;" onclick="saveAnthropicKey()">Salvar chave</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <div class="config-label">Google OAuth</div>
+      <div class="config-step">
+        <div class="config-step-num">2</div>
+        <div style="flex:1;">
+          <div class="config-step-label">Client ID do Google Cloud Console</div>
+          <div class="config-step-desc">Já configurado durante o setup inicial</div>
+          <input class="config-input" type="text" id="client-id-input" placeholder="xxxxx.apps.googleusercontent.com">
+          <button class="btn-green" style="margin-top:8px;" onclick="saveClientId()">Salvar Client ID</button>
+        </div>
+      </div>
+      <div class="config-step">
+        <div class="config-step-num">3</div>
+        <div style="flex:1;">
+          <div class="config-step-label">Conectar conta Google</div>
+          <div class="config-step-desc">Use o OAuth Playground para gerar o access token e cole abaixo</div>
+          <input class="config-input" type="text" id="token-config-input" placeholder="ya29.xxxxxxx">
+          <button class="btn-green" style="margin-top:8px;" onclick="applyTokenFromConfig()">Ativar token</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:var(--text3);margin-top:1rem;">
+      Status: Client ID — <span id="cid-status">1064899047986-lousa0...</span> &nbsp;|&nbsp; Token — <span id="token-status">não conectado</span> &nbsp;|&nbsp; API Claude — <span id="claude-status">não configurada</span>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ALUNO -->
+<div class="overlay" id="modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Novo aluno</span>
+      <button class="icon-btn" onclick="closeModal()" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fl"><label>Nome completo</label><input type="text" id="f-name" placeholder="Ex: Caian Maroni"></div>
+      <div class="fl"><label>Divisão de treino</label><input type="text" id="f-split" placeholder="Ex: Upper/Lower A/B/C"></div>
+      <div class="fl"><label>Objetivo</label>
+        <select id="f-goal"><option>Hipertrofia</option><option>Força</option><option>Emagrecimento</option><option>Resistência</option><option>Recomposição corporal</option></select>
+      </div>
+      <div class="fl"><label>Link da planilha Google Sheets</label><input type="text" id="f-sheet" placeholder="https://docs.google.com/spreadsheets/d/..."></div>
+      <div class="fl"><label>Status</label>
+        <select id="f-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
+      </div>
+      <div class="fl"><label>Observações (lesões, restrições, equipamentos, metas do próximo meso)</label>
+        <textarea id="f-obs" rows="3" placeholder="Ex: Próximo meso: +20% séries de ombros. Sem leg press por dor no joelho."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn-green" onclick="saveStudent()">Salvar aluno</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AUTH -->
+<div class="overlay" id="auth-modal" style="display: none;">
+  <div class="auth-modal">
+    <h2>🔗 Conectar Google</h2>
+    <p>Siga os passos para gerar o access token via OAuth Playground e cole aqui.</p>
+    <div class="auth-step">
+      <div class="auth-step-num">1</div>
+      <div class="auth-step-text">Acesse <strong>developers.google.com/oauthplayground</strong></div>
+    </div>
+    <div class="auth-step">
+      <div class="auth-step-num">2</div>
+      <div class="auth-step-text">Clique na ⚙️ engrenagem → marque <strong>"Use your own OAuth credentials"</strong> → cole o Client ID e Client Secret</div>
+    </div>
+    <div class="auth-step">
+      <div class="auth-step-num">3</div>
+      <div class="auth-step-text">No campo de escopos, cole: <strong>https://www.googleapis.com/auth/spreadsheets</strong> → clique <strong>"Authorize APIs"</strong></div>
+    </div>
+    <div class="auth-step">
+      <div class="auth-step-num">4</div>
+      <div class="auth-step-text">Clique <strong>"Exchange authorization code for tokens"</strong> → copie o <strong>Access token</strong> (começa com ya29.)</div>
+    </div>
+    <label style="font-size:12px;color:var(--text2);">Cole o Access token aqui:</label>
+    <input class="token-field" type="text" id="token-input" placeholder="ya29.xxxxxxx">
+    <div style="display:flex;gap:8px;margin-top:.5rem;">
+      <button class="btn-green" onclick="applyToken()">✓ Ativar token</button>
+      <button class="btn-ghost" onclick="closeAuthModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEETS_BASE = 'https://sheets.googleapis.com/v4/spreadsheets';
+const DEFAULT_CLIENT_ID = '1064899047986-lousa06c8ofa4cbmaofsr1a8mclh1jbk.apps.googleusercontent.com';
+
+let students = [], selectedId = null, msgHistory = [], msgHistory2 = [], isLoading = false, editingId = null;
+let accessToken = null, clientId = DEFAULT_CLIENT_ID, anthropicKey = '';
+
+async function init() {
+  clientId = localStorage.getItem('coach_client_id') || DEFAULT_CLIENT_ID;
+  accessToken = localStorage.getItem('coach_token') || null;
+  anthropicKey = localStorage.getItem('coach_anthropic_key') || '';
+  const raw = localStorage.getItem('coach_students_v2');
+  if (raw) { try { students = JSON.parse(raw); } catch(e) { students = []; } }
+  if (students.length === 0) {
+    students = [{id:'caian',name:'Caian Maroni',split:'Upper/Lower A/B/C',goal:'Hipertrofia',sheet:'https://docs.google.com/spreadsheets/d/1vVoFG7dTgZ6Z7wTSxmeMhDDxdu-rX4zy0LTSqg_47F8/edit',status:'ativo',obs:'Próximo meso: +20% séries semanais de ombros sem aumentar total por sessão'}];
+    saveAll();
+  }
+  if (accessToken) setAuthConnected();
+  updateConfigStatus();
+  renderList();
+}
+
+function saveAll() { localStorage.setItem('coach_students_v2', JSON.stringify(students)); }
+
+function setAuthConnected() {
+  document.getElementById('auth-pill').className = 'auth-pill on';
+  document.getElementById('auth-dot').className = 'auth-dot on';
+  document.getElementById('auth-label').textContent = 'Google conectado';
+  const n = document.getElementById('notice-bar');
+  if (n) { n.className = 'notice ok'; n.textContent = '✓ Google conectado — todas as ações estão disponíveis.'; }
+}
+
+function updateConfigStatus() {
+  const cid = document.getElementById('cid-status');
+  const tok = document.getElementById('token-status');
+  const cl = document.getElementById('claude-status');
+  if (cid) cid.textContent = clientId ? clientId.slice(0,20)+'...' : 'não configurado';
+  if (tok) tok.textContent = accessToken ? 'conectado ✓' : 'não conectado';
+  if (cl) cl.textContent = anthropicKey ? 'configurada ✓' : 'não configurada';
+  const ci = document.getElementById('client-id-input');
+  const ak = document.getElementById('anthropic-key');
+  if (ci) ci.value = clientId || '';
+  if (ak) ak.value = anthropicKey || '';
+}
+
+function initials(n) { return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
+
+function renderList(filter='') {
+  const list = document.getElementById('student-list');
+  const f = students.filter(s => s.name.toLowerCase().includes(filter.toLowerCase()));
+  list.innerHTML = '';
+  f.forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'si' + (s.id === selectedId ? ' active' : '');
+    d.onclick = () => selectStudent(s.id);
+    d.innerHTML = `<div class="si-av${s.status==='inativo'?' off':''}">${initials(s.name)}</div><div style="flex:1;min-width:0;"><div class="si-name">${s.name}</div><div class="si-meta">${s.split||'—'}</div></div><div class="si-dot${s.status==='inativo'?' off':''}"></div>`;
+    list.appendChild(d);
+  });
+  const active = students.filter(s=>s.status==='ativo').length;
+  document.getElementById('counter').textContent = `${students.length} alunos · ${active} ativos`;
+}
+
+function filterStudents() { renderList(document.getElementById('search-input').value); }
+
+function selectStudent(id) {
+  selectedId = id;
+  const s = students.find(x=>x.id===id); if (!s) return;
+  msgHistory = []; msgHistory2 = [];
+  document.getElementById('msgs').innerHTML = `<div class="msg msg-ai">Pronto para trabalhar com <strong>${s.name}</strong> (${s.split} · ${s.goal}). ${s.obs ? s.obs+'.' : ''} Como posso ajudar?</div>`;
+  document.getElementById('msgs2').innerHTML = `<div class="msg msg-ai">Chat aberto para ${s.name}. Pode perguntar sobre programação, progressão ou qualquer ajuste.</div>`;
+  document.getElementById('ph-av').textContent = initials(s.name);
+  document.getElementById('ph-name').textContent = s.name;
+  document.getElementById('ph-meta').textContent = `${s.split} · ${s.goal} · ${s.status==='ativo'?'Ativo':'Inativo'}`;
+  document.getElementById('empty-state').style.display = 'none';
+  const sv = document.getElementById('student-view');
+  sv.style.display = 'flex'; sv.style.flexDirection = 'column'; sv.style.flex = '1';
+  renderList(document.getElementById('search-input').value);
+}
+
+function openSheet() {
+  const s = students.find(x=>x.id===selectedId);
+  if (s && s.sheet) window.open(s.sheet, '_blank');
+}
+
+function getSheetId(url) {
+  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? m[1] : null;
+}
+
+async function runSheetAction(type) {
+  if (!accessToken) { showToast('Conecte o Google primeiro', 'err'); showAuthModal(); return; }
+  const s = students.find(x=>x.id===selectedId);
+  if (!s || !s.sheet) { showToast('Aluno sem planilha configurada', 'err'); return; }
+  const sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Link da planilha inválido', 'err'); return; }
+  addMsg('msgs', `Acessando planilha de ${s.name}...`, true);
+  addLoading('msgs');
+  try {
+    const res = await fetch(`${SHEETS_BASE}/${sheetId}?fields=sheets.properties`, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const names = data.sheets.map(s=>s.properties.title);
+    removeLoading('msgs');
+    addMsg('msgs', `✓ Planilha acessada! Abas encontradas: ${names.slice(0,8).join(', ')}${names.length>8?'...':''}`, false);
+    await sendAutoMsg(`A planilha do ${s.name} tem as abas: ${names.join(', ')}. Ação solicitada: "${type}". ${s.obs||''} Descreva exatamente o que fazer em cada aba para executar essa ação, considerando a estrutura Upper/Lower A/B/C com tracking S1-S10.`);
+  } catch(e) {
+    removeLoading('msgs');
+    if (e.message.includes('401') || e.message.includes('invalid_token')) {
+      accessToken = null; localStorage.removeItem('coach_token');
+      document.getElementById('auth-pill').className = 'auth-pill';
+      document.getElementById('auth-label').textContent = 'Conectar Google';
+      addMsg('msgs', 'Token expirado — reconecte o Google.', false);
+      showAuthModal();
+    } else {
+      addMsg('msgs', 'Erro: ' + e.message, false);
+    }
+  }
+}
+
+function getSystemPrompt() {
+  const s = students.find(x=>x.id===selectedId); if (!s) return '';
+  return `Você é o assistente do Coach Felipe, personal trainer brasileiro especializado em hipertrofia.
+
+Aluno atual: ${s.name}
+Divisão: ${s.split}
+Objetivo: ${s.goal}
+${s.obs ? 'Observações importantes: ' + s.obs : ''}
+Link da planilha: ${s.sheet || 'não informada'}
+
+Estrutura da planilha:
+- 6 sessões: Upper A, Upper B, Upper C, Lower A, Lower B, Lower C
+- Cada exercício tem: nome, link, objetivo (ativação/força técnica/hipertrofia), séries, repetições, cadência (ex: 3131), RiR, critério técnico
+- Tracking semanal de carga e reps: colunas S1 a S10
+- Volume Load calculado automaticamente com comparação ao mesociclo anterior
+
+Ao sugerir programação seja sempre específico:
+- Nome exato do exercício
+- Número de séries
+- Range de repetições
+- Cadência (4 dígitos: ex 3131)
+- RiR (repetições em reserva)
+- Objetivo da série (ativação / força técnica / hipertrofia)
+
+Responda de forma objetiva e prática. Máximo 4 parágrafos por resposta.`;
+}
+
+function addMsg(id, text, isUser) {
+  const c = document.getElementById(id);
+  const d = document.createElement('div');
+  d.className = 'msg ' + (isUser ? 'msg-user' : 'msg-ai');
+  d.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+
+function addLoading(id) {
+  const c = document.getElementById(id);
+  const d = document.createElement('div');
+  d.className = 'msg-loading'; d.id = 'ld-'+id;
+  d.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+
+function removeLoading(id) { const el = document.getElementById('ld-'+id); if(el) el.remove(); }
+
+async function callClaude(history, system) {
+  const key = anthropicKey || '';
+  if (!key) return 'Configure a API Key do Claude na aba Configuração para usar o assistente.';
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-allow-browser': 'true' },
+    body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, system, messages: history })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.content?.[0]?.text || 'Sem resposta.';
+}
+
+async function sendMsg() {
+  if (isLoading) return;
+  const inp = document.getElementById('ai-input');
+  const text = inp.value.trim(); if (!text) return;
+  inp.value = ''; isLoading = true;
+  document.getElementById('send-btn').disabled = true;
+  addMsg('msgs', text, true); addLoading('msgs');
+  msgHistory.push({role:'user', content:text});
+  try {
+    const reply = await callClaude(msgHistory, getSystemPrompt());
+    removeLoading('msgs'); addMsg('msgs', reply, false);
+    msgHistory.push({role:'assistant', content:reply});
+  } catch(e) { removeLoading('msgs'); addMsg('msgs', 'Erro: ' + e.message, false); }
+  isLoading = false; document.getElementById('send-btn').disabled = false;
+}
+
+async function sendAutoMsg(text) {
+  msgHistory.push({role:'user', content:text}); addLoading('msgs');
+  try {
+    const reply = await callClaude(msgHistory, getSystemPrompt());
+    removeLoading('msgs'); addMsg('msgs', reply, false);
+    msgHistory.push({role:'assistant', content:reply});
+  } catch(e) { removeLoading('msgs'); addMsg('msgs', 'Erro: ' + e.message, false); }
+}
+
+async function sendMsg2() {
+  const inp = document.getElementById('ai-input2');
+  const text = inp.value.trim(); if (!text) return;
+  inp.value = ''; addMsg('msgs2', text, true); addLoading('msgs2');
+  msgHistory2.push({role:'user', content:text});
+  try {
+    const reply = await callClaude(msgHistory2, getSystemPrompt());
+    removeLoading('msgs2'); addMsg('msgs2', reply, false);
+    msgHistory2.push({role:'assistant', content:reply});
+  } catch(e) { removeLoading('msgs2'); addMsg('msgs2', 'Erro: ' + e.message, false); }
+}
+
+function useChip(el) { document.getElementById('ai-input').value = el.textContent; sendMsg(); }
+function useChip2(el) { document.getElementById('ai-input2').value = el.textContent; sendMsg2(); }
+
+function runAction(type) {
+  const s = students.find(x=>x.id===selectedId); if (!s) return;
+  document.getElementById('ai-input').value = `Para ${s.name}: monte um novo mesociclo completo do zero. Divisão: ${s.split}. ${s.obs||''} Sugira todos os exercícios com séries, reps, cadência e RiR para cada sessão (Upper A, B, C e Lower A, B, C).`;
+  document.getElementById('tab-treino').style.display = 'block';
+  document.getElementById('tab-ia').style.display = 'none';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab')[0].classList.add('active');
+  sendMsg();
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-treino').style.display = tab==='treino' ? 'block' : 'none';
+  document.getElementById('tab-ia').style.display = tab==='ia' ? 'block' : 'none';
+}
+
+function showPage(page, el) {
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('page-alunos').style.display = page==='alunos' ? 'flex' : 'none';
+  document.getElementById('page-config').style.display = page==='config' ? 'flex' : 'none';
+  if (page==='config') updateConfigStatus();
+}
+
+function showAuthModal() { document.getElementById('auth-modal').style.display = 'flex'; }
+function closeAuthModal() { document.getElementById('auth-modal').style.display = 'none'; }
+
+function applyToken() {
+  const val = document.getElementById('token-input').value.trim();
+  if (!val) { showToast('Cole o token primeiro', 'err'); return; }
+  accessToken = val; localStorage.setItem('coach_token', val);
+  setAuthConnected(); closeAuthModal();
+  showToast('Google conectado com sucesso!', 'ok');
+  updateConfigStatus();
+}
+
+function applyTokenFromConfig() {
+  const val = document.getElementById('token-config-input').value.trim();
+  if (!val) return;
+  accessToken = val; localStorage.setItem('coach_token', val);
+  setAuthConnected(); showToast('Token ativado!', 'ok'); updateConfigStatus();
+}
+
+function saveClientId() {
+  const val = document.getElementById('client-id-input').value.trim(); if (!val) return;
+  clientId = val; localStorage.setItem('coach_client_id', val);
+  showToast('Client ID salvo!', 'ok'); updateConfigStatus();
+}
+
+function saveAnthropicKey() {
+  const val = document.getElementById('anthropic-key').value.trim(); if (!val) return;
+  anthropicKey = val; localStorage.setItem('coach_anthropic_key', val);
+  showToast('API Key salva!', 'ok'); updateConfigStatus();
+}
+
+function openModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = 'Novo aluno';
+  ['f-name','f-split','f-sheet','f-obs'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-goal').value = 'Hipertrofia';
+  document.getElementById('f-status').value = 'ativo';
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function openEditModal() {
+  const s = students.find(x=>x.id===selectedId); if (!s) return;
+  editingId = s.id;
+  document.getElementById('modal-title').textContent = 'Editar aluno';
+  document.getElementById('f-name').value = s.name;
+  document.getElementById('f-split').value = s.split || '';
+  document.getElementById('f-goal').value = s.goal || 'Hipertrofia';
+  document.getElementById('f-sheet').value = s.sheet || '';
+  document.getElementById('f-status').value = s.status || 'ativo';
+  document.getElementById('f-obs').value = s.obs || '';
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('modal').style.display = 'none'; editingId = null; }
+
+function saveStudent() {
+  const name = document.getElementById('f-name').value.trim(); if (!name) return;
+  const data = { name, split: document.getElementById('f-split').value.trim(), goal: document.getElementById('f-goal').value, sheet: document.getElementById('f-sheet').value.trim(), status: document.getElementById('f-status').value, obs: document.getElementById('f-obs').value.trim() };
+  if (editingId) { const idx = students.findIndex(s=>s.id===editingId); if(idx>=0) students[idx] = {...students[idx], ...data}; }
+  else { data.id = 'st_' + Date.now(); students.push(data); }
+  saveAll(); closeModal();
+  renderList(document.getElementById('search-input').value);
+  selectStudent(editingId || data.id);
+  showToast('Aluno salvo!', 'ok');
+}
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'toast ' + type; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+init();
+</script>
+
+
+</body></html>

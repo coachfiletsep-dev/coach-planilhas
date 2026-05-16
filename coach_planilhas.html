@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- saved from url=(0061)file:///C:/Users/Lenovo/Downloads/coach_planilhas_final3.html -->
+<html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Coach Planilhas</title>
 <style>
   :root {
@@ -157,36 +157,35 @@
     </div>
   </div>
   <div class="nav">
-    <button class="nav-btn active" onclick="showPage('alunos',this)">Alunos</button>
-    <button class="nav-btn" onclick="showPage('config',this)">Configuração</button>
-    <button class="auth-pill" id="auth-pill" onclick="showAuthModal()">
-      <div class="auth-dot" id="auth-dot"></div>
-      <span id="auth-label">Conectar Google</span>
+    <button class="nav-btn active" onclick="showPage(&#39;alunos&#39;,this)">Alunos</button>
+    <button class="nav-btn" onclick="showPage(&#39;config&#39;,this)">Configuração</button>
+    <button class="auth-pill on" id="auth-pill" onclick="showAuthModal()">
+      <div class="auth-dot on" id="auth-dot"></div>
+      <span id="auth-label">Google conectado</span>
     </button>
   </div>
 </div>
 
-<div id="notice-bar" class="notice warn">
-  ⚠️ Google não conectado — clique em "Conectar Google" para liberar as ações nas planilhas.
-</div>
+<div id="notice-bar" class="notice ok">Google conectado — todas as ações disponíveis.</div>
 
 <div id="page-alunos" class="main">
   <div class="sidebar">
     <div class="sidebar-top">
       <div class="search">
         <span style="color:var(--text3);font-size:13px;">🔍</span>
-        <input type="text" placeholder="Buscar aluno..." id="search-input" oninput="filterStudents()" />
+        <input type="text" placeholder="Buscar aluno..." id="search-input" oninput="filterStudents()">
       </div>
     </div>
-    <div class="student-list" id="student-list"></div>
+    <div class="student-list" id="student-list"><div class="si"><div class="si-av">CM</div><div style="flex:1;min-width:0;"><div class="si-name">Caian Maroni</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fabio Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div></div>
     <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
+    <button class="add-btn" style="border-style:solid;color:#4285f4;border-color:#4285f4;" onclick="importarBrainering()">📥 Importar Brainering</button>
     <div style="padding:.5rem;display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--border);">
       <div style="font-size:10px;color:var(--text3);padding:2px 4px;font-weight:600;">ATUALIZAR TODOS</div>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('seg_qui')">📅 Seg → qui</button>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('qui_dom')">📆 Qui → dom</button>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('semana_completa')">🗓️ Semana completa</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;seg_qui&#39;)">📅 Seg → qui</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;qui_dom&#39;)">📆 Qui → dom</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;semana_completa&#39;)">🗓️ Semana completa</button>
     </div>
-    <div class="sidebar-footer" id="counter">0 alunos</div>
+    <div class="sidebar-footer" id="counter">2 alunos · 2 ativos</div>
   </div>
 
   <div class="panel">
@@ -206,31 +205,31 @@
         <div class="ph-actions">
           <button class="icon-btn" onclick="openEditModal()" title="Editar aluno">✏️</button>
           <button class="icon-btn" onclick="openSheet()" title="Abrir planilha">↗️</button>
-          <button class="btn-green" onclick="runAction('zero')">🔄 Novo meso IA</button>
+          <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
         </div>
       </div>
       <div class="tabs">
-        <button class="tab active" onclick="switchTab('treino',this)">Ações</button>
-        <button class="tab" onclick="switchTab('ia',this)">Assistente IA</button>
+        <button class="tab active" onclick="switchTab(&#39;treino&#39;,this)">Ações</button>
+        <button class="tab" onclick="switchTab(&#39;ia&#39;,this)">Assistente IA</button>
       </div>
       <div class="tab-body" id="tab-treino">
         <div class="ag">
-          <button class="ac" onclick="runSheetAction('seg_qui')">
+          <button class="ac" onclick="runSheetAction(&#39;seg_qui&#39;)">
             <div class="ac-icon">📅</div>
             <div class="ac-label">Semana seg → qui</div>
             <div class="ac-desc">Avança cargas e reps de segunda a quinta</div>
           </button>
-          <button class="ac" onclick="runSheetAction('qui_dom')">
+          <button class="ac" onclick="runSheetAction(&#39;qui_dom&#39;)">
             <div class="ac-icon">📆</div>
             <div class="ac-label">Semana qui → dom</div>
             <div class="ac-desc">Avança cargas e reps de quinta a domingo</div>
           </button>
-          <button class="ac" onclick="runSheetAction('semana_completa')">
+          <button class="ac" onclick="runSheetAction(&#39;semana_completa&#39;)">
             <div class="ac-icon">🗓️</div>
             <div class="ac-label">Semana completa</div>
             <div class="ac-desc">Avança toda a semana de uma vez</div>
           </button>
-          <button class="ac" onclick="runSheetAction('planilha_zero')">
+          <button class="ac" onclick="runSheetAction(&#39;planilha_zero&#39;)">
             <div class="ac-icon">📄</div>
             <div class="ac-label">Planilha do zero</div>
             <div class="ac-desc">Cria nova aba zerada para novo mesociclo</div>
@@ -249,8 +248,7 @@
             <button class="chip" onclick="useChip(this)">Montar novo meso completo</button>
           </div>
           <div class="input-row">
-            <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1"
-              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+            <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
             <button class="send-btn" id="send-btn" onclick="sendMsg()">Enviar ↗</button>
           </div>
         </div>
@@ -269,8 +267,7 @@
             <button class="chip" onclick="useChip2(this)">Deload — quando e como?</button>
           </div>
           <div class="input-row">
-            <textarea class="ai-input" id="ai-input2" placeholder="Converse livremente sobre treino..." rows="1"
-              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg2();}"></textarea>
+            <textarea class="ai-input" id="ai-input2" placeholder="Converse livremente sobre treino..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg2();}"></textarea>
             <button class="send-btn" onclick="sendMsg2()">Enviar ↗</button>
           </div>
         </div>
@@ -288,7 +285,7 @@
         <div style="flex:1;">
           <div class="config-step-label">API Key</div>
           <div class="config-step-desc">console.anthropic.com → API Keys → criar nova chave</div>
-          <input class="config-input" type="password" id="anthropic-key" placeholder="sk-ant-..." />
+          <input class="config-input" type="password" id="anthropic-key" placeholder="sk-ant-...">
           <button class="btn-green" style="margin-top:8px;" onclick="saveAnthropicKey()">Salvar</button>
         </div>
       </div>
@@ -300,7 +297,7 @@
         <div style="flex:1;">
           <div class="config-step-label">Refresh Token (renovação automática)</div>
           <div class="config-step-desc">Cole o refresh_token do OAuth Playground para conectar automaticamente.</div>
-          <input class="config-input" type="password" id="refresh-token-input" placeholder="1//04A1..." />
+          <input class="config-input" type="password" id="refresh-token-input" placeholder="1//04A1...">
           <button class="btn-green" style="margin-top:8px;" onclick="saveRefreshToken()">Salvar e conectar</button>
         </div>
       </div>
@@ -309,13 +306,13 @@
         <div style="flex:1;">
           <div class="config-step-label">Access Token manual (opcional)</div>
           <div class="config-step-desc">Alternativa ao refresh token para conexão manual.</div>
-          <input class="config-input" type="text" id="token-config-input" placeholder="ya29.xxxxxxx" />
+          <input class="config-input" type="text" id="token-config-input" placeholder="ya29.xxxxxxx">
           <button class="btn-green" style="margin-top:8px;" onclick="applyTokenFromConfig()">Ativar</button>
         </div>
       </div>
     </div>
     <div style="font-size:11px;color:var(--text3);margin-top:1rem;">
-      Token — <span id="token-status">não conectado</span> &nbsp;|&nbsp; API Claude — <span id="claude-status">não configurada</span>
+      Token — <span id="token-status">conectado ✓</span> &nbsp;|&nbsp; API Claude — <span id="claude-status">não configurada</span>
     </div>
   </div>
 </div>
@@ -328,8 +325,8 @@
       <button class="icon-btn" onclick="closeModal()" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
-      <div class="fl"><label>Nome completo</label><input type="text" id="f-name" placeholder="Ex: Caian Maroni" /></div>
-      <div class="fl"><label>Link da planilha Google Sheets</label><input type="text" id="f-sheet" placeholder="https://docs.google.com/spreadsheets/d/..." /></div>
+      <div class="fl"><label>Nome completo</label><input type="text" id="f-name" placeholder="Ex: Caian Maroni"></div>
+      <div class="fl"><label>Link da planilha Google Sheets</label><input type="text" id="f-sheet" placeholder="https://docs.google.com/spreadsheets/d/..."></div>
       <div class="fl"><label>Status</label>
         <select id="f-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
       </div>
@@ -383,7 +380,7 @@
       <div class="auth-step-text">Escopo: <strong>https://www.googleapis.com/auth/spreadsheets</strong> → Authorize → Exchange → copie o Access token</div>
     </div>
     <label style="font-size:12px;color:var(--text2);">Access token:</label>
-    <input class="token-field" type="text" id="token-input" placeholder="ya29.xxxxxxx" />
+    <input class="token-field" type="text" id="token-input" placeholder="ya29.xxxxxxx">
     <div style="display:flex;gap:8px;margin-top:.5rem;">
       <button class="btn-green" onclick="applyToken()">✓ Ativar token</button>
       <button class="btn-ghost" onclick="closeAuthModal()">Cancelar</button>
@@ -711,6 +708,66 @@ function showToast(msg, type) {
   setTimeout(function(){t.remove();},3500);
 }
 
+async function importarBrainering() {
+  if (!accessToken) { showToast('Conecte o Google primeiro', 'err'); showAuthModal(); return; }
+  const BRAINERING_ID = '1QH7IXHNqF_3QUYOkjYsTvEtoHVL4Ocg-_Az6Y5XxrMk';
+  const SHEET_NAME = 'Alunos_cadastro';
+  showToast('Importando do Brainering...', 'ok');
+  try {
+    const res = await fetch(
+      'https://sheets.googleapis.com/v4/spreadsheets/' + BRAINERING_ID +
+      '/values/' + encodeURIComponent(SHEET_NAME) + '!A:K',
+      { headers: { 'Authorization': 'Bearer ' + accessToken } }
+    );
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const rows = data.values || [];
+    let importados = 0;
+    let ignorados = 0;
+
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i];
+      var nome = row[1] || '';
+      var sheet = row[5] || '';
+      var status = (row[7] || '').toLowerCase();
+      var obs = row[10] || '';
+
+      if (!nome || !sheet) { ignorados++; continue; }
+
+      var statusApp = status === 'ativo' ? 'ativo' : 'inativo';
+
+      // Verificar se já existe
+      var existe = students.find(function(s) {
+        return s.sheet === sheet || s.name === nome;
+      });
+
+      if (existe) { ignorados++; continue; }
+
+      students.push({
+        id: 'imp_' + Date.now() + '_' + i,
+        name: nome,
+        sheet: sheet,
+        status: statusApp,
+        obs: obs
+      });
+      importados++;
+    }
+
+    saveAll();
+    renderList(document.getElementById('search-input').value);
+    showToast(importados + ' alunos importados! ' + ignorados + ' ignorados.', 'ok');
+  } catch(e) {
+    if (e.message.includes('401')) {
+      accessToken = null;
+      const ok = await renovarToken();
+      if (ok) { importarBrainering(); return; }
+      showToast('Token expirado. Reconecte o Google.', 'err');
+    } else {
+      showToast('Erro: ' + e.message, 'err');
+    }
+  }
+}
+
 async function atualizarTodos(tipo) {
   const ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet; });
   if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha cadastrada', 'err'); return; }
@@ -776,5 +833,6 @@ function getSheetId(url) {
 
 init();
 </script>
-</body>
-</html>
+
+
+</body></html>

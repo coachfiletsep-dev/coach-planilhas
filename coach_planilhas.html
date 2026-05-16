@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/Lenovo/Downloads/coach_planilhas_final6.html -->
+<!-- saved from url=(0061)file:///C:/Users/Lenovo/Downloads/coach_planilhas_final7.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -284,10 +284,8 @@
       <div class="config-step">
         <div class="config-step-num">1</div>
         <div style="flex:1;">
-          <div class="config-step-label">API Key</div>
-          <div class="config-step-desc">console.anthropic.com → API Keys → criar nova chave</div>
-          <input class="config-input" type="password" id="anthropic-key" placeholder="sk-ant-...">
-          <button class="btn-green" style="margin-top:8px;" onclick="saveAnthropicKey()">Salvar</button>
+          <div class="config-step-label">API Key gerenciada pelo Cloudflare ✓</div>
+          <div class="config-step-desc">A chave da API Claude está armazenada com segurança no Cloudflare Worker. Não é necessário configurar aqui.</div>
         </div>
       </div>
     </div>
@@ -313,7 +311,7 @@
       </div>
     </div>
     <div style="font-size:11px;color:var(--text3);margin-top:1rem;">
-      Token — <span id="token-status">conectado ✓</span> &nbsp;|&nbsp; API Claude — <span id="claude-status">não configurada</span>
+      Token — <span id="token-status">conectado ✓</span> &nbsp;|&nbsp; API Claude — <span style="color:var(--green);">✓ Cloudflare</span>
     </div>
   </div>
 </div>
@@ -564,10 +562,9 @@ function addLoading(id) {
 function removeLoading(id) { const el=document.getElementById('ld-'+id); if(el) el.remove(); }
 
 async function callClaude(history, system) {
-  if (!anthropicKey) return 'Configure a API Key do Claude na aba Configuração.';
   const res = await fetch(PROXY_URL, {
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':anthropicKey,'anthropic-version':'2023-06-01','anthropic-dangerous-allow-browser':'true'},
+    headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01'},
     body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2000,system:system,messages:history})
   });
   const data = await res.json();

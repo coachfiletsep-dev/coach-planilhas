@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/Lenovo/Downloads/coach_planilhas_final9.html -->
+<!-- saved from url=(0062)file:///C:/Users/Lenovo/Downloads/coach_planilhas_final10.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -630,13 +630,16 @@ async function runAction(type) {
     } catch(e) {}
   }
 
-  document.getElementById('ai-input').value = 'Monte o novo mesociclo para ' + s.name + '.\nAba atual da planilha: ' + abaAtual + ' (use esta aba no JSON)\nDivisão: \nFoco muscular: \nRestrições: \nObservações: ' + (s.obs||'');
+  // Calcular próxima aba
+  var numAtual = parseInt(abaAtual.replace('S','')) || 0;
+  var proximaAba = 'S' + (numAtual + 1);
+  document.getElementById('ai-input').value = 'Monte o novo mesociclo para ' + s.name + '.\nAba para escrever: ' + proximaAba + ' (OBRIGATÓRIO usar esta aba no JSON, não a atual ' + abaAtual + ')\nDivisão: \nFoco muscular: \nRestrições: \nObservações: ' + (s.obs||'');
   document.getElementById('tab-treino').style.display='block';
   document.getElementById('tab-ia').style.display='none';
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.tab')[0].classList.add('active');
   document.getElementById('ai-input').focus();
-  showToast('Aba atual: ' + abaAtual + ' — preencha as especificações e envie!', 'ok');
+  showToast('Nova aba: ' + proximaAba + ' — preencha as especificações e envie!', 'ok');
 }
 
 function switchTab(tab, el) {

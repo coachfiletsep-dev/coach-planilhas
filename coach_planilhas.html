@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0061)file:///C:/Users/Lenovo/Downloads/coach_planilhas_final8.html -->
+<!-- saved from url=(0061)file:///C:/Users/Lenovo/Downloads/coach_planilhas_final9.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -539,7 +539,12 @@ function getSystemPrompt() {
 }
 
 function tryParseJSON(text) {
-  try { const m = text.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]); } catch(e) {}
+  try {
+    // Remove markdown code blocks se existir
+    var clean = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    var m = clean.match(/\{[\s\S]*\}/);
+    if (m) return JSON.parse(m[0]);
+  } catch(e) {}
   return null;
 }
 
@@ -611,16 +616,27 @@ async function sendMsg2() {
 function useChip(el) { document.getElementById('ai-input').value=el.textContent; sendMsg(); }
 function useChip2(el) { document.getElementById('ai-input2').value=el.textContent; sendMsg2(); }
 
-function runAction(type) {
+async function runAction(type) {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
-  // Apenas preenche o campo com template — não envia automaticamente
-  document.getElementById('ai-input').value = 'Monte o novo mesociclo para ' + s.name + '.\nDivisão: \nFoco muscular: \nRestrições: \nObservações: ' + (s.obs||'');
+
+  // Buscar aba atual da planilha do aluno
+  var abaAtual = 'S1';
+  var sheetId = getSheetId(s.sheet);
+  if (sheetId) {
+    try {
+      var res = await fetch(APPS_SCRIPT_URL + '?action=getAba&spreadsheetId=' + sheetId);
+      var data = await res.json();
+      if (data.aba) abaAtual = data.aba;
+    } catch(e) {}
+  }
+
+  document.getElementById('ai-input').value = 'Monte o novo mesociclo para ' + s.name + '.\nAba atual da planilha: ' + abaAtual + ' (use esta aba no JSON)\nDivisão: \nFoco muscular: \nRestrições: \nObservações: ' + (s.obs||'');
   document.getElementById('tab-treino').style.display='block';
   document.getElementById('tab-ia').style.display='none';
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.tab')[0].classList.add('active');
   document.getElementById('ai-input').focus();
-  showToast('Preencha as especificações e clique em Enviar', 'ok');
+  showToast('Aba atual: ' + abaAtual + ' — preencha as especificações e envie!', 'ok');
 }
 
 function switchTab(tab, el) {

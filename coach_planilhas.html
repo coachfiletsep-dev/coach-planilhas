@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v19_2.html -->
+<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v20.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -286,7 +286,7 @@
         <div class="config-step-num">1</div>
         <div style="flex:1;">
           <div class="config-step-label">API Key gerenciada pelo Cloudflare ✓</div>
-          <div class="config-step-desc">A chave da API Claude está armazenada com segurança no Cloudflare Worker. Não é necessário configurar aqui.</div>
+          <div class="config-step-desc">A chave da API Claude está armazenada com segurança no Cloudflare Worker.</div>
         </div>
       </div>
     </div>
@@ -317,7 +317,7 @@
   </div>
 </div>
 
-<!-- MODAL ALUNO (simplificado) -->
+<!-- MODAL ALUNO -->
 <div class="overlay" id="modal" style="display:none;">
   <div class="modal">
     <div class="modal-header">
@@ -387,7 +387,7 @@
       <div style="font-size:11px;color:var(--text3);padding:8px;background:var(--bg2);border-radius:var(--radius);">
         A IA vai analisar as semanas selecionadas e montar o próximo meso com base nos princípios de Prestes, Schoenfeld, Krause, Pacholok, Salles e Gentil.
       </div>
-        </div>
+    </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
       <button class="btn-green" onclick="confirmarNovoMeso()">✨ Gerar meso</button>
@@ -507,13 +507,9 @@ function setAuthConnected() {
 
 function updateConfigStatus() {
   const tok = document.getElementById('token-status');
-  const cl = document.getElementById('claude-status');
   const rt = document.getElementById('refresh-token-input');
-  const ak = document.getElementById('anthropic-key');
   if (tok) tok.textContent = accessToken ? 'conectado ✓' : 'não conectado';
-  if (cl) cl.textContent = anthropicKey ? 'configurada ✓' : 'não configurada';
   if (rt && refreshToken) rt.value = '••••••••••••••••';
-  if (ak) ak.value = anthropicKey || '';
 }
 
 function initials(n) { return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
@@ -574,19 +570,14 @@ async function runSheetAction(type) {
       const msgs = { seg_qui:'Semana seg → qui criada' + (novaAba?' ('+novaAba+')':'') + '!', qui_dom:'Semana qui → dom criada' + (novaAba?' ('+novaAba+')':'') + '!', semana_completa:'Semana completa criada' + (novaAba?' ('+novaAba+')':'') + '!', planilha_zero:'Nova aba criada! Use "Novo meso IA" para preencher.' };
       addMsg('msgs', (msgs[type]||'Feito!') + ' Abra a planilha para conferir.', false);
       showToast('Feito!', 'ok');
-
-      // Para seg_qui e qui_dom, perguntar se quer fazer alterações
-      if (type === 'seg_qui' || type === 'qui_dom' || type === 'semana_completa') {
-        if (novaAba) {
-          setTimeout(function() {
-            addMsg('msgs', '✨ Quer fazer alguma alteração nesta semana? Ex: mudar repetições, trocar exercício, ajustar séries. Digite abaixo ou "não" para manter igual.', false);
-            document.getElementById('ai-input').value = '';
-            document.getElementById('ai-input').placeholder = 'Ex: muda as reps do supino para 8-10, ou "não" para manter igual...';
-            document.getElementById('ai-input').focus();
-            // Salvar aba criada para contexto
-            window._ultimaAbaCriada = novaAba;
-          }, 500);
-        }
+      if ((type === 'seg_qui' || type === 'qui_dom' || type === 'semana_completa') && novaAba) {
+        setTimeout(function() {
+          addMsg('msgs', '✨ Quer fazer alguma alteração nesta semana? Ex: mudar repetições, trocar exercício, ajustar séries. Digite abaixo ou "não" para manter igual.', false);
+          document.getElementById('ai-input').value = '';
+          document.getElementById('ai-input').placeholder = 'Ex: muda as reps do supino para 8-10, ou "não" para manter igual...';
+          document.getElementById('ai-input').focus();
+          window._ultimaAbaCriada = novaAba;
+        }, 500);
       }
     } else {
       addMsg('msgs', 'Erro: ' + (data.erro||'desconhecido'), false);
@@ -597,19 +588,20 @@ async function runSheetAction(type) {
   }
 }
 
+// ============================================================
+// escreverNaPlanilha — usado APENAS para novo meso (cria aba nova)
+// ============================================================
 async function escreverNaPlanilha(exercicios, nomeAba) {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
   addMsg('msgs', 'Verificando aba ' + nomeAba + '...', false);
   addLoading('msgs');
   try {
-    // Primeiro criar a aba zerada
     const criarPayload = {acao: 'planilha_zero'};
     if (sheetId) criarPayload.spreadsheetId = sheetId;
     const criarRes = await fetch(APPS_SCRIPT_URL, { method:'POST', body:JSON.stringify(criarPayload) });
     const criarData = await criarRes.json();
     removeLoading('msgs');
-
     if (criarData.sucesso) {
       addMsg('msgs', 'Aba ' + criarData.novaAba + ' criada! Escrevendo exercícios...', false);
     } else if (criarData.erro && criarData.erro.includes('ja existe')) {
@@ -617,7 +609,6 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
     } else {
       addMsg('msgs', 'Aviso ao criar aba: ' + (criarData.erro||''), false);
     }
-
     addLoading('msgs');
     const payload = {aba:nomeAba, exercicios:exercicios};
     if (sheetId) payload.spreadsheetId = sheetId;
@@ -636,13 +627,13 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
 function getSystemPrompt() {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return '';
   return 'Voce e um especialista em treinamento de forca e hipertrofia que assiste o Coach Felipe, personal trainer brasileiro.\n\n' +
-    '=== BASE CIENTIFICA — raciocine sempre com estes principios ===\n' +
-    'JONATO PRESTES: Periodizacao ondulatoria diaria/semanal. Volume progressivo por mesociclo com deload a cada 4-6 semanas. Individualizacao por nivel. Progressao de carga como variavel primaria.\n' +
-    'BRAD SCHOENFELD: Tres mecanismos de hipertrofia — tensao mecanica (principal), estresse metabolico e dano muscular. Rep ranges 6-30 sao eficazes se proximos a falha. Exercicios no alongamento maximo (amplitude longa) maximizam hipertrofia. Frequencia 2x/semana por musculo e superior.\n' +
-    'WALTER KRAUSE JR: Periodizacao pratica no contexto brasileiro. Progressao sistematica de carga por bloco. RiR (Reps in Reserve) como metrica de intensidade — RiR 0-3 para volume efetivo.\n' +
-    'PACHOLOK: Cadencia como variavel de treino. Excentrica lenta (3-4s) aumenta dano muscular produtivo. Qualidade de execucao precede quantidade. Formato de cadencia: excentrica/pausa/concentrica/pausa (ex: 3010).\n' +
-    'BELMIRO SALLES: Apenas series proximas a falha contam como volume efetivo. Gestao de fadiga acumulada entre sessoes. Priorizacao de grupos musculares lagging.\n' +
-    'PAULO GENTIL: Evidencias > tradicao. Simplicidade com eficiencia — poucos exercicios multiarticulares bem executados com progressao de carga sao suficientes. Critica ao excesso de volume sem necessidade.\n\n' +
+    '=== BASE CIENTIFICA ===\n' +
+    'JONATO PRESTES: Periodizacao ondulatoria diaria/semanal. Volume progressivo por mesociclo com deload a cada 4-6 semanas.\n' +
+    'BRAD SCHOENFELD: Tres mecanismos de hipertrofia — tensao mecanica, estresse metabolico, dano muscular. Rep ranges 6-30 proximos a falha. Frequencia 2x/semana por musculo.\n' +
+    'WALTER KRAUSE JR: Progressao sistematica de carga por bloco. RiR 0-3 para volume efetivo.\n' +
+    'PACHOLOK: Cadencia como variavel. Excentrica lenta (3-4s). Formato: excentrica/pausa/concentrica/pausa (ex: 3010).\n' +
+    'BELMIRO SALLES: Apenas series proximas a falha contam. Gestao de fadiga. Priorizacao de grupos lagging.\n' +
+    'PAULO GENTIL: Evidencias > tradicao. Poucos exercicios multiarticulares bem executados com progressao.\n\n' +
     '=== ALUNO ATUAL ===\n' +
     'Nome: ' + s.name + '\n' + (s.obs ? 'Observacoes: ' + s.obs + '\n' : '') +
     'Planilha: ' + (s.sheet || 'nao informada') + '\n\n' +
@@ -658,37 +649,22 @@ function getSystemPrompt() {
     'GMEDIO: CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA\n' +
     'ABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n\n' +
     '=== FLUXO OBRIGATORIO PARA NOVO MESOCICLO ===\n' +
-    'FASE 1 - COLETA DE INFORMACOES:\n' +
-    'Antes de gerar qualquer programacao, confirme que tem TODAS estas informacoes. Se faltar alguma, pergunte de forma objetiva e direta:\n' +
-    '  - Divisao do treino (ex: Upper/Lower A/B, PPL, ABC, Full Body)\n' +
-    '  - Dias da semana que o aluno treina (ex: seg/ter/qui/sex)\n' +
-    '  - Numero de exercicios por sessao (ou por grupo muscular)\n' +
-    '  - Objetivo principal do meso (hipertrofia geral, enfase em grupo especifico, recomposicao)\n' +
-    '  - Restricoes, lesoes ou equipamentos indisponiveis\n' +
-    'Faca as perguntas de forma agrupada e natural. Seja conciso.\n\n' +
-    'FASE 2 - CONFIRMACAO:\n' +
-    'Quando tiver todas as informacoes, resuma o plano em texto (divisao, dias, volume estimado por musculo) e pergunte ao Coach Felipe: "Posso gerar a programacao agora?"\n\n' +
-    'FASE 3 - GERACAO DO JSON:\n' +
-    'Somente apos confirmacao, retorne UM UNICO bloco JSON com TODOS os exercicios de TODOS os dias. Cada exercicio DEVE ter o campo "dia" indicando o dia da semana (SEG, TER, QUA, QUI, SEX, SAB ou DOM). NAO use texto antes ou depois, NAO use markdown. APENAS o JSON:\n' +
-    '{"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Hipertrofia","series":4,"repeticoes":"8-10","cadencia":"3010","rir":"2","criterio":"controle excentrico"},{"dia":"SEG","nome":"PUXADA FRENTE ABERTA","objetivo":"Hipertrofia","series":4,"repeticoes":"10-12","cadencia":"3011","rir":"2","criterio":"amplitude completa"},{"dia":"TER","nome":"AGACHAMENTO BARRA LIVRE","objetivo":"Hipertrofia","series":4,"repeticoes":"8-10","cadencia":"3010","rir":"2","criterio":"profundidade completa"}]}\n' +
-    'O campo aba deve ser exatamente o informado no prompt. O campo dia deve ser sempre uma dessas siglas: SEG, TER, QUA, QUI, SEX, SAB, DOM. RiR entre 0-3. Cadencia no formato 4 digitos (ex: 3010).\n\n' +
-    'Para perguntas que nao sejam sobre programacao de mesociclo, responda normalmente em texto.';
+    'FASE 1 - COLETA: Confirme divisao, dias, exercicios/sessao, objetivo, restricoes.\n' +
+    'FASE 2 - CONFIRMACAO: Resuma e pergunte "Posso gerar agora?"\n' +
+    'FASE 3 - JSON: Apenas apos confirmacao, retorne:\n' +
+    '{"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Hipertrofia","series":4,"repeticoes":"8-10","cadencia":"3010","rir":"2","criterio":"controle excentrico"}]}\n' +
+    'Campo dia: SEG, TER, QUA, QUI, SEX, SAB ou DOM. RiR: 0-3. Cadencia: 4 digitos.\n\n' +
+    'Para perguntas que nao sejam sobre programacao, responda normalmente em texto.';
 }
 
 function tryParseJSON(text) {
   try {
     var clean = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-
-    // 1. Tentar parsear o texto inteiro diretamente
     try { var p = JSON.parse(clean); if (p && p.exercicios && p.aba) return p; } catch(e) {}
-
-    // 2. Extrair e tentar o maior bloco JSON único
     var m = clean.match(/\{[\s\S]*\}/);
     if (m) {
       try { var p2 = JSON.parse(m[0]); if (p2 && p2.exercicios && p2.aba) return p2; } catch(e) {}
     }
-
-    // 3. Coletar TODOS os blocos JSON que têm "exercicios" e mesclar
     var allBlocks = [];
     var searchStr = clean;
     var offset = 0;
@@ -696,7 +672,6 @@ function tryParseJSON(text) {
       var start = searchStr.indexOf('{"aba"', offset);
       if (start === -1) { start = searchStr.indexOf('{ "aba"', offset); }
       if (start === -1) break;
-      // Encontrar o fechamento correto contando chaves
       var depth = 0, end = -1;
       for (var i = start; i < searchStr.length; i++) {
         if (searchStr[i] === '{') depth++;
@@ -709,7 +684,6 @@ function tryParseJSON(text) {
       } catch(e) {}
       offset = end + 1;
     }
-
     if (allBlocks.length > 0) {
       var merged = { aba: allBlocks[0].aba || (window._proximaAba || 'S1'), exercicios: [] };
       allBlocks.forEach(function(b) { if (b.exercicios) merged.exercicios = merged.exercicios.concat(b.exercicios); });
@@ -789,8 +763,6 @@ function useChip2(el) { document.getElementById('ai-input2').value=el.textConten
 
 async function runAction(type) {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
-
-  // Buscar aba atual da planilha do aluno
   var abaAtual = 'S1';
   var sheetId = getSheetId(s.sheet);
   if (sheetId) {
@@ -800,21 +772,67 @@ async function runAction(type) {
       if (data.aba) abaAtual = data.aba;
     } catch(e) {}
   }
-
   var numAtual = parseInt(abaAtual.replace('S','')) || 0;
   var proximaAba = 'S' + (numAtual + 1);
-
-  // Mostrar modal de opções do novo meso
   window._sheetIdAtual = sheetId;
   window._proximaAba = proximaAba;
   window._abaAtual = abaAtual;
   window._nomeAluno = s.name;
   window._obsAluno = s.obs || '';
+
+  // Carregar abas disponíveis para o modal
+  document.getElementById('meso-abas-loading').style.display = 'block';
+  document.getElementById('meso-abas-lista').style.display = 'none';
   document.getElementById('meso-modal').style.display = 'flex';
+
+  if (sheetId) {
+    try {
+      var resAbas = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
+      var dataAbas = await resAbas.json();
+      renderMesoAbas(dataAbas.abas || []);
+    } catch(e) {
+      document.getElementById('meso-abas-loading').textContent = 'Erro ao buscar abas.';
+    }
+  } else {
+    document.getElementById('meso-abas-loading').textContent = 'Planilha não configurada.';
+  }
+}
+
+function renderMesoAbas(abas) {
+  const loading = document.getElementById('meso-abas-loading');
+  const lista = document.getElementById('meso-abas-lista');
+  loading.style.display = 'none';
+  lista.style.display = 'flex';
+  lista.innerHTML = '';
+  if (abas.length === 0) {
+    lista.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:4px;">Nenhuma aba S encontrada.</div>';
+    return;
+  }
+  abas.forEach(function(aba) {
+    var label = document.createElement('label');
+    label.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;padding:3px 4px;border-radius:4px;';
+    label.onmouseover = function(){ this.style.background='var(--bg3)'; };
+    label.onmouseout = function(){ this.style.background=''; };
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = aba;
+    cb.id = 'aba-cb-' + aba;
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(aba));
+    lista.appendChild(label);
+  });
+}
+
+function selecionarTodasAbas(val) {
+  var cbs = document.getElementById('meso-abas-lista').querySelectorAll('input[type=checkbox]');
+  cbs.forEach(function(cb){ cb.checked = val; });
 }
 
 async function confirmarNovoMeso() {
-  const qtd = parseInt(document.getElementById('meso-qtd-abas').value) || 0;
+  var abasSelecionadas = [];
+  document.getElementById('meso-abas-lista').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){
+    abasSelecionadas.push(cb.value);
+  });
   const instrucoes = document.getElementById('meso-instrucoes').value.trim();
   document.getElementById('meso-modal').style.display = 'none';
 
@@ -824,29 +842,26 @@ async function confirmarNovoMeso() {
   document.querySelectorAll('.tab')[0].classList.add('active');
 
   var contextoAbas = '';
-
-  if (qtd > 0 && window._sheetIdAtual) {
-    addMsg('msgs', 'Analisando últimas ' + qtd + ' semanas...', false);
+  if (abasSelecionadas.length > 0 && window._sheetIdAtual) {
+    addMsg('msgs', 'Analisando ' + abasSelecionadas.length + ' semana(s): ' + abasSelecionadas.join(', ') + '...', false);
     addLoading('msgs');
     try {
       const res = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: window._sheetIdAtual, quantidadeAbas: qtd })
+        body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: window._sheetIdAtual, abasSelecionadas: abasSelecionadas })
       });
       const data = await res.json();
       removeLoading('msgs');
-
       if (data.sucesso && data.abas) {
-        contextoAbas = '\n\n=== ANÁLISE DAS ÚLTIMAS ' + qtd + ' SEMANAS ===\n';
+        contextoAbas = '\n\n=== ANÁLISE DAS SEMANAS SELECIONADAS ===\n';
         data.abas.forEach(function(aba) {
           contextoAbas += '\nAba ' + aba.aba + ' (' + aba.totalExercicios + ' exercícios, ' + aba.totalSeries + ' séries totais):\n';
           contextoAbas += 'Volume por músculo: ' + JSON.stringify(aba.volumePorMusculo) + '\n';
-          contextoAbas += 'Exercícios:\n';
           aba.exercicios.forEach(function(ex) {
             contextoAbas += '  - ' + ex.nome + ': ' + ex.series + 'x' + ex.repeticoes + ' | cadência ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
           });
         });
-        contextoAbas += '\nUse esta análise para periodizar intelligentemente seguindo os princípios de Schoenfeld, Prestas, Krause, Salles, Pacholok e Gentil.';
+        contextoAbas += '\nUse esta análise para periodizar inteligentemente.';
         addMsg('msgs', 'Análise concluída! Montando mesociclo...', false);
       }
     } catch(e) {
@@ -875,7 +890,7 @@ function switchTab(tab, el) {
 function showPage(page, el) {
   document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
   el.classList.add('active');
-  document.getElementById('page-alunos').style.display=page==='alunos'?'block':'none';
+  document.getElementById('page-alunos').style.display=page==='alunos'?'flex':'none';
   document.getElementById('page-config').style.display=page==='config'?'flex':'none';
   if (page==='config') updateConfigStatus();
 }
@@ -904,12 +919,6 @@ function saveRefreshToken() {
     if (ok) showToast('Google conectado automaticamente!','ok');
     else showToast('Erro ao conectar. Verifique o token.','err');
   });
-}
-
-function saveAnthropicKey() {
-  const val = document.getElementById('anthropic-key').value.trim(); if (!val) return;
-  anthropicKey=val; localStorage.setItem('coach_anthropic_key',val);
-  showToast('API Key salva!','ok'); updateConfigStatus();
 }
 
 function openModal() {
@@ -941,9 +950,7 @@ function deletarAluno() {
   if (!s) return;
   if (!confirm('Deletar ' + s.name + '? Isso não pode ser desfeito.')) return;
   students = students.filter(function(x){return x.id!==editingId;});
-  saveAll();
-  closeModal();
-  selectedId = null;
+  saveAll(); closeModal(); selectedId = null;
   document.getElementById('empty-state').style.display='flex';
   document.getElementById('student-view').style.display='none';
   renderList(document.getElementById('search-input').value);
@@ -982,37 +989,16 @@ async function importarBrainering() {
     const data = await res.json();
     if (data.error) throw new Error(data.error.message);
     const rows = data.values || [];
-    let importados = 0;
-    let ignorados = 0;
-
+    let importados = 0, ignorados = 0;
     for (var i = 1; i < rows.length; i++) {
       var row = rows[i];
-      var nome = row[1] || '';
-      var sheet = row[5] || '';
-      var status = (row[7] || '').toLowerCase();
-      var obs = row[10] || '';
-
+      var nome = row[1] || '', sheet = row[5] || '', status = (row[7] || '').toLowerCase(), obs = row[10] || '';
       if (!nome || !sheet) { ignorados++; continue; }
-
-      var statusApp = status === 'ativo' ? 'ativo' : 'inativo';
-
-      // Verificar se já existe
-      var existe = students.find(function(s) {
-        return s.sheet === sheet || s.name === nome;
-      });
-
+      var existe = students.find(function(s){ return s.sheet === sheet || s.name === nome; });
       if (existe) { ignorados++; continue; }
-
-      students.push({
-        id: 'imp_' + Date.now() + '_' + i,
-        name: nome,
-        sheet: sheet,
-        status: statusApp,
-        obs: obs
-      });
+      students.push({ id: 'imp_' + Date.now() + '_' + i, name: nome, sheet: sheet, status: status === 'ativo' ? 'ativo' : 'inativo', obs: obs });
       importados++;
     }
-
     saveAll();
     renderList(document.getElementById('search-input').value);
     showToast(importados + ' alunos importados! ' + ignorados + ' ignorados.', 'ok');
@@ -1031,7 +1017,6 @@ async function importarBrainering() {
 async function atualizarTodos(tipo) {
   const ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet; });
   if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha cadastrada', 'err'); return; }
-
   const labels = { seg_qui:'Seg → qui', qui_dom:'Qui → dom', semana_completa:'Semana completa' };
   document.getElementById('progress-title').textContent = 'Atualizando todos — ' + (labels[tipo]||tipo);
   document.getElementById('progress-count').textContent = '0';
@@ -1040,7 +1025,6 @@ async function atualizarTodos(tipo) {
   document.getElementById('progress-log').innerHTML = '';
   document.getElementById('progress-close-btn').style.display = 'none';
   document.getElementById('progress-modal').style.display = 'flex';
-
   var erros = [];
   for (var i = 0; i < ativos.length; i++) {
     var s = ativos[i];
@@ -1048,53 +1032,50 @@ async function atualizarTodos(tipo) {
     var logEl = document.createElement('div');
     logEl.textContent = '⏳ ' + s.name + '...';
     document.getElementById('progress-log').appendChild(logEl);
-
     try {
-      var res = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ acao: tipo, spreadsheetId: sheetId })
-      });
+      var res = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ acao: tipo, spreadsheetId: sheetId }) });
       var data = await res.json();
       if (data.sucesso) {
         logEl.textContent = '✅ ' + s.name + (data.novaAba ? ' → ' + data.novaAba : '');
         logEl.style.color = 'var(--green)';
       } else {
         logEl.textContent = '❌ ' + s.name + ': ' + (data.erro||'erro');
-        logEl.style.color = 'var(--red)';
-        erros.push(s.name);
+        logEl.style.color = 'var(--red)'; erros.push(s.name);
       }
     } catch(e) {
       logEl.textContent = '❌ ' + s.name + ': ' + e.message;
-      logEl.style.color = 'var(--red)';
-      erros.push(s.name);
+      logEl.style.color = 'var(--red)'; erros.push(s.name);
     }
-
     document.getElementById('progress-count').textContent = i + 1;
     document.getElementById('progress-bar').style.width = Math.round(((i+1)/ativos.length)*100) + '%';
     document.getElementById('progress-log').scrollTop = document.getElementById('progress-log').scrollHeight;
-
     if (i < ativos.length - 1) await new Promise(function(r){ setTimeout(r, 1500); });
   }
-
-  document.getElementById('progress-title').textContent = erros.length === 0
-    ? '✅ Todos atualizados!'
-    : '⚠️ Concluído com ' + erros.length + ' erro(s)';
+  document.getElementById('progress-title').textContent = erros.length === 0 ? '✅ Todos atualizados!' : '⚠️ Concluído com ' + erros.length + ' erro(s)';
   document.getElementById('progress-close-btn').style.display = 'block';
 }
 
-function closeProgressModal() {
-  document.getElementById('progress-modal').style.display = 'none';
-}
+function closeProgressModal() { document.getElementById('progress-modal').style.display = 'none'; }
 
+// ============================================================
+// editarAbaAtual — lê a aba ATUAL (não a próxima) e abre modal
+// ============================================================
 async function editarAbaAtual() {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
   var sheetId = getSheetId(s.sheet);
   var abaAtual = 'S1';
   if (sheetId) {
     try {
-      var res = await fetch(APPS_SCRIPT_URL + '?action=getAba&spreadsheetId=' + sheetId);
+      // FIX BUG 1: usar action=getAbaAtual para garantir aba existente (não a próxima)
+      var res = await fetch(APPS_SCRIPT_URL + '?action=getAbaAtual&spreadsheetId=' + sheetId);
       var data = await res.json();
       if (data.aba) abaAtual = data.aba;
+      else {
+        // fallback: tentar getAba
+        var res2 = await fetch(APPS_SCRIPT_URL + '?action=getAba&spreadsheetId=' + sheetId);
+        var data2 = await res2.json();
+        if (data2.aba) abaAtual = data2.aba;
+      }
     } catch(e) {}
   }
   window._sheetIdAtual = sheetId;
@@ -1106,16 +1087,18 @@ async function editarAbaAtual() {
   document.getElementById('editar-modal').style.display = 'flex';
 }
 
+// ============================================================
+// confirmarEdicao — FIX BUG 2 (grupo muscular) + BUG 3 (linha)
+// ============================================================
 async function confirmarEdicao() {
   const instrucoes = document.getElementById('editar-instrucoes').value.trim();
   if (!instrucoes) { showToast('Descreva o que quer corrigir', 'err'); return; }
   document.getElementById('editar-modal').style.display = 'none';
 
-  // Ler a aba atual do script
   addMsg('msgs', '📖 Lendo aba ' + window._abaAtual + '...', false);
   addLoading('msgs');
 
-  var contextoAba = '';
+  var contextoLinhas = '';
   try {
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
@@ -1126,9 +1109,21 @@ async function confirmarEdicao() {
     if (data.sucesso && data.abas && data.abas.length > 0) {
       var aba = data.abas[0];
       window._dadosAbaAtual = aba.exercicios;
-      contextoAba = '\n\nABA ATUAL (' + aba.aba + ') — ' + aba.totalExercicios + ' exercícios:\n';
-      aba.exercicios.forEach(function(ex) {
-        contextoAba += '  DIA ' + ex.dia + ' | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadência ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
+
+      // FIX BUG 3: mapear posição ordinal de cada exercício por dia
+      var linhasMap = {'SEG':5,'TER':229,'QUA':453,'QUI':677,'SEX':901,'SAB':1125,'DOM':1349};
+      var indiceTemp = {};
+      window._dadosAbaAtual.forEach(function(ex) {
+        var dia = ex.dia;
+        if (!indiceTemp[dia]) indiceTemp[dia] = 0;
+        var linhaReal = (linhasMap[dia] || 0) + indiceTemp[dia] * 14;
+        ex._linha = linhaReal;
+        indiceTemp[dia]++;
+        var posicao = indiceTemp[dia];
+        // FIX BUG 2: determinar tipo do dia para o prompt
+        var tiposDia = {SEG:'UPPER', TER:'LOWER', QUA:'UPPER', QUI:'UPPER', SEX:'LOWER', SAB:'LOWER', DOM:'LOWER'};
+        ex._tipo = tiposDia[dia] || '?';
+        contextoLinhas += '  Linha ' + linhaReal + ' | DIA ' + dia + ' (' + ex._tipo + ') | ' + posicao + 'o exercicio | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadencia ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
       });
     }
   } catch(e) {
@@ -1137,30 +1132,24 @@ async function confirmarEdicao() {
     return;
   }
 
-  // Mapa de linhas por dia
-  var linhasMap = {'SEG':5,'TER':229,'QUA':453,'QUI':677,'SEX':901,'SAB':1125,'DOM':1349};
-  var contextoLinhas = '';
-  var indiceTemp = {};
-  if (window._dadosAbaAtual) {
-    window._dadosAbaAtual.forEach(function(ex) {
-      var dia = ex.dia;
-      if (!indiceTemp[dia]) indiceTemp[dia] = 0;
-      var linhaReal = (linhasMap[dia] || 0) + indiceTemp[dia] * 14;
-      indiceTemp[dia]++;
-      contextoLinhas += '  Linha ' + linhaReal + ' | DIA ' + dia + ' | Ex' + indiceTemp[dia] + ' | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadência ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
-    });
-  }
-
-    var prompt = 'Você está editando a aba ' + window._abaAtual + ' do aluno ' + window._nomeAluno + '.\n\n' +
+  // FIX BUG 1: garantir aba no prompt de forma absolutamente explícita
+  // FIX BUG 2: regra de grupo muscular muito explícita
+  var prompt = 'Voce esta editando a aba ' + window._abaAtual + ' do aluno ' + window._nomeAluno + '.\n' +
+    'ATENCAO: O campo "aba" no JSON de resposta DEVE ser EXATAMENTE "' + window._abaAtual + '" — nunca outra aba.\n\n' +
     'PEDIDO DO COACH: ' + instrucoes + '\n\n' +
-    'PROGRAMAÇÃO ATUAL (dia | posição | exercício | séries x reps | RiR):\n' +
-    (contextoLinhas || contextoAba) + '\n' +
-    'REGRAS:\n' +
-    '1. NUNCA mencione números de linha — use nome do exercício ou posição (ex: 2o exercicio da terca).\n' +
-    '2. Respeite o grupo muscular do dia: superiores (SEG/QUI) = PEITO/COSTAS/OMBRO/TRICEPS/BICEPS | inferiores (TER/SEX/DOM) = COXA/POSTERIOR/GMAX/GMEDIO.\n' +
-    '3. Use apenas nomes exatos da biblioteca.\n' +
-    '4. Se ambiguo, pergunte antes de aplicar.\n' +
-    '5. Quando confirmado, retorne JSON apenas com exercicios alterados, campo dia, aba ' + window._abaAtual + '. Nao inclua exercicios nao alterados.\n';
+    'PROGRAMACAO ATUAL (linha | dia | tipo | posicao | exercicio | series x reps | RiR):\n' +
+    contextoLinhas + '\n' +
+    'REGRAS CRITICAS — violar qualquer uma e um erro grave:\n' +
+    '1. NUNCA mencione numeros de linha na resposta — use posicao ordinal (ex: 2o exercicio da terca).\n' +
+    '2. GRUPO MUSCULAR POR DIA — respeite SEMPRE:\n' +
+    '   Dias UPPER (SEG, QUA, QUI): APENAS PEITO, COSTAS, OMBRO, TRICEPS, BICEPS\n' +
+    '   Dias LOWER (TER, SEX, SAB, DOM): APENAS COXA, POSTERIOR, GMAX, GMEDIO, ABDOME\n' +
+    '   NUNCA coloque exercicio de OMBRO em dia LOWER. NUNCA coloque COXA em dia UPPER.\n' +
+    '3. Use apenas nomes EXATOS da biblioteca de exercicios do sistema.\n' +
+    '4. Se o pedido for ambiguo, pergunte antes de aplicar.\n' +
+    '5. Quando confirmado, retorne JSON APENAS com exercicios alterados.\n' +
+    '   FORMATO OBRIGATORIO: {"aba":"' + window._abaAtual + '","exercicios":[...apenas alterados...]}\n' +
+    '   O campo "aba" DEVE ser "' + window._abaAtual + '". Nao inclua exercicios nao alterados.\n';
 
   msgHistory.push({role:'user', content: prompt});
   addMsg('msgs', '⏳ Aplicando correções...', false);
@@ -1171,7 +1160,12 @@ async function confirmarEdicao() {
     removeLoading('msgs');
     var parsed = tryParseJSON(reply);
     if (parsed && parsed.exercicios && parsed.aba) {
-      addMsg('msgs', '✅ ' + parsed.exercicios.length + ' exercício(s) corrigido(s) na aba ' + parsed.aba + '! Escrevendo...', false);
+      // FIX BUG 1: Se a IA retornou aba errada, corrigir automaticamente
+      if (parsed.aba !== window._abaAtual) {
+        addMsg('msgs', '⚠️ IA retornou aba ' + parsed.aba + ' — corrigindo para ' + window._abaAtual + ' automaticamente.', false);
+        parsed.aba = window._abaAtual;
+      }
+      addMsg('msgs', '✅ ' + parsed.exercicios.length + ' exercício(s) a corrigir na aba ' + parsed.aba + '. Escrevendo...', false);
       msgHistory.push({role:'assistant', content: reply});
       editarNaPlanilha(parsed.exercicios, parsed.aba);
     } else {
@@ -1186,12 +1180,23 @@ async function confirmarEdicao() {
   });
 }
 
+// ============================================================
+// editarNaPlanilha — FIX BUG 1: NUNCA cria nova aba, só edita
+// ============================================================
 async function editarNaPlanilha(exercicios, nomeAba) {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
-  addMsg('msgs', 'Aplicando correções na aba ' + nomeAba + '...', false);
+
+  // FIX BUG 1: garantia final — nunca editar aba diferente da atual
+  if (nomeAba !== window._abaAtual) {
+    addMsg('msgs', '⚠️ Correção de aba: ' + nomeAba + ' → ' + window._abaAtual, false);
+    nomeAba = window._abaAtual;
+  }
+
+  addMsg('msgs', 'Aplicando correções na aba ' + nomeAba + ' (' + exercicios.length + ' exercício(s))...', false);
   addLoading('msgs');
   try {
+    // modoEdicao:true instrui o Apps Script a EDITAR (não criar) a aba
     const payload = { aba: nomeAba, exercicios: exercicios, modoEdicao: true };
     if (sheetId) payload.spreadsheetId = sheetId;
     const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
@@ -1210,6 +1215,7 @@ async function editarNaPlanilha(exercicios, nomeAba) {
 }
 
 function getSheetId(url) {
+  if (!url) return null;
   var m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   return m ? m[1] : null;
 }

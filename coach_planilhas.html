@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v16.html -->
+<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v17.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -603,7 +603,44 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
 
 function getSystemPrompt() {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return '';
-  return 'Voce e o assistente do Coach Felipe, personal trainer brasileiro especializado em hipertrofia.\n\nAluno: ' + s.name + '\n' + (s.obs?'Obs: '+s.obs:'') + '\nPlanilha: ' + (s.sheet||'nao informada') + '\n\nBiblioteca (nomes EXATOS):\nPEITO: SUPINO RETO BARRA, SUPINO INCLINADO BARRA, SUPINO RETO COM HALTER, SUPINO INCLINADO COM HALTER, SUPINO INCLINADO ARTICULADO, CRUCIFIXO RETO COM HALTER, PEC DECK\nCOSTAS: PUXADA FRENTE ABERTA, PUXADA UNILATERAL MAQUINA, REMADA ALTERNADA COM HALTERES BANCO, REMADA SERROTE APOIO BAIXO, FACEPULL, DUMBBELL SCAPTION 120\nOMBRO: DESENVOLVIMENTO SENTADO COM HALTERES, DESENVOLVIMENTO ARTICULADO ABERTO, ELEVACAO LATERAL EM PE COM HALTER, ELEVACAO LATERAL NA POLIA UNI, MANGUITO ROTACAO EXTERNA CABO, FACEPULL COM ROTACAO EXTERNA, YTW COM HALTERES\nTRICEPS: TRICEPS NA CORDA, TRICEPS TESTA BARRA W, TRICEPS FRANCES EM PE POLIA\nBICEPS: ROSCA DIRETA EM PE COM HALTERES, BICEPS MARTELO COM HALTERES EM PE, ROSCA SCOTT BARRA W, BICEPS MARTELO COM CORDA BAIXA\nCOXA: AGACHAMENTO BARRA LIVRE, BULGARO COM HALTERES, LEG PRESS 45, CADEIRA EXTENSORA, HACK ANGULAR, FLEXAO NORDICA REVERSA\nPOSTERIOR: STIFF COM HALTERES, MESA FLEXORA, CADEIRA FLEXORA, RDL COM HALTERES, SINGLE LEG DEADLIFT\nGMAX: ELEVACAO PELVICA COM BARRA, ELEVACAO PELVICA NA MAQUINA, ELEVACAO PELVICA UNI COM HALTER\nGMEDIO: CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA\nABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n\nREGRA CRITICA: Quando pedir programacao, meso ou treino, voce DEVE retornar UM UNICO bloco JSON com TODOS os exercicios de todos os dias juntos no array. NAO use texto, NAO separe por dia, NAO use markdown. Retorne APENAS o JSON:\n{"aba":"S6","exercicios":[{"nome":"NOME EXATO","objetivo":"Hipertrofia","series":4,"repeticoes":"12-15","cadencia":"3131","rir":"1","criterio":"criterio"},{"nome":"OUTRO EXERCICIO","objetivo":"Hipertrofia","series":3,"repeticoes":"10-12","cadencia":"3010","rir":"2","criterio":"criterio 2"}]}\nO campo aba deve ser exatamente o informado no prompt. Todos os exercicios de todos os dias no mesmo array. Para outras perguntas responda em texto normalmente.';
+  return 'Voce e um especialista em treinamento de forca e hipertrofia que assiste o Coach Felipe, personal trainer brasileiro.\n\n' +
+    '=== BASE CIENTIFICA — raciocine sempre com estes principios ===\n' +
+    'JONATO PRESTES: Periodizacao ondulatoria diaria/semanal. Volume progressivo por mesociclo com deload a cada 4-6 semanas. Individualizacao por nivel. Progressao de carga como variavel primaria.\n' +
+    'BRAD SCHOENFELD: Tres mecanismos de hipertrofia — tensao mecanica (principal), estresse metabolico e dano muscular. Rep ranges 6-30 sao eficazes se proximos a falha. Exercicios no alongamento maximo (amplitude longa) maximizam hipertrofia. Frequencia 2x/semana por musculo e superior.\n' +
+    'WALTER KRAUSE JR: Periodizacao pratica no contexto brasileiro. Progressao sistematica de carga por bloco. RiR (Reps in Reserve) como metrica de intensidade — RiR 0-3 para volume efetivo.\n' +
+    'PACHOLOK: Cadencia como variavel de treino. Excentrica lenta (3-4s) aumenta dano muscular produtivo. Qualidade de execucao precede quantidade. Formato de cadencia: excentrica/pausa/concentrica/pausa (ex: 3010).\n' +
+    'BELMIRO SALLES: Apenas series proximas a falha contam como volume efetivo. Gestao de fadiga acumulada entre sessoes. Priorizacao de grupos musculares lagging.\n' +
+    'PAULO GENTIL: Evidencias > tradicao. Simplicidade com eficiencia — poucos exercicios multiarticulares bem executados com progressao de carga sao suficientes. Critica ao excesso de volume sem necessidade.\n\n' +
+    '=== ALUNO ATUAL ===\n' +
+    'Nome: ' + s.name + '\n' + (s.obs ? 'Observacoes: ' + s.obs + '\n' : '') +
+    'Planilha: ' + (s.sheet || 'nao informada') + '\n\n' +
+    '=== BIBLIOTECA DE EXERCICIOS — use APENAS estes nomes EXATOS ===\n' +
+    'PEITO: SUPINO RETO BARRA, SUPINO INCLINADO BARRA, SUPINO RETO COM HALTER, SUPINO INCLINADO COM HALTER, SUPINO INCLINADO ARTICULADO, CRUCIFIXO RETO COM HALTER, PEC DECK\n' +
+    'COSTAS: PUXADA FRENTE ABERTA, PUXADA UNILATERAL MAQUINA, REMADA ALTERNADA COM HALTERES BANCO, REMADA SERROTE APOIO BAIXO, FACEPULL, DUMBBELL SCAPTION 120\n' +
+    'OMBRO: DESENVOLVIMENTO SENTADO COM HALTERES, DESENVOLVIMENTO ARTICULADO ABERTO, ELEVACAO LATERAL EM PE COM HALTER, ELEVACAO LATERAL NA POLIA UNI, MANGUITO ROTACAO EXTERNA CABO, FACEPULL COM ROTACAO EXTERNA, YTW COM HALTERES\n' +
+    'TRICEPS: TRICEPS NA CORDA, TRICEPS TESTA BARRA W, TRICEPS FRANCES EM PE POLIA\n' +
+    'BICEPS: ROSCA DIRETA EM PE COM HALTERES, BICEPS MARTELO COM HALTERES EM PE, ROSCA SCOTT BARRA W, BICEPS MARTELO COM CORDA BAIXA\n' +
+    'COXA: AGACHAMENTO BARRA LIVRE, BULGARO COM HALTERES, LEG PRESS 45, CADEIRA EXTENSORA, HACK ANGULAR, FLEXAO NORDICA REVERSA\n' +
+    'POSTERIOR: STIFF COM HALTERES, MESA FLEXORA, CADEIRA FLEXORA, RDL COM HALTERES, SINGLE LEG DEADLIFT\n' +
+    'GMAX: ELEVACAO PELVICA COM BARRA, ELEVACAO PELVICA NA MAQUINA, ELEVACAO PELVICA UNI COM HALTER\n' +
+    'GMEDIO: CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA\n' +
+    'ABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n\n' +
+    '=== FLUXO OBRIGATORIO PARA NOVO MESOCICLO ===\n' +
+    'FASE 1 - COLETA DE INFORMACOES:\n' +
+    'Antes de gerar qualquer programacao, confirme que tem TODAS estas informacoes. Se faltar alguma, pergunte de forma objetiva e direta:\n' +
+    '  - Divisao do treino (ex: Upper/Lower A/B, PPL, ABC, Full Body)\n' +
+    '  - Dias da semana que o aluno treina (ex: seg/ter/qui/sex)\n' +
+    '  - Numero de exercicios por sessao (ou por grupo muscular)\n' +
+    '  - Objetivo principal do meso (hipertrofia geral, enfase em grupo especifico, recomposicao)\n' +
+    '  - Restricoes, lesoes ou equipamentos indisponiveis\n' +
+    'Faca as perguntas de forma agrupada e natural. Seja conciso.\n\n' +
+    'FASE 2 - CONFIRMACAO:\n' +
+    'Quando tiver todas as informacoes, resuma o plano em texto (divisao, dias, volume estimado por musculo) e pergunte ao Coach Felipe: "Posso gerar a programacao agora?"\n\n' +
+    'FASE 3 - GERACAO DO JSON:\n' +
+    'Somente apos confirmacao, retorne UM UNICO bloco JSON com TODOS os exercicios de TODOS os dias. NAO use texto antes ou depois, NAO separe por dia, NAO use markdown. APENAS o JSON:\n' +
+    '{"aba":"S6","exercicios":[{"nome":"NOME EXATO","objetivo":"Hipertrofia","series":4,"repeticoes":"12-15","cadencia":"3010","rir":"2","criterio":"criterio tecnico objetivo"}]}\n' +
+    'O campo aba deve ser exatamente o informado no prompt. RiR entre 0-3. Cadencia no formato 4 digitos (ex: 3010).\n\n' +
+    'Para perguntas que nao sejam sobre programacao de mesociclo, responda normalmente em texto.';
 }
 
 function tryParseJSON(text) {
@@ -791,28 +828,9 @@ async function confirmarNovoMeso() {
   if (window._obsAluno) prompt += 'Observações do aluno: ' + window._obsAluno + '\n';
   prompt += contextoAbas;
 
-  msgHistory.push({role:'user', content: prompt});
-  addMsg('msgs', '⏳ Gerando mesociclo com IA...', false);
-  addLoading('msgs');
-  isLoading = true; document.getElementById('send-btn').disabled = true;
-  callClaude(msgHistory, getSystemPrompt()).then(function(reply) {
-    removeLoading('msgs');
-    var parsed = tryParseJSON(reply);
-    if (parsed && parsed.exercicios && parsed.aba) {
-      addMsg('msgs', '✅ ' + parsed.exercicios.length + ' exercícios gerados para aba ' + parsed.aba + '! Escrevendo na planilha...', false);
-      msgHistory.push({role:'assistant', content: reply});
-      escreverNaPlanilha(parsed.exercicios, parsed.aba);
-    } else {
-      addMsg('msgs', reply, false);
-      msgHistory.push({role:'assistant', content: reply});
-      addMsg('msgs', '⚠️ A IA retornou texto em vez de JSON. Tente novamente ou use o chat para ajustar.', false);
-    }
-    isLoading = false; document.getElementById('send-btn').disabled = false;
-  }).catch(function(e) {
-    removeLoading('msgs');
-    addMsg('msgs', 'Erro ao gerar meso: ' + e.message, false);
-    isLoading = false; document.getElementById('send-btn').disabled = false;
-  });
+  document.getElementById('ai-input').value = prompt;
+  document.getElementById('ai-input').focus();
+  showToast('Revise e adicione detalhes, depois clique em Enviar.', 'ok');
 }
 
 function switchTab(tab, el) {

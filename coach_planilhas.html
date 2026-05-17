@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v20.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v20_1.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -536,6 +536,7 @@ function selectStudent(id) {
   selectedId = id;
   const s = students.find(function(x){return x.id===id;}); if (!s) return;
   msgHistory = []; msgHistory2 = [];
+  window._modoEdicao = false;
   document.getElementById('msgs').innerHTML = '<div class="msg msg-ai">Pronto para trabalhar com <strong>' + s.name + '</strong>. ' + (s.obs||'') + ' Como posso ajudar?</div>';
   document.getElementById('msgs2').innerHTML = '<div class="msg msg-ai">Chat aberto para ' + s.name + '. Pergunte sobre programação, progressão ou qualquer ajuste.</div>';
   document.getElementById('ph-av').textContent = initials(s.name);
@@ -735,9 +736,17 @@ async function sendMsg() {
     removeLoading('msgs');
     const parsed = tryParseJSON(reply);
     if (parsed && parsed.exercicios && parsed.aba) {
-      addMsg('msgs', 'Programação gerada! Escrevendo ' + parsed.exercicios.length + ' exercícios na aba ' + parsed.aba + '...', false);
-      msgHistory.push({role:'assistant',content:reply});
-      await escreverNaPlanilha(parsed.exercicios, parsed.aba);
+      // Se estamos em modo edição, redirecionar para editarNaPlanilha (nunca cria aba)
+      if (window._modoEdicao) {
+        if (parsed.aba !== window._abaAtual) parsed.aba = window._abaAtual;
+        addMsg('msgs', '✅ ' + parsed.exercicios.length + ' exercício(s) corrigido(s). Escrevendo na aba ' + parsed.aba + '...', false);
+        msgHistory.push({role:'assistant',content:reply});
+        await editarNaPlanilha(parsed.exercicios, parsed.aba);
+      } else {
+        addMsg('msgs', 'Programação gerada! Escrevendo ' + parsed.exercicios.length + ' exercícios na aba ' + parsed.aba + '...', false);
+        msgHistory.push({role:'assistant',content:reply});
+        await escreverNaPlanilha(parsed.exercicios, parsed.aba);
+      }
     } else {
       addMsg('msgs', reply, false);
       msgHistory.push({role:'assistant',content:reply});
@@ -829,6 +838,7 @@ function selecionarTodasAbas(val) {
 }
 
 async function confirmarNovoMeso() {
+  window._modoEdicao = false; // novo meso sempre usa escreverNaPlanilha
   var abasSelecionadas = [];
   document.getElementById('meso-abas-lista').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){
     abasSelecionadas.push(cb.value);
@@ -1094,6 +1104,8 @@ async function confirmarEdicao() {
   const instrucoes = document.getElementById('editar-instrucoes').value.trim();
   if (!instrucoes) { showToast('Descreva o que quer corrigir', 'err'); return; }
   document.getElementById('editar-modal').style.display = 'none';
+  // Ativar modo edição — sendMsg vai usar editarNaPlanilha (nunca cria aba)
+  window._modoEdicao = true;
 
   addMsg('msgs', '📖 Lendo aba ' + window._abaAtual + '...', false);
   addLoading('msgs');

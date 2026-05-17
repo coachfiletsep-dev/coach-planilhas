@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v20_2.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v20_3.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1128,20 +1128,16 @@ async function confirmarEdicao() {
     removeLoading('msgs');
 
     // Montar contexto da aba atual
+    // CORRECAO: usar posicao e linha vindas do Apps Script (nao recalcular)
     if (dataAba.sucesso && dataAba.abas && dataAba.abas.length > 0) {
       var aba = dataAba.abas[0];
       window._dadosAbaAtual = aba.exercicios;
-      var linhasMap = {'SEG':5,'TER':229,'QUA':453,'QUI':677,'SEX':901,'SAB':1125,'DOM':1349};
-      var indiceTemp = {};
       var tiposDia = {SEG:'UPPER', TER:'LOWER', QUA:'UPPER', QUI:'UPPER', SEX:'LOWER', SAB:'LOWER', DOM:'LOWER'};
       window._dadosAbaAtual.forEach(function(ex) {
-        var dia = ex.dia;
-        if (!indiceTemp[dia]) indiceTemp[dia] = 0;
-        var linhaReal = (linhasMap[dia] || 0) + indiceTemp[dia] * 14;
-        ex._linha = linhaReal;
-        indiceTemp[dia]++;
-        ex._tipo = tiposDia[dia] || '?';
-        contextoLinhas += '  Linha ' + linhaReal + ' | DIA ' + dia + ' (' + ex._tipo + ') | ' + indiceTemp[dia] + 'o exercicio | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadencia ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
+        // linha e posicao vêm direto do Apps Script — posição real na planilha
+        ex._linha = ex.linha;
+        ex._tipo = tiposDia[ex.dia] || '?';
+        contextoLinhas += '  Linha ' + ex.linha + ' | DIA ' + ex.dia + ' (' + ex._tipo + ') | ' + ex.posicao + 'o exercicio | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadencia ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
       });
     }
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0062)file:///C:/Users/Lenovo/Downloads/coach_planilhas_final15.html -->
+<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v16.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -603,15 +603,49 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
 
 function getSystemPrompt() {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return '';
-  return 'Voce e o assistente do Coach Felipe, personal trainer brasileiro especializado em hipertrofia.\n\nAluno: ' + s.name + '\n' + (s.obs?'Obs: '+s.obs:'') + '\nPlanilha: ' + (s.sheet||'nao informada') + '\n\nBiblioteca (nomes EXATOS):\nPEITO: SUPINO RETO BARRA, SUPINO INCLINADO BARRA, SUPINO RETO COM HALTER, SUPINO INCLINADO COM HALTER, SUPINO INCLINADO ARTICULADO, CRUCIFIXO RETO COM HALTER, PEC DECK\nCOSTAS: PUXADA FRENTE ABERTA, PUXADA UNILATERAL MAQUINA, REMADA ALTERNADA COM HALTERES BANCO, REMADA SERROTE APOIO BAIXO, FACEPULL, DUMBBELL SCAPTION 120\nOMBRO: DESENVOLVIMENTO SENTADO COM HALTERES, DESENVOLVIMENTO ARTICULADO ABERTO, ELEVACAO LATERAL EM PE COM HALTER, ELEVACAO LATERAL NA POLIA UNI, MANGUITO ROTACAO EXTERNA CABO, FACEPULL COM ROTACAO EXTERNA, YTW COM HALTERES\nTRICEPS: TRICEPS NA CORDA, TRICEPS TESTA BARRA W, TRICEPS FRANCES EM PE POLIA\nBICEPS: ROSCA DIRETA EM PE COM HALTERES, BICEPS MARTELO COM HALTERES EM PE, ROSCA SCOTT BARRA W, BICEPS MARTELO COM CORDA BAIXA\nCOXA: AGACHAMENTO BARRA LIVRE, BULGARO COM HALTERES, LEG PRESS 45, CADEIRA EXTENSORA, HACK ANGULAR, FLEXAO NORDICA REVERSA\nPOSTERIOR: STIFF COM HALTERES, MESA FLEXORA, CADEIRA FLEXORA, RDL COM HALTERES, SINGLE LEG DEADLIFT\nGMAX: ELEVACAO PELVICA COM BARRA, ELEVACAO PELVICA NA MAQUINA, ELEVACAO PELVICA UNI COM HALTER\nGMEDIO: CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA\nABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n\nQuando pedir programacao, responda APENAS com JSON:\n{"aba":"S18","exercicios":[{"nome":"NOME EXATO","objetivo":"Hipertrofia","series":4,"repeticoes":"12-15","cadencia":"3131","rir":"1","criterio":"criterio aqui"}]}\n\nPara outras perguntas, responda em texto normalmente.';
+  return 'Voce e o assistente do Coach Felipe, personal trainer brasileiro especializado em hipertrofia.\n\nAluno: ' + s.name + '\n' + (s.obs?'Obs: '+s.obs:'') + '\nPlanilha: ' + (s.sheet||'nao informada') + '\n\nBiblioteca (nomes EXATOS):\nPEITO: SUPINO RETO BARRA, SUPINO INCLINADO BARRA, SUPINO RETO COM HALTER, SUPINO INCLINADO COM HALTER, SUPINO INCLINADO ARTICULADO, CRUCIFIXO RETO COM HALTER, PEC DECK\nCOSTAS: PUXADA FRENTE ABERTA, PUXADA UNILATERAL MAQUINA, REMADA ALTERNADA COM HALTERES BANCO, REMADA SERROTE APOIO BAIXO, FACEPULL, DUMBBELL SCAPTION 120\nOMBRO: DESENVOLVIMENTO SENTADO COM HALTERES, DESENVOLVIMENTO ARTICULADO ABERTO, ELEVACAO LATERAL EM PE COM HALTER, ELEVACAO LATERAL NA POLIA UNI, MANGUITO ROTACAO EXTERNA CABO, FACEPULL COM ROTACAO EXTERNA, YTW COM HALTERES\nTRICEPS: TRICEPS NA CORDA, TRICEPS TESTA BARRA W, TRICEPS FRANCES EM PE POLIA\nBICEPS: ROSCA DIRETA EM PE COM HALTERES, BICEPS MARTELO COM HALTERES EM PE, ROSCA SCOTT BARRA W, BICEPS MARTELO COM CORDA BAIXA\nCOXA: AGACHAMENTO BARRA LIVRE, BULGARO COM HALTERES, LEG PRESS 45, CADEIRA EXTENSORA, HACK ANGULAR, FLEXAO NORDICA REVERSA\nPOSTERIOR: STIFF COM HALTERES, MESA FLEXORA, CADEIRA FLEXORA, RDL COM HALTERES, SINGLE LEG DEADLIFT\nGMAX: ELEVACAO PELVICA COM BARRA, ELEVACAO PELVICA NA MAQUINA, ELEVACAO PELVICA UNI COM HALTER\nGMEDIO: CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA\nABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n\nREGRA CRITICA: Quando pedir programacao, meso ou treino, voce DEVE retornar UM UNICO bloco JSON com TODOS os exercicios de todos os dias juntos no array. NAO use texto, NAO separe por dia, NAO use markdown. Retorne APENAS o JSON:\n{"aba":"S6","exercicios":[{"nome":"NOME EXATO","objetivo":"Hipertrofia","series":4,"repeticoes":"12-15","cadencia":"3131","rir":"1","criterio":"criterio"},{"nome":"OUTRO EXERCICIO","objetivo":"Hipertrofia","series":3,"repeticoes":"10-12","cadencia":"3010","rir":"2","criterio":"criterio 2"}]}\nO campo aba deve ser exatamente o informado no prompt. Todos os exercicios de todos os dias no mesmo array. Para outras perguntas responda em texto normalmente.';
 }
 
 function tryParseJSON(text) {
   try {
-    // Remove markdown code blocks se existir
     var clean = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+    // 1. Tentar parsear o texto inteiro diretamente
+    try { var p = JSON.parse(clean); if (p && p.exercicios && p.aba) return p; } catch(e) {}
+
+    // 2. Extrair e tentar o maior bloco JSON único
     var m = clean.match(/\{[\s\S]*\}/);
-    if (m) return JSON.parse(m[0]);
+    if (m) {
+      try { var p2 = JSON.parse(m[0]); if (p2 && p2.exercicios && p2.aba) return p2; } catch(e) {}
+    }
+
+    // 3. Coletar TODOS os blocos JSON que têm "exercicios" e mesclar
+    var allBlocks = [];
+    var searchStr = clean;
+    var offset = 0;
+    while (offset < searchStr.length) {
+      var start = searchStr.indexOf('{"aba"', offset);
+      if (start === -1) { start = searchStr.indexOf('{ "aba"', offset); }
+      if (start === -1) break;
+      // Encontrar o fechamento correto contando chaves
+      var depth = 0, end = -1;
+      for (var i = start; i < searchStr.length; i++) {
+        if (searchStr[i] === '{') depth++;
+        else if (searchStr[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+      }
+      if (end === -1) break;
+      try {
+        var block = JSON.parse(searchStr.slice(start, end + 1));
+        if (block && block.exercicios && Array.isArray(block.exercicios)) allBlocks.push(block);
+      } catch(e) {}
+      offset = end + 1;
+    }
+
+    if (allBlocks.length > 0) {
+      var merged = { aba: allBlocks[0].aba || (window._proximaAba || 'S1'), exercicios: [] };
+      allBlocks.forEach(function(b) { if (b.exercicios) merged.exercicios = merged.exercicios.concat(b.exercicios); });
+      if (merged.exercicios.length > 0) return merged;
+    }
   } catch(e) {}
   return null;
 }
@@ -757,9 +791,28 @@ async function confirmarNovoMeso() {
   if (window._obsAluno) prompt += 'Observações do aluno: ' + window._obsAluno + '\n';
   prompt += contextoAbas;
 
-  document.getElementById('ai-input').value = prompt;
-  document.getElementById('ai-input').focus();
-  showToast('Pronto! Revise e clique em Enviar.', 'ok');
+  msgHistory.push({role:'user', content: prompt});
+  addMsg('msgs', '⏳ Gerando mesociclo com IA...', false);
+  addLoading('msgs');
+  isLoading = true; document.getElementById('send-btn').disabled = true;
+  callClaude(msgHistory, getSystemPrompt()).then(function(reply) {
+    removeLoading('msgs');
+    var parsed = tryParseJSON(reply);
+    if (parsed && parsed.exercicios && parsed.aba) {
+      addMsg('msgs', '✅ ' + parsed.exercicios.length + ' exercícios gerados para aba ' + parsed.aba + '! Escrevendo na planilha...', false);
+      msgHistory.push({role:'assistant', content: reply});
+      escreverNaPlanilha(parsed.exercicios, parsed.aba);
+    } else {
+      addMsg('msgs', reply, false);
+      msgHistory.push({role:'assistant', content: reply});
+      addMsg('msgs', '⚠️ A IA retornou texto em vez de JSON. Tente novamente ou use o chat para ajustar.', false);
+    }
+    isLoading = false; document.getElementById('send-btn').disabled = false;
+  }).catch(function(e) {
+    removeLoading('msgs');
+    addMsg('msgs', 'Erro ao gerar meso: ' + e.message, false);
+    isLoading = false; document.getElementById('send-btn').disabled = false;
+  });
 }
 
 function switchTab(tab, el) {

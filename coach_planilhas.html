@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v21_1.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v21_2.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -271,6 +271,9 @@
     <div style="flex-shrink:0;padding:.5rem;display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--border);">
       <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
       <button class="add-btn" style="border-style:solid;color:#4285f4;border-color:#4285f4;" onclick="importarBrainering()">📥 Importar Brainering</button>
+      <div style="font-size:10px;color:var(--text3);padding:2px 4px;font-weight:600;margin-top:4px;">WHATSAPP</div>
+      <button class="add-btn" style="border-style:solid;color:#25D366;border-color:#25D366;" onclick="dispararRelatorios()">📊 Relatórios domingo</button>
+      <button class="add-btn" style="border-style:solid;color:#25D366;border-color:#25D366;" onclick="dispararBoaSemana()">🌅 Boa semana</button>
       <div style="font-size:10px;color:var(--text3);padding:2px 4px;font-weight:600;margin-top:4px;">ATUALIZAR TODOS</div>
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;seg_qui&#39;)">📅 Seg → qui</button>
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;qui_dom&#39;)">📆 Qui → dom</button>
@@ -406,6 +409,37 @@
     </div>
     <div style="font-size:11px;color:var(--text3);margin-top:1rem;">
       Token — <span id="token-status">conectado ✓</span> &nbsp;|&nbsp; API Claude — <span style="color:var(--green);">✓ Cloudflare</span>
+    </div>
+
+    <!-- Z-API WHATSAPP -->
+    <div class="config-section" style="margin-top:1.5rem;">
+      <div class="config-label">📱 WhatsApp Z-API</div>
+      <div class="config-step" style="flex-direction:column;gap:10px;">
+        <div style="flex:1;">
+          <div class="config-step-label">Credenciais Z-API</div>
+          <div class="config-step-desc">Configure sua instância Z-API para disparo automático de relatórios e mensagens de boa semana.</div>
+        </div>
+        <div class="fl">
+          <label>Instance ID</label>
+          <input class="config-input" type="text" id="zapi-instance" placeholder="Ex: 3C7B2A1D4E5F...">
+        </div>
+        <div class="fl">
+          <label>Token</label>
+          <input class="config-input" type="password" id="zapi-token" placeholder="Seu token Z-API">
+        </div>
+        <div class="fl">
+          <label>Client Token</label>
+          <input class="config-input" type="password" id="zapi-client-token" placeholder="Seu client token Z-API">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-green" onclick="saveZapiConfig()">💾 Salvar</button>
+          <button class="btn-ghost" onclick="testarZapi()">🔌 Testar conexão</button>
+          <span id="zapi-status" style="font-size:11px;color:var(--text3);"></span>
+        </div>
+        <div style="font-size:11px;color:var(--text3);padding:8px;background:var(--bg2);border-radius:var(--radius);line-height:1.5;">
+          💡 As credenciais ficam salvas localmente. Os disparos automáticos (domingo 20h e segunda 6h) são configurados via Apps Script — veja o <strong>code_gs</strong> para ativar os triggers.
+        </div>
+      </div>
     </div>
 
     <!-- PREFERÊNCIAS DO COACH -->
@@ -727,7 +761,9 @@ async function init() {
   }
   updateConfigStatus();
   loadCoachPrefs();
+  loadZapiConfig();
   renderList();
+  sincronizarSeConectado();
 }
 
 function saveAll() { localStorage.setItem('coach_students_v2', JSON.stringify(students)); }
@@ -1141,7 +1177,7 @@ function showPage(page, el) {
   el.classList.add('active');
   document.getElementById('page-alunos').style.display=page==='alunos'?'flex':'none';
   document.getElementById('page-config').style.display=page==='config'?'flex':'none';
-  if (page==='config') { updateConfigStatus(); loadCoachPrefs(); }
+  if (page==='config') { updateConfigStatus(); loadCoachPrefs(); loadZapiConfig(); }
 }
 
 function showAuthModal() { document.getElementById('auth-modal').style.display='flex'; }
@@ -1228,6 +1264,7 @@ function deletarAluno() {
   document.getElementById('student-view').style.display='none';
   renderList(document.getElementById('search-input').value);
   showToast('Aluno removido!', 'ok');
+  sincronizarAlunosApp(); // sincroniza com Brainering em background
 }
 
 function saveStudent() {
@@ -1239,6 +1276,7 @@ function saveStudent() {
   renderList(document.getElementById('search-input').value);
   selectStudent(editingId||data.id);
   showToast('Aluno salvo!','ok');
+  sincronizarAlunosApp(); // sincroniza com Brainering em background
 }
 
 function showToast(msg, type) {
@@ -2149,6 +2187,364 @@ function imprimirRelatorio() {
   win.document.close();
   setTimeout(function(){ win.print(); }, 500);
 }
+
+
+// ============================================================
+// SINCRONIZAÇÃO ALUNOS_APP NO BRAINERING
+// ============================================================
+async function sincronizarAlunosApp() {
+  if (!accessToken) return; // sem token, silencia
+  const BRAINERING_ID = '1QH7IXHNqF_3QUYOkjYsTvEtoHVL4Ocg-_Az6Y5XxrMk';
+  const ABA = 'Alunos_App';
+
+  // Montar dados: linha 1 = cabeçalho, linhas seguintes = alunos
+  var valores = [['id','nome','planilha','status','obs']];
+  students.forEach(function(s) {
+    valores.push([s.id, s.name, s.sheet||'', s.status||'ativo', s.obs||'']);
+  });
+
+  try {
+    // Limpar e reescrever a aba inteira
+    await fetch(
+      'https://sheets.googleapis.com/v4/spreadsheets/' + BRAINERING_ID +
+      '/values/' + encodeURIComponent(ABA) + '!A:E?valueInputOption=RAW',
+      {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: valores })
+      }
+    );
+  } catch(e) {
+    console.log('Sincronização Brainering silenciosa falhou:', e.message);
+  }
+}
+
+// Sincronizar ao iniciar (garante consistência)
+async function sincronizarSeConectado() {
+  if (accessToken && students.length > 0) await sincronizarAlunosApp();
+}
+
+// ============================================================
+// CONFIGURAÇÃO Z-API
+// ============================================================
+function saveZapiConfig() {
+  var inst  = document.getElementById('zapi-instance').value.trim();
+  var token = document.getElementById('zapi-token').value.trim();
+  var ctoken = document.getElementById('zapi-client-token').value.trim();
+  if (!inst || !token) { showToast('Preencha Instance ID e Token', 'err'); return; }
+  localStorage.setItem('zapi_instance', inst);
+  localStorage.setItem('zapi_token', token);
+  localStorage.setItem('zapi_client_token', ctoken);
+  showToast('Z-API salva!', 'ok');
+  var st = document.getElementById('zapi-status');
+  st.textContent = 'Salvo ✓'; st.style.color = 'var(--green)';
+  setTimeout(function(){ st.textContent = ''; }, 2500);
+}
+
+function loadZapiConfig() {
+  var inst = localStorage.getItem('zapi_instance') || '';
+  var token = localStorage.getItem('zapi_token') || '';
+  var ctoken = localStorage.getItem('zapi_client_token') || '';
+  var elI = document.getElementById('zapi-instance');
+  var elT = document.getElementById('zapi-token');
+  var elC = document.getElementById('zapi-client-token');
+  if (elI) elI.value = inst;
+  if (elT && token) elT.value = '••••••••••••••••';
+  if (elC && ctoken) elC.value = '••••••••••••••••';
+}
+
+async function testarZapi() {
+  var inst  = localStorage.getItem('zapi_instance');
+  var token = localStorage.getItem('zapi_token');
+  var ctoken = localStorage.getItem('zapi_client_token');
+  if (!inst || !token) { showToast('Configure as credenciais primeiro', 'err'); return; }
+  var st = document.getElementById('zapi-status');
+  st.textContent = 'Testando...'; st.style.color = 'var(--text3)';
+  try {
+    var res = await fetch('https://api.z-api.io/instances/' + inst + '/token/' + token + '/status', {
+      headers: { 'Client-Token': ctoken }
+    });
+    var data = await res.json();
+    if (data.connected || data.status === 'connected') {
+      st.textContent = '✅ Conectado!'; st.style.color = 'var(--green)';
+      showToast('Z-API conectada!', 'ok');
+    } else {
+      st.textContent = '❌ Não conectado'; st.style.color = 'var(--red)';
+      showToast('Z-API não conectada. Verifique o QR Code.', 'err');
+    }
+  } catch(e) {
+    st.textContent = '❌ Erro: ' + e.message; st.style.color = 'var(--red)';
+  }
+}
+
+// ============================================================
+// ENVIO DE MENSAGEM VIA Z-API
+// ============================================================
+async function enviarWhatsApp(telefone, mensagem) {
+  var inst   = localStorage.getItem('zapi_instance');
+  var token  = localStorage.getItem('zapi_token');
+  var ctoken = localStorage.getItem('zapi_client_token');
+  if (!inst || !token) return { erro: 'Z-API não configurada' };
+
+  // Normalizar telefone: remover não-dígitos e garantir DDI 55
+  var fone = String(telefone).replace(/\D/g, '');
+  if (fone.length === 10 || fone.length === 11) fone = '55' + fone;
+
+  try {
+    var res = await fetch('https://api.z-api.io/instances/' + inst + '/token/' + token + '/send-text', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Client-Token': ctoken
+      },
+      body: JSON.stringify({ phone: fone, message: mensagem })
+    });
+    return await res.json();
+  } catch(e) {
+    return { erro: e.message };
+  }
+}
+
+// ============================================================
+// BUSCAR TELEFONE DO ALUNO NO BRAINERING
+// ============================================================
+async function buscarTelefoneAluno(nomeAluno) {
+  if (!accessToken) return null;
+  const BRAINERING_ID = '1QH7IXHNqF_3QUYOkjYsTvEtoHVL4Ocg-_Az6Y5XxrMk';
+  try {
+    var res = await fetch(
+      'https://sheets.googleapis.com/v4/spreadsheets/' + BRAINERING_ID +
+      '/values/Alunos_cadastro!B:E',
+      { headers: { 'Authorization': 'Bearer ' + accessToken } }
+    );
+    var data = await res.json();
+    var rows = data.values || [];
+    for (var i = 1; i < rows.length; i++) {
+      var nome = String(rows[i][0] || '').trim().toLowerCase();
+      if (nome === nomeAluno.trim().toLowerCase()) {
+        return String(rows[i][3] || '').replace(/\D/g,''); // coluna E = índice 3
+      }
+    }
+  } catch(e) {}
+  return null;
+}
+
+// ============================================================
+// DISPARO MANUAL — RELATÓRIOS (botão no app)
+// ============================================================
+async function dispararRelatorios() {
+  if (!confirm('Disparar relatórios para TODOS os alunos ativos agora?')) return;
+  var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet; });
+  if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha', 'err'); return; }
+
+  // Abrir modal de progresso
+  document.getElementById('progress-title').textContent = 'Disparando relatórios WhatsApp...';
+  document.getElementById('progress-count').textContent = '0';
+  document.getElementById('progress-total').textContent = ativos.length;
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('progress-log').innerHTML = '';
+  document.getElementById('progress-close-btn').style.display = 'none';
+  document.getElementById('progress-modal').style.display = 'flex';
+
+  var erros = 0;
+  for (var i = 0; i < ativos.length; i++) {
+    var s = ativos[i];
+    var logEl = document.createElement('div');
+    logEl.textContent = '⏳ ' + s.name + '...';
+    document.getElementById('progress-log').appendChild(logEl);
+
+    try {
+      // Buscar telefone
+      var tel = await buscarTelefoneAluno(s.name);
+      if (!tel) {
+        logEl.textContent = '⚠️ ' + s.name + ' — telefone não encontrado';
+        logEl.style.color = '#92600a';
+        erros++;
+        continue;
+      }
+
+      // Buscar dados da última aba
+      var sheetId = getSheetId(s.sheet);
+      var resAba = await fetch(APPS_SCRIPT_URL + '?action=getAbaAtual&spreadsheetId=' + sheetId);
+      var dataAba = await resAba.json();
+      var abaAtual = dataAba.aba || 'S1';
+
+      var resRel = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ gerarRelatorio: true, spreadsheetId: sheetId, abasSelecionadas: [abaAtual] })
+      });
+      var relData = await resRel.json();
+
+      // Montar mensagem
+      var msg = montarMensagemRelatorio(s.name, relData);
+
+      // Enviar
+      var envio = await enviarWhatsApp(tel, msg);
+      if (envio.erro || envio.error) {
+        logEl.textContent = '❌ ' + s.name + ': ' + (envio.erro || envio.error);
+        logEl.style.color = 'var(--red)'; erros++;
+      } else {
+        logEl.textContent = '✅ ' + s.name + ' → ' + tel;
+        logEl.style.color = 'var(--green)';
+      }
+    } catch(e) {
+      logEl.textContent = '❌ ' + s.name + ': ' + e.message;
+      logEl.style.color = 'var(--red)'; erros++;
+    }
+
+    document.getElementById('progress-count').textContent = i + 1;
+    document.getElementById('progress-bar').style.width = Math.round(((i+1)/ativos.length)*100) + '%';
+    document.getElementById('progress-log').scrollTop = 9999;
+    await new Promise(function(r){ setTimeout(r, 1500); });
+  }
+
+  document.getElementById('progress-title').textContent = erros === 0
+    ? '✅ Relatórios enviados!' : '⚠️ Concluído com ' + erros + ' erro(s)';
+  document.getElementById('progress-close-btn').style.display = 'block';
+}
+
+// ============================================================
+// DISPARO MANUAL — BOA SEMANA (botão no app)
+// ============================================================
+async function dispararBoaSemana() {
+  if (!confirm('Disparar "Boa semana" para TODOS os alunos ativos agora?')) return;
+  var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet; });
+  if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha', 'err'); return; }
+
+  document.getElementById('progress-title').textContent = 'Disparando boa semana...';
+  document.getElementById('progress-count').textContent = '0';
+  document.getElementById('progress-total').textContent = ativos.length;
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('progress-log').innerHTML = '';
+  document.getElementById('progress-close-btn').style.display = 'none';
+  document.getElementById('progress-modal').style.display = 'flex';
+
+  var erros = 0;
+  for (var i = 0; i < ativos.length; i++) {
+    var s = ativos[i];
+    var logEl = document.createElement('div');
+    logEl.textContent = '⏳ ' + s.name + '...';
+    document.getElementById('progress-log').appendChild(logEl);
+
+    try {
+      var tel = await buscarTelefoneAluno(s.name);
+      if (!tel) {
+        logEl.textContent = '⚠️ ' + s.name + ' — telefone não encontrado';
+        logEl.style.color = '#92600a'; erros++; continue;
+      }
+
+      // Buscar semana atual
+      var sheetId = getSheetId(s.sheet);
+      var resAba = await fetch(APPS_SCRIPT_URL + '?action=getAbaAtual&spreadsheetId=' + sheetId);
+      var dataAba = await resAba.json();
+      var semanaAtual = dataAba.aba || 'S1';
+      var numSemana = semanaAtual.replace('S','');
+
+      var primeiroNome = s.name.split(' ')[0];
+      var msg = '🌅 *Bom dia, ' + primeiroNome + '!*\n\n' +
+        'Que semana incrível te espera! 💪\n\n' +
+        'Esta semana você inicia a *Semana ' + numSemana + '* dos seus treinos.\n\n' +
+        'Foco, consistência e evolução. Bora! 🔥\n\n' +
+        '_Coach Felipe_';
+
+      var envio = await enviarWhatsApp(tel, msg);
+      if (envio.erro || envio.error) {
+        logEl.textContent = '❌ ' + s.name + ': ' + (envio.erro || envio.error);
+        logEl.style.color = 'var(--red)'; erros++;
+      } else {
+        logEl.textContent = '✅ ' + s.name + ' → ' + tel;
+        logEl.style.color = 'var(--green)';
+      }
+    } catch(e) {
+      logEl.textContent = '❌ ' + s.name + ': ' + e.message;
+      logEl.style.color = 'var(--red)'; erros++;
+    }
+
+    document.getElementById('progress-count').textContent = i + 1;
+    document.getElementById('progress-bar').style.width = Math.round(((i+1)/ativos.length)*100) + '%';
+    document.getElementById('progress-log').scrollTop = 9999;
+    await new Promise(function(r){ setTimeout(r, 1200); });
+  }
+
+  document.getElementById('progress-title').textContent = erros === 0
+    ? '✅ Boa semana enviado!' : '⚠️ Concluído com ' + erros + ' erro(s)';
+  document.getElementById('progress-close-btn').style.display = 'block';
+}
+
+// ============================================================
+// MONTAR MENSAGEM DE RELATÓRIO (texto WhatsApp)
+// ============================================================
+function montarMensagemRelatorio(nomeAluno, relData) {
+  if (!relData.sucesso || !relData.abas || relData.abas.length === 0) {
+    return '📊 Relatório de ' + nomeAluno + ' — sem dados disponíveis.';
+  }
+  var aba = relData.abas[0];
+  var r = aba.resumoSemana;
+  var primeiroNome = nomeAluno.split(' ')[0];
+  var pctFreq = aba.diasComExercicios > 0
+    ? Math.round((aba.diasRealizados/aba.diasComExercicios)*100) : 0;
+
+  var msg = '📊 *Relatório Semanal — ' + primeiroNome + '*\n';
+  msg += '📅 Semana ' + aba.aba + '\n\n';
+
+  // Frequência
+  msg += '🏋️ *Frequência:* ' + aba.diasRealizados + '/' + aba.diasComExercicios + ' treinos (' + pctFreq + '%)\n';
+
+  // Volume load
+  if (r.totalVolumeLoad > 0) {
+    msg += '⚡ *Volume Load Total:* ' + r.totalVolumeLoad.toLocaleString('pt-BR') + ' kg\n';
+  }
+
+  // Calorias
+  var calTotal = (r.totalCaloriasForca||0) + (r.totalCaloirasMetabolico||0);
+  if (calTotal > 0) msg += '🔥 *Calorias totais:* ' + calTotal.toLocaleString('pt-BR') + ' kcal\n';
+
+  // Aeróbio
+  if (r.sessoesMetabolico > 0) {
+    msg += '🏃 *Aeróbio:* ' + r.sessoesMetabolico + ' sessão(ões)';
+    if (r.totalTempoMetabolico) msg += ' · ' + r.totalTempoMetabolico + ' min';
+    if (r.totalCaloirasMetabolico) msg += ' · ' + r.totalCaloirasMetabolico + ' kcal';
+    msg += '\n';
+  }
+
+  // Progressões e recordes
+  var progressoes = [], records = [];
+  Object.keys(aba.dias).forEach(function(dia) {
+    var diaData = aba.dias[dia];
+    diaData.exercicios.forEach(function(ex) {
+      if (!ex.realizado) return;
+      if (ex.recordeCarga || ex.recordeVolumeLoad) records.push(ex.nome);
+      else if (ex.progressaoCarga) progressoes.push(ex.nome + ' (carga ↑)');
+      else if (ex.progressaoReps) progressoes.push(ex.nome + ' (reps ↑)');
+    });
+  });
+
+  if (records.length > 0) {
+    msg += '\n🏆 *Recordes da semana:*\n';
+    records.forEach(function(r){ msg += '• ' + r + '\n'; });
+  }
+  if (progressoes.length > 0) {
+    msg += '\n📈 *Progressões:*\n';
+    progressoes.forEach(function(p){ msg += '• ' + p + '\n'; });
+  }
+
+  // % por dia
+  var diasComProblema = [];
+  Object.keys(aba.dias).forEach(function(dia) {
+    var d = aba.dias[dia];
+    if (d.totalExercicios > 0 && d.percentualRealizado < 100 && d.treinou) {
+      diasComProblema.push(dia + ': ' + d.percentualRealizado + '%');
+    }
+  });
+  if (diasComProblema.length > 0) {
+    msg += '\n⚠️ *Treinos incompletos:*\n';
+    diasComProblema.forEach(function(d){ msg += '• ' + d + '\n'; });
+  }
+
+  msg += '\n_Parabéns pela semana! Continuamos evoluindo 💪_\n_Coach Felipe_';
+  return msg;
+}
+
 
 init();
 </script>

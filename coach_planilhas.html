@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v19_1.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v19_2.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -408,10 +408,10 @@
       </div>
       <div class="fl">
         <label>O que quer corrigir?</label>
-        <textarea id="editar-instrucoes" rows="4" placeholder="Ex: linha 298 — troca por outro exercício adequado ao dia
-troca o stiff da terça por RDL com halteres
+        <textarea id="editar-instrucoes" rows="4" placeholder="Ex: troca o stiff da terça por outro exercício de posterior
+2º exercício da sexta — substitui por algo com mais amplitude
 muda as séries do agachamento para 4
-segundo exercício da sexta — troca por algo com mais amplitude" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
+troca o facepull da quinta por exercício de rotação externa" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
       </div>
       <div style="font-size:11px;color:var(--text3);padding:8px;background:var(--bg2);border-radius:var(--radius);">
         A IA vai ler o que está na aba atual e aplicar apenas as correções pedidas, sem mexer no resto.
@@ -1151,14 +1151,16 @@ async function confirmarEdicao() {
     });
   }
 
-  var prompt = 'Você está editando a aba ' + window._abaAtual + ' do aluno ' + window._nomeAluno + '.\n\n' +
-    'PEDIDO: ' + instrucoes + '\n\n' +
-    'MAPA DA ABA (linha real | dia | posição | exercício | volume | RiR):\n' +
+    var prompt = 'Você está editando a aba ' + window._abaAtual + ' do aluno ' + window._nomeAluno + '.\n\n' +
+    'PEDIDO DO COACH: ' + instrucoes + '\n\n' +
+    'PROGRAMAÇÃO ATUAL (dia | posição | exercício | séries x reps | RiR):\n' +
     (contextoLinhas || contextoAba) + '\n' +
-    'Use o mapa para entender contexto de cada exercício — qual dia, grupo muscular, posição na sessão.\n' +
-    'Ao trocar, escolha exercício adequado ao grupo muscular e objetivo daquele dia.\n' +
-    'FASE DIÁLOGO: Se ambíguo, pergunte antes de aplicar.\n' +
-    'FASE GERAÇÃO: Quando confirmado, retorne JSON com apenas os exercícios alterados, campo "dia", aba "' + window._abaAtual + '".\n';
+    'REGRAS:\n' +
+    '1. NUNCA mencione números de linha — use nome do exercício ou posição (ex: 2o exercicio da terca).\n' +
+    '2. Respeite o grupo muscular do dia: superiores (SEG/QUI) = PEITO/COSTAS/OMBRO/TRICEPS/BICEPS | inferiores (TER/SEX/DOM) = COXA/POSTERIOR/GMAX/GMEDIO.\n' +
+    '3. Use apenas nomes exatos da biblioteca.\n' +
+    '4. Se ambiguo, pergunte antes de aplicar.\n' +
+    '5. Quando confirmado, retorne JSON apenas com exercicios alterados, campo dia, aba ' + window._abaAtual + '. Nao inclua exercicios nao alterados.\n';
 
   msgHistory.push({role:'user', content: prompt});
   addMsg('msgs', '⏳ Aplicando correções...', false);
@@ -1171,7 +1173,7 @@ async function confirmarEdicao() {
     if (parsed && parsed.exercicios && parsed.aba) {
       addMsg('msgs', '✅ ' + parsed.exercicios.length + ' exercício(s) corrigido(s) na aba ' + parsed.aba + '! Escrevendo...', false);
       msgHistory.push({role:'assistant', content: reply});
-      escreverNaPlanilha(parsed.exercicios, parsed.aba);
+      editarNaPlanilha(parsed.exercicios, parsed.aba);
     } else {
       addMsg('msgs', reply, false);
       msgHistory.push({role:'assistant', content: reply});
@@ -1182,6 +1184,29 @@ async function confirmarEdicao() {
     addMsg('msgs', 'Erro: ' + e.message, false);
     isLoading = false; document.getElementById('send-btn').disabled = false;
   });
+}
+
+async function editarNaPlanilha(exercicios, nomeAba) {
+  const s = students.find(function(x){return x.id===selectedId;});
+  const sheetId = s ? getSheetId(s.sheet) : null;
+  addMsg('msgs', 'Aplicando correções na aba ' + nomeAba + '...', false);
+  addLoading('msgs');
+  try {
+    const payload = { aba: nomeAba, exercicios: exercicios, modoEdicao: true };
+    if (sheetId) payload.spreadsheetId = sheetId;
+    const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
+    const data = await res.json();
+    removeLoading('msgs');
+    if (data.sucesso) {
+      addMsg('msgs', '✅ ' + data.escritos + ' exercício(s) corrigido(s) na aba ' + nomeAba + '! Abra a planilha para conferir.', false);
+      showToast('Aba corrigida!', 'ok');
+    } else {
+      addMsg('msgs', 'Erro ao corrigir: ' + (data.erro||'desconhecido'), false);
+    }
+  } catch(e) {
+    removeLoading('msgs');
+    addMsg('msgs', 'Erro: ' + e.message, false);
+  }
 }
 
 function getSheetId(url) {

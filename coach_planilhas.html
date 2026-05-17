@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v21_7.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v21_8.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2000,6 +2000,14 @@ async function gerarRelatorioHTML() {
     conteudo.innerHTML = '<div style="color:var(--red);padding:20px;">Erro: ' + e.message + '</div>';
   }
 }
+
+function _cardPDF(val, label) {
+  return '<div style="background:#f7f7f5;border-radius:8px;padding:10px;text-align:center;border:0.5px solid #eee;">' +
+    '<div style="font-size:18px;font-weight:700;color:#1D9E75;">' + val + '</div>' +
+    '<div style="font-size:10px;color:#9b9b96;margin-top:2px;">' + label + '</div></div>';
+}
+
+function _fmtN(n) { if (!n) return '0'; return Number(n).toLocaleString('pt-BR'); }
 
 function montarHTMLRelatorio(nomeAluno, data) {
   var DIAS_NOMES = {SEG:'Seg',TER:'Ter',QUA:'Qua',QUI:'Qui',SEX:'Sex',SAB:'Sab',DOM:'Dom'};

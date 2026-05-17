@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v20_3.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v20_4.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -143,6 +143,49 @@
   .toast.ok { background: var(--green); color: #fff; }
   .toast.err { background: var(--red); color: #fff; }
   @keyframes fadeup { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* PREVIEW MODAL */
+  .preview-row { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:var(--radius); border:0.5px solid var(--border); background:var(--bg2); margin-bottom:6px; }
+  .preview-antes { flex:1; font-size:11px; color:var(--red); text-decoration:line-through; line-height:1.5; }
+  .preview-depois { flex:1; font-size:11px; color:var(--green-dark); font-weight:600; line-height:1.5; }
+  .preview-arrow { font-size:14px; color:var(--text3); flex-shrink:0; padding-top:1px; }
+  .preview-dia { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.05em; width:32px; flex-shrink:0; padding-top:2px; }
+
+  /* HISTORICO */
+  .hist-item { padding:8px 10px; border-radius:var(--radius); border:0.5px solid var(--border); background:var(--bg2); margin-bottom:6px; }
+  .hist-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .hist-aba { font-size:11px; font-weight:700; color:var(--green-dark); }
+  .hist-data { font-size:10px; color:var(--text3); }
+  .hist-desc { font-size:11px; color:var(--text2); line-height:1.4; }
+
+  /* ALERTA DELOAD */
+  .deload-banner { padding:.75rem 1.25rem; background:#fef3c7; border-bottom:0.5px solid #fcd34d; display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .deload-banner.critico { background:#fee2e2; border-color:#fca5a5; }
+  @media (prefers-color-scheme: dark) {
+    .deload-banner { background:#3d2e00; border-color:#856400; }
+    .deload-banner.critico { background:#3d0000; border-color:#850000; }
+  }
+  .deload-icon { font-size:18px; flex-shrink:0; }
+  .deload-text { flex:1; font-size:12px; line-height:1.4; }
+  .deload-text strong { font-weight:700; }
+  .deload-btn { padding:4px 10px; border-radius:var(--radius); border:none; background:var(--green); color:#fff; font-size:11px; font-weight:600; cursor:pointer; flex-shrink:0; }
+
+  /* COMPARAR ABAS */
+  .comp-table { width:100%; border-collapse:collapse; font-size:11px; margin-top:8px; }
+  .comp-table th { padding:5px 8px; background:var(--bg3); font-weight:600; text-align:left; border-bottom:0.5px solid var(--border2); }
+  .comp-table td { padding:5px 8px; border-bottom:0.5px solid var(--border); vertical-align:top; }
+  .comp-diff { background:rgba(229,231,25,.15); }
+  .comp-tag-add { display:inline-block; padding:1px 6px; border-radius:99px; background:var(--green-light); color:var(--green-dark); font-size:10px; font-weight:600; }
+  .comp-tag-rem { display:inline-block; padding:1px 6px; border-radius:99px; background:#fee2e2; color:#991b1b; font-size:10px; font-weight:600; }
+
+  /* TEMPLATE */
+  .tpl-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:var(--radius); border:0.5px solid var(--border); background:var(--bg2); margin-bottom:6px; cursor:pointer; transition:all .12s; }
+  .tpl-item:hover { border-color:var(--green); background:var(--green-light); }
+  .tpl-name { flex:1; font-size:12px; font-weight:600; }
+  .tpl-meta { font-size:10px; color:var(--text3); }
+  .tpl-del { font-size:13px; color:var(--text3); cursor:pointer; padding:2px 4px; border-radius:4px; }
+  .tpl-del:hover { color:var(--red); background:rgba(226,75,74,.1); }
+
   ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
 </style>
 </head>
@@ -168,6 +211,11 @@
 
 <div id="notice-bar" class="notice ok">Google conectado — todas as ações disponíveis.</div>
 
+<div id="deload-banner" style="display:none;" class="deload-banner">
+  <div class="deload-icon">⚠️</div>
+  <div class="deload-text" id="deload-text"></div>
+  <button class="deload-btn" onclick="document.getElementById(&#39;deload-banner&#39;).style.display=&#39;none&#39;">OK</button>
+</div>
 <div id="page-alunos" class="main">
   <div class="sidebar">
     <div class="sidebar-top">
@@ -206,6 +254,8 @@
         <div class="ph-actions">
           <button class="icon-btn" onclick="openEditModal()" title="Editar aluno">✏️</button>
           <button class="icon-btn" onclick="openSheet()" title="Abrir planilha">↗️</button>
+          <button class="icon-btn" onclick="abrirHistorico()" title="Histórico de edições">📋</button>
+          <button class="icon-btn" onclick="abrirComparar()" title="Comparar abas">🔀</button>
           <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;">✏️ Editar aba</button>
           <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
         </div>
@@ -314,6 +364,34 @@
     <div style="font-size:11px;color:var(--text3);margin-top:1rem;">
       Token — <span id="token-status">conectado ✓</span> &nbsp;|&nbsp; API Claude — <span style="color:var(--green);">✓ Cloudflare</span>
     </div>
+
+    <!-- PREFERÊNCIAS DO COACH -->
+    <div class="config-section" style="margin-top:1.5rem;">
+      <div class="config-label">🎯 Preferências do Coach</div>
+      <div class="config-step" style="flex-direction:column;gap:10px;">
+        <div style="flex:1;">
+          <div class="config-step-label">Persona e preferências de programação</div>
+          <div class="config-step-desc">Estas preferências são injetadas automaticamente em toda chamada à IA — para todos os alunos. Descreva sua filosofia, exercícios preferidos, ordem, critérios, etc.</div>
+        </div>
+        <textarea id="coach-prefs-input" rows="10" style="width:100%;padding:9px 10px;font-size:12px;font-family:inherit;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);resize:vertical;line-height:1.6;outline:none;" placeholder="Ex:
+- Sempre priorizar exercícios multiarticulares no início da sessão
+- Grupos menores (bíceps, tríceps, ombro isolado) sempre por último
+- Preferência por: agachamento livre, leg press 45, extensora, stiff
+- Evitar exercícios de impacto para joelhos em alunos acima de 50 anos
+- Rep range padrão: 8-12 para hipertrofia, 4-6 para força
+- Sempre incluir pelo menos 1 exercício de rotação externa de ombro em dias upper
+- Progressão de carga como variável principal, volume secundário
+- Deload a cada 5-6 semanas com redução de 40% no volume"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-green" onclick="saveCoachPrefs()">💾 Salvar preferências</button>
+          <button class="btn-ghost" onclick="clearCoachPrefs()">Limpar</button>
+          <span id="prefs-status" style="font-size:11px;color:var(--text3);"></span>
+        </div>
+        <div style="font-size:11px;color:var(--text3);padding:8px;background:var(--bg2);border-radius:var(--radius);line-height:1.5;">
+          💡 Dica: seja específico. Quanto mais detalhado, mais a IA vai respeitar sua filosofia na hora de montar e editar os mesos.
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -390,6 +468,7 @@
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-ghost" onclick="abrirTemplates()" style="margin-right:auto;">📌 Templates</button>
       <button class="btn-green" onclick="confirmarNovoMeso()">✨ Gerar meso</button>
     </div>
   </div>
@@ -450,6 +529,93 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   </div>
 </div>
 
+
+<!-- MODAL PREVIEW ANTES/DEPOIS -->
+<div class="overlay" id="preview-modal" style="display:none;">
+  <div class="modal" style="width:500px;">
+    <div class="modal-header">
+      <span class="modal-title">👁️ Preview das alterações</span>
+      <button class="icon-btn" onclick="fecharPreview()" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Confira as alterações antes de aplicar na planilha:</div>
+      <div id="preview-lista"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="fecharPreview()">Cancelar</button>
+      <button class="btn-green" onclick="confirmarPreview()">✅ Confirmar e escrever</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HISTÓRICO -->
+<div class="overlay" id="historico-modal" style="display:none;">
+  <div class="modal" style="width:460px;">
+    <div class="modal-header">
+      <span class="modal-title">📋 Histórico de edições</span>
+      <button class="icon-btn" onclick="document.getElementById(&#39;historico-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body" id="historico-lista">
+      <div style="font-size:12px;color:var(--text3);text-align:center;padding:20px;">Nenhuma edição registrada.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="limparHistorico()">🗑️ Limpar histórico</button>
+      <button class="btn-ghost" onclick="document.getElementById(&#39;historico-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COMPARAR ABAS -->
+<div class="overlay" id="comparar-modal" style="display:none;">
+  <div class="modal" style="width:600px;max-width:95vw;">
+    <div class="modal-header">
+      <span class="modal-title">🔀 Comparar abas</span>
+      <button class="icon-btn" onclick="document.getElementById(&#39;comparar-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-end;">
+        <div class="fl" style="flex:1;">
+          <label>Aba A</label>
+          <select id="comp-aba-a" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"></select>
+        </div>
+        <div style="font-size:18px;padding-bottom:6px;color:var(--text3);">vs</div>
+        <div class="fl" style="flex:1;">
+          <label>Aba B</label>
+          <select id="comp-aba-b" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"></select>
+        </div>
+        <button class="btn-green" onclick="executarComparacao()" style="flex-shrink:0;">Comparar</button>
+      </div>
+      <div id="comp-resultado" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="document.getElementById(&#39;comparar-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TEMPLATES -->
+<div class="overlay" id="templates-modal" style="display:none;">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <span class="modal-title">📌 Templates de meso</span>
+      <button class="icon-btn" onclick="document.getElementById(&#39;templates-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="templates-lista"></div>
+      <div style="margin-top:8px;">
+        <div class="fl">
+          <label>Salvar meso atual como template</label>
+          <input type="text" id="template-nome-input" placeholder="Ex: Upper/Lower 4x Hipertrofia" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+        </div>
+        <button class="btn-green" style="margin-top:8px;" onclick="salvarTemplate()">💾 Salvar como template</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="document.getElementById(&#39;templates-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTcezZ5a2i8GyIAdUhnIksaMXM3eMHf6vOSaV9SsAdMgZ13kPWtn5dBc_gtkevf_VUXw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
@@ -492,6 +658,7 @@ async function init() {
     renovarToken().then(function(ok) { if (ok) showToast('Conectado automaticamente!', 'ok'); });
   }
   updateConfigStatus();
+  loadCoachPrefs();
   renderList();
 }
 
@@ -546,6 +713,7 @@ function selectStudent(id) {
   const sv = document.getElementById('student-view');
   sv.style.display = 'flex'; sv.style.flexDirection = 'column'; sv.style.flex = '1';
   renderList(document.getElementById('search-input').value);
+  var _s = students.find(function(x){return x.id===id;}); if (_s && _s.sheet) verificarDeload(getSheetId(_s.sheet), _s.name);
 }
 
 function openSheet() {
@@ -655,7 +823,11 @@ function getSystemPrompt() {
     'FASE 3 - JSON: Apenas apos confirmacao, retorne:\n' +
     '{"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Hipertrofia","series":4,"repeticoes":"8-10","cadencia":"3010","rir":"2","criterio":"controle excentrico"}]}\n' +
     'Campo dia: SEG, TER, QUA, QUI, SEX, SAB ou DOM. RiR: 0-3. Cadencia: 4 digitos.\n\n' +
-    'Para perguntas que nao sejam sobre programacao, responda normalmente em texto.';
+    'Para perguntas que nao sejam sobre programacao, responda normalmente em texto.' +
+    (function() {
+      var prefs = localStorage.getItem('coach_prefs') || '';
+      return prefs.trim() ? '\n\n=== PREFERENCIAS DO COACH FELIPE (respeite sempre) ===\n' + prefs.trim() + '\n' : '';
+    })();
 }
 
 function tryParseJSON(text) {
@@ -736,12 +908,11 @@ async function sendMsg() {
     removeLoading('msgs');
     const parsed = tryParseJSON(reply);
     if (parsed && parsed.exercicios && parsed.aba) {
-      // Se estamos em modo edição, redirecionar para editarNaPlanilha (nunca cria aba)
+      // Se estamos em modo edição, mostrar preview antes de escrever
       if (window._modoEdicao) {
         if (parsed.aba !== window._abaAtual) parsed.aba = window._abaAtual;
-        addMsg('msgs', '✅ ' + parsed.exercicios.length + ' exercício(s) corrigido(s). Escrevendo na aba ' + parsed.aba + '...', false);
         msgHistory.push({role:'assistant',content:reply});
-        await editarNaPlanilha(parsed.exercicios, parsed.aba);
+        mostrarPreview(parsed.exercicios, parsed.aba);
       } else {
         addMsg('msgs', 'Programação gerada! Escrevendo ' + parsed.exercicios.length + ' exercícios na aba ' + parsed.aba + '...', false);
         msgHistory.push({role:'assistant',content:reply});
@@ -902,7 +1073,7 @@ function showPage(page, el) {
   el.classList.add('active');
   document.getElementById('page-alunos').style.display=page==='alunos'?'flex':'none';
   document.getElementById('page-config').style.display=page==='config'?'flex':'none';
-  if (page==='config') updateConfigStatus();
+  if (page==='config') { updateConfigStatus(); loadCoachPrefs(); }
 }
 
 function showAuthModal() { document.getElementById('auth-modal').style.display='flex'; }
@@ -929,6 +1100,30 @@ function saveRefreshToken() {
     if (ok) showToast('Google conectado automaticamente!','ok');
     else showToast('Erro ao conectar. Verifique o token.','err');
   });
+}
+
+function saveCoachPrefs() {
+  var val = document.getElementById('coach-prefs-input').value.trim();
+  localStorage.setItem('coach_prefs', val);
+  var st = document.getElementById('prefs-status');
+  st.textContent = 'Salvo ✓';
+  st.style.color = 'var(--green)';
+  setTimeout(function(){ st.textContent = ''; }, 2500);
+  showToast('Preferências salvas!', 'ok');
+}
+
+function clearCoachPrefs() {
+  if (!confirm('Limpar todas as preferências?')) return;
+  localStorage.removeItem('coach_prefs');
+  document.getElementById('coach-prefs-input').value = '';
+  document.getElementById('prefs-status').textContent = '';
+  showToast('Preferências removidas', 'ok');
+}
+
+function loadCoachPrefs() {
+  var val = localStorage.getItem('coach_prefs') || '';
+  var el = document.getElementById('coach-prefs-input');
+  if (el) el.value = val;
 }
 
 function openModal() {
@@ -1185,14 +1380,10 @@ async function confirmarEdicao() {
     removeLoading('msgs');
     var parsed = tryParseJSON(reply);
     if (parsed && parsed.exercicios && parsed.aba) {
-      // FIX BUG 1: Se a IA retornou aba errada, corrigir automaticamente
-      if (parsed.aba !== window._abaAtual) {
-        addMsg('msgs', '⚠️ IA retornou aba ' + parsed.aba + ' — corrigindo para ' + window._abaAtual + ' automaticamente.', false);
-        parsed.aba = window._abaAtual;
-      }
-      addMsg('msgs', '✅ ' + parsed.exercicios.length + ' exercício(s) a corrigir na aba ' + parsed.aba + '. Escrevendo...', false);
+      if (parsed.aba !== window._abaAtual) parsed.aba = window._abaAtual;
       msgHistory.push({role:'assistant', content: reply});
-      editarNaPlanilha(parsed.exercicios, parsed.aba);
+      // Mostrar PREVIEW antes de escrever
+      mostrarPreview(parsed.exercicios, parsed.aba);
     } else {
       addMsg('msgs', reply, false);
       msgHistory.push({role:'assistant', content: reply});
@@ -1244,6 +1435,405 @@ function getSheetId(url) {
   var m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   return m ? m[1] : null;
 }
+
+
+// ============================================================
+// PREVIEW ANTES/DEPOIS
+// ============================================================
+function mostrarPreview(exercicios, nomeAba) {
+  window._previewExercicios = exercicios;
+  window._previewAba = nomeAba;
+
+  var lista = document.getElementById('preview-lista');
+  lista.innerHTML = '';
+
+  exercicios.forEach(function(ex) {
+    // Encontrar o exercício original na aba atual pelo campo dia + linha
+    var original = null;
+    if (window._dadosAbaAtual) {
+      original = window._dadosAbaAtual.find(function(o) {
+        return o.dia === ex.dia && o.linha === ex._linha;
+      });
+      // fallback por posição
+      if (!original) {
+        original = window._dadosAbaAtual.find(function(o) {
+          return o.dia === ex.dia && o.posicao === ex.posicao;
+        });
+      }
+    }
+
+    var row = document.createElement('div');
+    row.className = 'preview-row';
+
+    var diaEl = document.createElement('div');
+    diaEl.className = 'preview-dia';
+    diaEl.textContent = ex.dia;
+
+    var antesEl = document.createElement('div');
+    antesEl.className = 'preview-antes';
+    if (original) {
+      antesEl.innerHTML =
+        '<strong>' + original.nome + '</strong><br>' +
+        original.series + 'x' + original.repeticoes +
+        ' | ' + original.cadencia + ' | RiR ' + original.rir;
+    } else {
+      antesEl.textContent = '(posição ' + (ex.posicao || '?') + ')';
+    }
+
+    var arrow = document.createElement('div');
+    arrow.className = 'preview-arrow';
+    arrow.textContent = '→';
+
+    var depoisEl = document.createElement('div');
+    depoisEl.className = 'preview-depois';
+    depoisEl.innerHTML =
+      '<strong>' + ex.nome + '</strong><br>' +
+      (ex.series || (original && original.series) || '?') + 'x' +
+      (ex.repeticoes || (original && original.repeticoes) || '?') +
+      ' | ' + (ex.cadencia || (original && original.cadencia) || '?') +
+      ' | RiR ' + (ex.rir || (original && original.rir) || '?');
+
+    row.appendChild(diaEl);
+    row.appendChild(antesEl);
+    row.appendChild(arrow);
+    row.appendChild(depoisEl);
+    lista.appendChild(row);
+  });
+
+  document.getElementById('preview-modal').style.display = 'flex';
+}
+
+function fecharPreview() {
+  document.getElementById('preview-modal').style.display = 'none';
+  window._previewExercicios = null;
+  window._previewAba = null;
+}
+
+async function confirmarPreview() {
+  if (!window._previewExercicios || !window._previewAba) return;
+  var exercicios = window._previewExercicios;
+  var aba = window._previewAba;
+  fecharPreview();
+  // Registrar no histórico antes de escrever
+  registrarHistorico(exercicios, aba);
+  await editarNaPlanilha(exercicios, aba);
+}
+
+// ============================================================
+// HISTÓRICO DE EDIÇÕES
+// ============================================================
+function registrarHistorico(exercicios, aba) {
+  var s = students.find(function(x){return x.id===selectedId;});
+  if (!s) return;
+  var key = 'coach_historico_' + s.id;
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
+
+  var originais = [];
+  exercicios.forEach(function(ex) {
+    var orig = null;
+    if (window._dadosAbaAtual) {
+      orig = window._dadosAbaAtual.find(function(o) {
+        return o.dia === ex.dia && (o.linha === ex._linha || o.posicao === ex.posicao);
+      });
+    }
+    originais.push({
+      dia: ex.dia,
+      antes: orig ? orig.nome : '?',
+      depois: ex.nome,
+      series: ex.series,
+      repeticoes: ex.repeticoes
+    });
+  });
+
+  hist.unshift({
+    data: new Date().toLocaleString('pt-BR'),
+    aba: aba,
+    aluno: s.name,
+    alteracoes: originais
+  });
+
+  // Manter últimas 50 edições
+  if (hist.length > 50) hist = hist.slice(0, 50);
+  localStorage.setItem(key, JSON.stringify(hist));
+}
+
+function abrirHistorico() {
+  var s = students.find(function(x){return x.id===selectedId;});
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  var key = 'coach_historico_' + s.id;
+  var hist = [];
+  try { hist = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e) {}
+
+  var lista = document.getElementById('historico-lista');
+  lista.innerHTML = '';
+
+  if (hist.length === 0) {
+    lista.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:20px;">Nenhuma edição registrada para ' + s.name + '.</div>';
+  } else {
+    hist.forEach(function(item) {
+      var div = document.createElement('div');
+      div.className = 'hist-item';
+      var alts = item.alteracoes.map(function(a) {
+        return a.dia + ': <strong>' + a.antes + '</strong> → ' + a.depois;
+      }).join('<br>');
+      div.innerHTML =
+        '<div class="hist-header"><span class="hist-aba">Aba ' + item.aba + '</span><span class="hist-data">' + item.data + '</span></div>' +
+        '<div class="hist-desc">' + alts + '</div>';
+      lista.appendChild(div);
+    });
+  }
+  document.getElementById('historico-modal').style.display = 'flex';
+}
+
+function limparHistorico() {
+  var s = students.find(function(x){return x.id===selectedId;});
+  if (!s) return;
+  if (!confirm('Limpar todo o histórico de ' + s.name + '?')) return;
+  localStorage.removeItem('coach_historico_' + s.id);
+  abrirHistorico();
+  showToast('Histórico limpo!', 'ok');
+}
+
+// ============================================================
+// COMPARAR ABAS
+// ============================================================
+async function abrirComparar() {
+  var s = students.find(function(x){return x.id===selectedId;});
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
+
+  // Buscar abas disponíveis
+  try {
+    var res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
+    var data = await res.json();
+    var abas = data.abas || [];
+    var selA = document.getElementById('comp-aba-a');
+    var selB = document.getElementById('comp-aba-b');
+    selA.innerHTML = ''; selB.innerHTML = '';
+    abas.forEach(function(a) {
+      selA.innerHTML += '<option value="' + a + '">' + a + '</option>';
+      selB.innerHTML += '<option value="' + a + '">' + a + '</option>';
+    });
+    // Default: últimas duas
+    if (abas.length >= 2) {
+      selA.value = abas[abas.length - 2];
+      selB.value = abas[abas.length - 1];
+    }
+  } catch(e) { showToast('Erro ao buscar abas', 'err'); return; }
+
+  document.getElementById('comp-resultado').innerHTML = '<div style="font-size:12px;color:var(--text3);padding:12px;text-align:center;">Clique em Comparar para ver as diferenças.</div>';
+  document.getElementById('comparar-modal').style.display = 'flex';
+}
+
+async function executarComparacao() {
+  var s = students.find(function(x){return x.id===selectedId;});
+  var sheetId = getSheetId(s.sheet);
+  var abaA = document.getElementById('comp-aba-a').value;
+  var abaB = document.getElementById('comp-aba-b').value;
+  if (abaA === abaB) { showToast('Selecione abas diferentes', 'err'); return; }
+
+  var res = document.getElementById('comp-resultado');
+  res.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:12px;text-align:center;">Carregando...</div>';
+
+  try {
+    var resp = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: sheetId, abasSelecionadas: [abaA, abaB] })
+    });
+    var data = await resp.json();
+    if (!data.sucesso || !data.abas || data.abas.length < 2) {
+      res.innerHTML = '<div style="color:var(--red);padding:12px;font-size:12px;">Erro ao carregar abas.</div>';
+      return;
+    }
+
+    var dadosA = {}, dadosB = {};
+    var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+
+    // Montar mapa por dia+posicao para cada aba
+    data.abas.forEach(function(aba) {
+      var mapa = aba.aba === abaA ? dadosA : dadosB;
+      aba.exercicios.forEach(function(ex) {
+        var key = ex.dia + '_' + ex.posicao;
+        mapa[key] = ex;
+      });
+    });
+
+    // Construir todas as chaves únicas
+    var todasChaves = {};
+    Object.keys(dadosA).concat(Object.keys(dadosB)).forEach(function(k) { todasChaves[k] = true; });
+
+    var html = '<table class="comp-table"><thead><tr><th>Dia</th><th>' + abaA + '</th><th>' + abaB + '</th></tr></thead><tbody>';
+    var diaDia = {};
+    Object.keys(todasChaves).sort().forEach(function(k) {
+      var parts = k.split('_');
+      var dia = parts[0];
+      if (!diaDia[dia]) diaDia[dia] = [];
+      diaDia[dia].push(k);
+    });
+
+    diasOrdem.forEach(function(dia) {
+      var chaves = diaDia[dia] || [];
+      chaves.forEach(function(k, idx) {
+        var exA = dadosA[k];
+        var exB = dadosB[k];
+        var diff = (!exA || !exB || exA.nome !== exB.nome || exA.series !== exB.series || exA.repeticoes !== exB.repeticoes);
+        var rowClass = diff ? ' class="comp-diff"' : '';
+
+        var celA = exA ? exA.nome + '<br><span style="color:var(--text3)">' + exA.series + 'x' + exA.repeticoes + '</span>' : '<span class="comp-tag-rem">Removido</span>';
+        var celB = exB ? exB.nome + '<br><span style="color:var(--text3)">' + exB.series + 'x' + exB.repeticoes + '</span>' :  '<span class="comp-tag-add">Novo</span>';
+
+        html += '<tr' + rowClass + '>';
+        html += '<td>' + (idx === 0 ? '<strong>' + dia + '</strong>' : '') + '</td>';
+        html += '<td>' + celA + '</td>';
+        html += '<td>' + celB + '</td>';
+        html += '</tr>';
+      });
+    });
+
+    html += '</tbody></table>';
+    res.innerHTML = html;
+  } catch(e) {
+    res.innerHTML = '<div style="color:var(--red);padding:12px;font-size:12px;">Erro: ' + e.message + '</div>';
+  }
+}
+
+// ============================================================
+// ALERTAS DE DELOAD (automático ao selecionar aluno)
+// ============================================================
+async function verificarDeload(sheetId, nomeAluno) {
+  if (!sheetId) return;
+  try {
+    var res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
+    var data = await res.json();
+    var abas = data.abas || [];
+    var total = abas.length;
+    var banner = document.getElementById('deload-banner');
+    var texto = document.getElementById('deload-text');
+    banner.style.display = 'none';
+    banner.className = 'deload-banner';
+
+    if (total >= 8) {
+      banner.className = 'deload-banner critico';
+      texto.innerHTML = '🔴 <strong>' + nomeAluno + '</strong> está na semana <strong>' + total + '</strong> sem deload — alto risco de fadiga acumulada. Considere um deload imediatamente.';
+      banner.style.display = 'flex';
+    } else if (total >= 6) {
+      texto.innerHTML = '⚠️ <strong>' + nomeAluno + '</strong> está na semana <strong>' + total + '</strong> — se aproximando do limite. Planeje o deload para as próximas 1-2 semanas.';
+      banner.style.display = 'flex';
+    }
+  } catch(e) {}
+}
+
+// ============================================================
+// TEMPLATES DE MESO
+// ============================================================
+function abrirTemplates() {
+  renderTemplates();
+  document.getElementById('templates-modal').style.display = 'flex';
+}
+
+function getTemplates() {
+  try { return JSON.parse(localStorage.getItem('coach_templates') || '[]'); } catch(e) { return []; }
+}
+
+function saveTemplates(tpls) {
+  localStorage.setItem('coach_templates', JSON.stringify(tpls));
+}
+
+function renderTemplates() {
+  var tpls = getTemplates();
+  var lista = document.getElementById('templates-lista');
+  lista.innerHTML = '';
+
+  if (tpls.length === 0) {
+    lista.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:12px 0;">Nenhum template salvo ainda. Gere um meso e salve como template.</div>';
+    return;
+  }
+
+  tpls.forEach(function(tpl, idx) {
+    var div = document.createElement('div');
+    div.className = 'tpl-item';
+    div.innerHTML =
+      '<div style="flex:1;">' +
+        '<div class="tpl-name">' + tpl.nome + '</div>' +
+        '<div class="tpl-meta">' + (tpl.exercicios ? tpl.exercicios.length : 0) + ' exercícios · Salvo em ' + tpl.data + '</div>' +
+      '</div>' +
+      '<div class="tpl-del" onclick="deletarTemplate(' + idx + ')" title="Deletar">🗑️</div>';
+    div.onclick = function(e) {
+      if (e.target.classList.contains('tpl-del')) return;
+      usarTemplate(tpl);
+    };
+    lista.appendChild(div);
+  });
+}
+
+async function salvarTemplate() {
+  var nome = document.getElementById('template-nome-input').value.trim();
+  if (!nome) { showToast('Digite um nome para o template', 'err'); return; }
+
+  var s = students.find(function(x){return x.id===selectedId;});
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+
+  // Ler aba atual para salvar como template
+  addLoading('msgs');
+  try {
+    var abaRes = await fetch(APPS_SCRIPT_URL + '?action=getAbaAtual&spreadsheetId=' + sheetId);
+    var abaData = await abaRes.json();
+    var abaAtual = abaData.aba || 'S1';
+
+    var res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: sheetId, abasSelecionadas: [abaAtual] })
+    });
+    var data = await res.json();
+    removeLoading('msgs');
+
+    if (data.sucesso && data.abas && data.abas.length > 0) {
+      var tpls = getTemplates();
+      tpls.unshift({
+        nome: nome,
+        data: new Date().toLocaleDateString('pt-BR'),
+        aba: abaAtual,
+        exercicios: data.abas[0].exercicios
+      });
+      saveTemplates(tpls);
+      renderTemplates();
+      document.getElementById('template-nome-input').value = '';
+      showToast('Template salvo!', 'ok');
+    }
+  } catch(e) {
+    removeLoading('msgs');
+    showToast('Erro ao salvar template: ' + e.message, 'err');
+  }
+}
+
+function deletarTemplate(idx) {
+  if (!confirm('Deletar este template?')) return;
+  var tpls = getTemplates();
+  tpls.splice(idx, 1);
+  saveTemplates(tpls);
+  renderTemplates();
+  showToast('Template deletado', 'ok');
+}
+
+function usarTemplate(tpl) {
+  document.getElementById('templates-modal').style.display = 'none';
+  // Preencher o prompt do novo meso com o template
+  var prompt = 'Use este template como base para o novo meso:\n';
+  var porDia = {};
+  tpl.exercicios.forEach(function(ex) {
+    if (!porDia[ex.dia]) porDia[ex.dia] = [];
+    porDia[ex.dia].push(ex.nome + ' ' + ex.series + 'x' + ex.repeticoes);
+  });
+  Object.keys(porDia).forEach(function(dia) {
+    prompt += dia + ': ' + porDia[dia].join(', ') + '\n';
+  });
+  document.getElementById('meso-instrucoes').value = prompt;
+  showToast('Template carregado nas instruções!', 'ok');
+}
+
 
 init();
 </script>

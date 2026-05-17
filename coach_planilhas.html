@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v19.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v19_1.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -159,16 +159,14 @@
   <div class="nav">
     <button class="nav-btn active" onclick="showPage(&#39;alunos&#39;,this)">Alunos</button>
     <button class="nav-btn" onclick="showPage(&#39;config&#39;,this)">Configuração</button>
-    <button class="auth-pill" id="auth-pill" onclick="showAuthModal()">
-      <div class="auth-dot" id="auth-dot"></div>
-      <span id="auth-label">Conectar Google</span>
+    <button class="auth-pill on" id="auth-pill" onclick="showAuthModal()">
+      <div class="auth-dot on" id="auth-dot"></div>
+      <span id="auth-label">Google conectado</span>
     </button>
   </div>
 </div>
 
-<div id="notice-bar" class="notice warn">
-  ⚠️ Google não conectado — clique em "Conectar Google" para liberar as ações nas planilhas.
-</div>
+<div id="notice-bar" class="notice ok">Google conectado — todas as ações disponíveis.</div>
 
 <div id="page-alunos" class="main">
   <div class="sidebar">
@@ -178,7 +176,7 @@
         <input type="text" placeholder="Buscar aluno..." id="search-input" oninput="filterStudents()">
       </div>
     </div>
-    <div class="student-list" id="student-list"></div>
+    <div class="student-list" id="student-list"><div class="si"><div class="si-av">CM</div><div style="flex:1;min-width:0;"><div class="si-name">Caian Maroni</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fabio Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">DB</div><div style="flex:1;min-width:0;"><div class="si-name">Débora Bueno_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AP</div><div style="flex:1;min-width:0;"><div class="si-name">Ana Paula Oliveira_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">IM</div><div style="flex:1;min-width:0;"><div class="si-name">Iago Maroni_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">EF</div><div style="flex:1;min-width:0;"><div class="si-name">Eduardo Fernandes_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RR</div><div style="flex:1;min-width:0;"><div class="si-name">Rafhael Romero Bentos_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RC</div><div style="flex:1;min-width:0;"><div class="si-name">Raphael Castilho_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">WF</div><div style="flex:1;min-width:0;"><div class="si-name">Wendel Ferreira de Souza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">BA</div><div style="flex:1;min-width:0;"><div class="si-name">Bruna Araújo_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RP</div><div style="flex:1;min-width:0;"><div class="si-name">Renan Piro Braz do Carmo_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LC</div><div style="flex:1;min-width:0;"><div class="si-name">Layla Codogno_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">L</div><div style="flex:1;min-width:0;"><div class="si-name">Letícia  Bernardes Souza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">ET</div><div style="flex:1;min-width:0;"><div class="si-name">Eric Toyoda_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PM</div><div style="flex:1;min-width:0;"><div class="si-name">Patrick Mikhael dos Santos Barboza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JB</div><div style="flex:1;min-width:0;"><div class="si-name">Joel Barbosa Moraes_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">HS</div><div style="flex:1;min-width:0;"><div class="si-name">Hugo Silva Marques_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JM</div><div style="flex:1;min-width:0;"><div class="si-name">João Marcelo Lopes Gigi</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fábio Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PG</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Giroto</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div></div>
 
     <div style="flex-shrink:0;padding:.5rem;display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--border);">
       <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
@@ -188,7 +186,7 @@
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;qui_dom&#39;)">📆 Qui → dom</button>
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;semana_completa&#39;)">🗓️ Semana completa</button>
     </div>
-    <div class="sidebar-footer" id="counter" style="flex-shrink:0;">0 alunos</div>
+    <div class="sidebar-footer" id="counter" style="flex-shrink:0;">20 alunos · 20 ativos</div>
   </div>
 
   <div class="panel">
@@ -314,7 +312,7 @@
       </div>
     </div>
     <div style="font-size:11px;color:var(--text3);margin-top:1rem;">
-      Token — <span id="token-status">não conectado</span> &nbsp;|&nbsp; API Claude — <span style="color:var(--green);">✓ Cloudflare</span>
+      Token — <span id="token-status">conectado ✓</span> &nbsp;|&nbsp; API Claude — <span style="color:var(--green);">✓ Cloudflare</span>
     </div>
   </div>
 </div>
@@ -1128,13 +1126,9 @@ async function confirmarEdicao() {
     if (data.sucesso && data.abas && data.abas.length > 0) {
       var aba = data.abas[0];
       window._dadosAbaAtual = aba.exercicios;
-      contextoAba = '
-
-ABA ATUAL (' + aba.aba + ') — ' + aba.totalExercicios + ' exercícios:
-';
+      contextoAba = '\n\nABA ATUAL (' + aba.aba + ') — ' + aba.totalExercicios + ' exercícios:\n';
       aba.exercicios.forEach(function(ex) {
-        contextoAba += '  DIA ' + ex.dia + ' | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadência ' + ex.cadencia + ' | RiR ' + ex.rir + '
-';
+        contextoAba += '  DIA ' + ex.dia + ' | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadência ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
       });
     }
   } catch(e) {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0062)file:///C:/Users/Lenovo/Downloads/coach_planilhas_final14.html -->
+<!-- saved from url=(0062)file:///C:/Users/Lenovo/Downloads/coach_planilhas_final15.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -362,6 +362,36 @@
   </div>
 </div>
 
+<!-- MODAL NOVO MESO IA -->
+<div class="overlay" id="meso-modal" style="display:none;">
+  <div class="modal" style="width:400px;">
+    <div class="modal-header">
+      <span class="modal-title">🔄 Novo Meso IA</span>
+      <button class="icon-btn" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fl">
+        <label>Quantas semanas anteriores analisar?</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="number" id="meso-qtd-abas" min="0" max="10" value="3" style="width:80px;padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <span style="font-size:12px;color:var(--text2);">semanas (0 = não analisar)</span>
+        </div>
+      </div>
+      <div class="fl">
+        <label>Instruções específicas (opcional)</label>
+        <textarea id="meso-instrucoes" rows="4" placeholder="Ex: aumentar volume de ombros, manter rep range 8-10, trocar agachamento por bulgaro..." style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <div style="font-size:11px;color:var(--text3);padding:8px;background:var(--bg2);border-radius:var(--radius);">
+        A IA vai analisar as semanas anteriores e montar o próximo meso baseada nos princípios de periodização de Schoenfeld, Prestas, Krause, Salles, Pacholok e Gentil.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-green" onclick="confirmarNovoMeso()">✨ Gerar meso</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL AUTH -->
 <div class="overlay" id="auth-modal" style="display:none;">
   <div class="auth-modal">
@@ -668,16 +698,68 @@ async function runAction(type) {
     } catch(e) {}
   }
 
-  // Calcular próxima aba
   var numAtual = parseInt(abaAtual.replace('S','')) || 0;
   var proximaAba = 'S' + (numAtual + 1);
-  document.getElementById('ai-input').value = 'Monte o novo mesociclo para ' + s.name + '.\nAba para escrever: ' + proximaAba + ' (OBRIGATÓRIO usar esta aba no JSON, não a atual ' + abaAtual + ')\nDivisão: \nFoco muscular: \nRestrições: \nObservações: ' + (s.obs||'');
+
+  // Mostrar modal de opções do novo meso
+  window._sheetIdAtual = sheetId;
+  window._proximaAba = proximaAba;
+  window._abaAtual = abaAtual;
+  window._nomeAluno = s.name;
+  window._obsAluno = s.obs || '';
+  document.getElementById('meso-modal').style.display = 'flex';
+}
+
+async function confirmarNovoMeso() {
+  const qtd = parseInt(document.getElementById('meso-qtd-abas').value) || 0;
+  const instrucoes = document.getElementById('meso-instrucoes').value.trim();
+  document.getElementById('meso-modal').style.display = 'none';
+
   document.getElementById('tab-treino').style.display='block';
   document.getElementById('tab-ia').style.display='none';
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.tab')[0].classList.add('active');
+
+  var contextoAbas = '';
+
+  if (qtd > 0 && window._sheetIdAtual) {
+    addMsg('msgs', 'Analisando últimas ' + qtd + ' semanas...', false);
+    addLoading('msgs');
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: window._sheetIdAtual, quantidadeAbas: qtd })
+      });
+      const data = await res.json();
+      removeLoading('msgs');
+
+      if (data.sucesso && data.abas) {
+        contextoAbas = '\n\n=== ANÁLISE DAS ÚLTIMAS ' + qtd + ' SEMANAS ===\n';
+        data.abas.forEach(function(aba) {
+          contextoAbas += '\nAba ' + aba.aba + ' (' + aba.totalExercicios + ' exercícios, ' + aba.totalSeries + ' séries totais):\n';
+          contextoAbas += 'Volume por músculo: ' + JSON.stringify(aba.volumePorMusculo) + '\n';
+          contextoAbas += 'Exercícios:\n';
+          aba.exercicios.forEach(function(ex) {
+            contextoAbas += '  - ' + ex.nome + ': ' + ex.series + 'x' + ex.repeticoes + ' | cadência ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
+          });
+        });
+        contextoAbas += '\nUse esta análise para periodizar intelligentemente seguindo os princípios de Schoenfeld, Prestas, Krause, Salles, Pacholok e Gentil.';
+        addMsg('msgs', 'Análise concluída! Montando mesociclo...', false);
+      }
+    } catch(e) {
+      removeLoading('msgs');
+      addMsg('msgs', 'Erro ao analisar abas: ' + e.message, false);
+    }
+  }
+
+  var prompt = 'Monte o novo mesociclo para ' + window._nomeAluno + '.\nAba para escrever: ' + window._proximaAba + ' (OBRIGATÓRIO)\n';
+  if (instrucoes) prompt += 'Instruções específicas: ' + instrucoes + '\n';
+  if (window._obsAluno) prompt += 'Observações do aluno: ' + window._obsAluno + '\n';
+  prompt += contextoAbas;
+
+  document.getElementById('ai-input').value = prompt;
   document.getElementById('ai-input').focus();
-  showToast('Nova aba: ' + proximaAba + ' — preencha as especificações e envie!', 'ok');
+  showToast('Pronto! Revise e clique em Enviar.', 'ok');
 }
 
 function switchTab(tab, el) {

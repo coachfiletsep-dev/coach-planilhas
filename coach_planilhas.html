@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v20_1.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v20_2.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1107,57 +1107,74 @@ async function confirmarEdicao() {
   // Ativar modo edição — sendMsg vai usar editarNaPlanilha (nunca cria aba)
   window._modoEdicao = true;
 
-  addMsg('msgs', '📖 Lendo aba ' + window._abaAtual + '...', false);
+  addMsg('msgs', '📖 Lendo aba ' + window._abaAtual + ' e biblioteca do Brainering...', false);
   addLoading('msgs');
 
   var contextoLinhas = '';
-  try {
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: window._sheetIdAtual, abasSelecionadas: [window._abaAtual] })
-    });
-    const data = await res.json();
-    removeLoading('msgs');
-    if (data.sucesso && data.abas && data.abas.length > 0) {
-      var aba = data.abas[0];
-      window._dadosAbaAtual = aba.exercicios;
+  var bibliotecaTexto = '';
 
-      // FIX BUG 3: mapear posição ordinal de cada exercício por dia
+  // Buscar aba atual e biblioteca do Brainering em paralelo
+  try {
+    const [resAba, resBib] = await Promise.all([
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: window._sheetIdAtual, abasSelecionadas: [window._abaAtual] })
+      }),
+      fetch(APPS_SCRIPT_URL + '?action=getBiblioteca')
+    ]);
+
+    const dataAba = await resAba.json();
+    const dataBib = await resBib.json();
+    removeLoading('msgs');
+
+    // Montar contexto da aba atual
+    if (dataAba.sucesso && dataAba.abas && dataAba.abas.length > 0) {
+      var aba = dataAba.abas[0];
+      window._dadosAbaAtual = aba.exercicios;
       var linhasMap = {'SEG':5,'TER':229,'QUA':453,'QUI':677,'SEX':901,'SAB':1125,'DOM':1349};
       var indiceTemp = {};
+      var tiposDia = {SEG:'UPPER', TER:'LOWER', QUA:'UPPER', QUI:'UPPER', SEX:'LOWER', SAB:'LOWER', DOM:'LOWER'};
       window._dadosAbaAtual.forEach(function(ex) {
         var dia = ex.dia;
         if (!indiceTemp[dia]) indiceTemp[dia] = 0;
         var linhaReal = (linhasMap[dia] || 0) + indiceTemp[dia] * 14;
         ex._linha = linhaReal;
         indiceTemp[dia]++;
-        var posicao = indiceTemp[dia];
-        // FIX BUG 2: determinar tipo do dia para o prompt
-        var tiposDia = {SEG:'UPPER', TER:'LOWER', QUA:'UPPER', QUI:'UPPER', SEX:'LOWER', SAB:'LOWER', DOM:'LOWER'};
         ex._tipo = tiposDia[dia] || '?';
-        contextoLinhas += '  Linha ' + linhaReal + ' | DIA ' + dia + ' (' + ex._tipo + ') | ' + posicao + 'o exercicio | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadencia ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
+        contextoLinhas += '  Linha ' + linhaReal + ' | DIA ' + dia + ' (' + ex._tipo + ') | ' + indiceTemp[dia] + 'o exercicio | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadencia ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
       });
     }
+
+    // Montar biblioteca do Brainering por grupo muscular
+    if (dataBib.sucesso && dataBib.biblioteca) {
+      window._bibliotecaBrainering = dataBib.biblioteca;
+      bibliotecaTexto = '\n=== BIBLIOTECA DE EXERCICIOS DO BRAINERING (nomes EXATOS para substituicao) ===\n';
+      Object.keys(dataBib.biblioteca).sort().forEach(function(grupo) {
+        var nomes = dataBib.biblioteca[grupo];
+        bibliotecaTexto += grupo + ': ' + nomes.join(', ') + '\n';
+      });
+      bibliotecaTexto += '\nUSE APENAS nomes desta lista. Nao invente nomes fora dela.\n';
+    }
+
   } catch(e) {
     removeLoading('msgs');
-    addMsg('msgs', 'Erro ao ler aba: ' + e.message, false);
+    addMsg('msgs', 'Erro ao carregar dados: ' + e.message, false);
     return;
   }
 
-  // FIX BUG 1: garantir aba no prompt de forma absolutamente explícita
-  // FIX BUG 2: regra de grupo muscular muito explícita
   var prompt = 'Voce esta editando a aba ' + window._abaAtual + ' do aluno ' + window._nomeAluno + '.\n' +
     'ATENCAO: O campo "aba" no JSON de resposta DEVE ser EXATAMENTE "' + window._abaAtual + '" — nunca outra aba.\n\n' +
     'PEDIDO DO COACH: ' + instrucoes + '\n\n' +
     'PROGRAMACAO ATUAL (linha | dia | tipo | posicao | exercicio | series x reps | RiR):\n' +
-    contextoLinhas + '\n' +
+    contextoLinhas +
+    bibliotecaTexto + '\n' +
     'REGRAS CRITICAS — violar qualquer uma e um erro grave:\n' +
     '1. NUNCA mencione numeros de linha na resposta — use posicao ordinal (ex: 2o exercicio da terca).\n' +
     '2. GRUPO MUSCULAR POR DIA — respeite SEMPRE:\n' +
     '   Dias UPPER (SEG, QUA, QUI): APENAS PEITO, COSTAS, OMBRO, TRICEPS, BICEPS\n' +
     '   Dias LOWER (TER, SEX, SAB, DOM): APENAS COXA, POSTERIOR, GMAX, GMEDIO, ABDOME\n' +
     '   NUNCA coloque exercicio de OMBRO em dia LOWER. NUNCA coloque COXA em dia UPPER.\n' +
-    '3. Use apenas nomes EXATOS da biblioteca de exercicios do sistema.\n' +
+    '3. Use SOMENTE nomes da biblioteca do Brainering acima. Nao invente nomes.\n' +
     '4. Se o pedido for ambiguo, pergunte antes de aplicar.\n' +
     '5. Quando confirmado, retorne JSON APENAS com exercicios alterados.\n' +
     '   FORMATO OBRIGATORIO: {"aba":"' + window._abaAtual + '","exercicios":[...apenas alterados...]}\n' +

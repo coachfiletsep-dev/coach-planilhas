@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v21_3.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v21_4.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2191,37 +2191,28 @@ function imprimirRelatorio() {
 
 // ============================================================
 // SINCRONIZAÇÃO ALUNOS_APP NO BRAINERING
+// Usa o Apps Script como intermediário — não depende do token OAuth
 // ============================================================
 async function sincronizarAlunosApp() {
-  if (!accessToken) return; // sem token, silencia
-  const BRAINERING_ID = '1QH7IXHNqF_3QUYOkjYsTvEtoHVL4Ocg-_Az6Y5XxrMk';
-  const ABA = 'Alunos_App';
-
-  // Montar dados: linha 1 = cabeçalho, linhas seguintes = alunos
-  var valores = [['id','nome','planilha','status','obs']];
-  students.forEach(function(s) {
-    valores.push([s.id, s.name, s.sheet||'', s.status||'ativo', s.obs||'']);
-  });
-
   try {
-    // Limpar e reescrever a aba inteira
-    await fetch(
-      'https://sheets.googleapis.com/v4/spreadsheets/' + BRAINERING_ID +
-      '/values/' + encodeURIComponent(ABA) + '!A:E?valueInputOption=RAW',
-      {
-        method: 'PUT',
-        headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: valores })
-      }
-    );
+    var res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ sincronizarAlunos: true, alunos: students })
+    });
+    var data = await res.json();
+    if (data.sucesso) {
+      console.log('Alunos_App sincronizada: ' + data.total + ' alunos');
+    } else {
+      console.log('Erro sincronização:', data.erro);
+    }
   } catch(e) {
-    console.log('Sincronização Brainering silenciosa falhou:', e.message);
+    console.log('Sincronização falhou:', e.message);
   }
 }
 
 // Sincronizar ao iniciar (garante consistência)
 async function sincronizarSeConectado() {
-  if (accessToken && students.length > 0) await sincronizarAlunosApp();
+  if (students.length > 0) await sincronizarAlunosApp();
 }
 
 // ============================================================

@@ -524,19 +524,35 @@ async function runSheetAction(type) {
 async function escreverNaPlanilha(exercicios, nomeAba) {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
-  addMsg('msgs', 'Escrevendo na planilha...', false);
+  addMsg('msgs', 'Verificando aba ' + nomeAba + '...', false);
   addLoading('msgs');
   try {
+    // Primeiro criar a aba zerada
+    const criarPayload = {acao: 'planilha_zero'};
+    if (sheetId) criarPayload.spreadsheetId = sheetId;
+    const criarRes = await fetch(APPS_SCRIPT_URL, { method:'POST', body:JSON.stringify(criarPayload) });
+    const criarData = await criarRes.json();
+    removeLoading('msgs');
+
+    if (criarData.sucesso) {
+      addMsg('msgs', 'Aba ' + criarData.novaAba + ' criada! Escrevendo exercícios...', false);
+    } else if (criarData.erro && criarData.erro.includes('ja existe')) {
+      addMsg('msgs', 'Aba já existe. Escrevendo exercícios...', false);
+    } else {
+      addMsg('msgs', 'Aviso ao criar aba: ' + (criarData.erro||''), false);
+    }
+
+    addLoading('msgs');
     const payload = {aba:nomeAba, exercicios:exercicios};
     if (sheetId) payload.spreadsheetId = sheetId;
     const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
     const data = await res.json();
     removeLoading('msgs');
     if (data.sucesso) {
-      addMsg('msgs', data.escritos + ' exercícios escritos na aba ' + nomeAba + '! Abra a planilha para conferir.', false);
+      addMsg('msgs', '✅ ' + data.escritos + ' exercícios escritos na aba ' + nomeAba + '! Abra a planilha para conferir.', false);
       showToast('Planilha atualizada!', 'ok');
     } else {
-      addMsg('msgs', 'Erro: ' + (data.erro||'desconhecido'), false);
+      addMsg('msgs', 'Erro ao escrever: ' + (data.erro||'desconhecido'), false);
     }
   } catch(e) { removeLoading('msgs'); addMsg('msgs', 'Erro: ' + e.message, false); }
 }

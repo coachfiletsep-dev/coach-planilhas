@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v18.html -->
+<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v19.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -159,14 +159,16 @@
   <div class="nav">
     <button class="nav-btn active" onclick="showPage(&#39;alunos&#39;,this)">Alunos</button>
     <button class="nav-btn" onclick="showPage(&#39;config&#39;,this)">Configuração</button>
-    <button class="auth-pill on" id="auth-pill" onclick="showAuthModal()">
-      <div class="auth-dot on" id="auth-dot"></div>
-      <span id="auth-label">Google conectado</span>
+    <button class="auth-pill" id="auth-pill" onclick="showAuthModal()">
+      <div class="auth-dot" id="auth-dot"></div>
+      <span id="auth-label">Conectar Google</span>
     </button>
   </div>
 </div>
 
-<div id="notice-bar" class="notice ok">Google conectado — todas as ações disponíveis.</div>
+<div id="notice-bar" class="notice warn">
+  ⚠️ Google não conectado — clique em "Conectar Google" para liberar as ações nas planilhas.
+</div>
 
 <div id="page-alunos" class="main">
   <div class="sidebar">
@@ -176,7 +178,7 @@
         <input type="text" placeholder="Buscar aluno..." id="search-input" oninput="filterStudents()">
       </div>
     </div>
-    <div class="student-list" id="student-list"><div class="si"><div class="si-av">CM</div><div style="flex:1;min-width:0;"><div class="si-name">Caian Maroni</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fabio Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">DB</div><div style="flex:1;min-width:0;"><div class="si-name">Débora Bueno_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AP</div><div style="flex:1;min-width:0;"><div class="si-name">Ana Paula Oliveira_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">IM</div><div style="flex:1;min-width:0;"><div class="si-name">Iago Maroni_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">EF</div><div style="flex:1;min-width:0;"><div class="si-name">Eduardo Fernandes_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RR</div><div style="flex:1;min-width:0;"><div class="si-name">Rafhael Romero Bentos_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RC</div><div style="flex:1;min-width:0;"><div class="si-name">Raphael Castilho_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">WF</div><div style="flex:1;min-width:0;"><div class="si-name">Wendel Ferreira de Souza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">BA</div><div style="flex:1;min-width:0;"><div class="si-name">Bruna Araújo_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RP</div><div style="flex:1;min-width:0;"><div class="si-name">Renan Piro Braz do Carmo_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LC</div><div style="flex:1;min-width:0;"><div class="si-name">Layla Codogno_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">L</div><div style="flex:1;min-width:0;"><div class="si-name">Letícia  Bernardes Souza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">ET</div><div style="flex:1;min-width:0;"><div class="si-name">Eric Toyoda_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PM</div><div style="flex:1;min-width:0;"><div class="si-name">Patrick Mikhael dos Santos Barboza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JB</div><div style="flex:1;min-width:0;"><div class="si-name">Joel Barbosa Moraes_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">HS</div><div style="flex:1;min-width:0;"><div class="si-name">Hugo Silva Marques_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JM</div><div style="flex:1;min-width:0;"><div class="si-name">João Marcelo Lopes Gigi</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fábio Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PG</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Giroto</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div></div>
+    <div class="student-list" id="student-list"></div>
 
     <div style="flex-shrink:0;padding:.5rem;display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--border);">
       <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
@@ -186,7 +188,7 @@
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;qui_dom&#39;)">📆 Qui → dom</button>
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;semana_completa&#39;)">🗓️ Semana completa</button>
     </div>
-    <div class="sidebar-footer" id="counter" style="flex-shrink:0;">20 alunos · 20 ativos</div>
+    <div class="sidebar-footer" id="counter" style="flex-shrink:0;">0 alunos</div>
   </div>
 
   <div class="panel">
@@ -206,6 +208,7 @@
         <div class="ph-actions">
           <button class="icon-btn" onclick="openEditModal()" title="Editar aluno">✏️</button>
           <button class="icon-btn" onclick="openSheet()" title="Abrir planilha">↗️</button>
+          <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;">✏️ Editar aba</button>
           <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
         </div>
       </div>
@@ -311,7 +314,7 @@
       </div>
     </div>
     <div style="font-size:11px;color:var(--text3);margin-top:1rem;">
-      Token — <span id="token-status">conectado ✓</span> &nbsp;|&nbsp; API Claude — <span style="color:var(--green);">✓ Cloudflare</span>
+      Token — <span id="token-status">não conectado</span> &nbsp;|&nbsp; API Claude — <span style="color:var(--green);">✓ Cloudflare</span>
     </div>
   </div>
 </div>
@@ -371,10 +374,12 @@
     </div>
     <div class="modal-body">
       <div class="fl">
-        <label>Quantas semanas anteriores analisar?</label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="number" id="meso-qtd-abas" min="0" max="10" value="3" style="width:80px;padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-          <span style="font-size:12px;color:var(--text2);">semanas (0 = não analisar)</span>
+        <label style="font-weight:600;">Semanas para analisar</label>
+        <div id="meso-abas-loading" style="font-size:12px;color:var(--text3);padding:8px;">Buscando abas disponíveis...</div>
+        <div id="meso-abas-lista" style="display:none;max-height:160px;overflow-y:auto;border:0.5px solid var(--border2);border-radius:var(--radius);padding:6px;background:var(--bg2);flex-direction:column;gap:4px;"></div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button class="btn-ghost" style="font-size:11px;padding:3px 8px;" onclick="selecionarTodasAbas(true)">Todas</button>
+          <button class="btn-ghost" style="font-size:11px;padding:3px 8px;" onclick="selecionarTodasAbas(false)">Nenhuma</button>
         </div>
       </div>
       <div class="fl">
@@ -382,12 +387,41 @@
         <textarea id="meso-instrucoes" rows="4" placeholder="Ex: aumentar volume de ombros, manter rep range 8-10, trocar agachamento por bulgaro..." style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
       </div>
       <div style="font-size:11px;color:var(--text3);padding:8px;background:var(--bg2);border-radius:var(--radius);">
-        A IA vai analisar as semanas anteriores e montar o próximo meso baseada nos princípios de periodização de Schoenfeld, Prestas, Krause, Salles, Pacholok e Gentil.
+        A IA vai analisar as semanas selecionadas e montar o próximo meso com base nos princípios de Prestes, Schoenfeld, Krause, Pacholok, Salles e Gentil.
       </div>
-    </div>
+        </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
       <button class="btn-green" onclick="confirmarNovoMeso()">✨ Gerar meso</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR ABA -->
+<div class="overlay" id="editar-modal" style="display:none;">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Editar aba atual</span>
+      <button class="icon-btn" onclick="document.getElementById(&#39;editar-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text2);padding:8px;background:var(--bg2);border-radius:var(--radius);margin-bottom:8px;">
+        Aba atual: <strong id="editar-aba-nome">—</strong>
+      </div>
+      <div class="fl">
+        <label>O que quer corrigir?</label>
+        <textarea id="editar-instrucoes" rows="4" placeholder="Ex: linha 298 — troca por outro exercício adequado ao dia
+troca o stiff da terça por RDL com halteres
+muda as séries do agachamento para 4
+segundo exercício da sexta — troca por algo com mais amplitude" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <div style="font-size:11px;color:var(--text3);padding:8px;background:var(--bg2);border-radius:var(--radius);">
+        A IA vai ler o que está na aba atual e aplicar apenas as correções pedidas, sem mexer no resto.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="document.getElementById(&#39;editar-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-green" onclick="confirmarEdicao()">✏️ Aplicar correções</button>
     </div>
   </div>
 </div>
@@ -1052,6 +1086,108 @@ async function atualizarTodos(tipo) {
 
 function closeProgressModal() {
   document.getElementById('progress-modal').style.display = 'none';
+}
+
+async function editarAbaAtual() {
+  const s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
+  var sheetId = getSheetId(s.sheet);
+  var abaAtual = 'S1';
+  if (sheetId) {
+    try {
+      var res = await fetch(APPS_SCRIPT_URL + '?action=getAba&spreadsheetId=' + sheetId);
+      var data = await res.json();
+      if (data.aba) abaAtual = data.aba;
+    } catch(e) {}
+  }
+  window._sheetIdAtual = sheetId;
+  window._abaAtual = abaAtual;
+  window._nomeAluno = s.name;
+  window._obsAluno = s.obs || '';
+  document.getElementById('editar-aba-nome').textContent = abaAtual;
+  document.getElementById('editar-instrucoes').value = '';
+  document.getElementById('editar-modal').style.display = 'flex';
+}
+
+async function confirmarEdicao() {
+  const instrucoes = document.getElementById('editar-instrucoes').value.trim();
+  if (!instrucoes) { showToast('Descreva o que quer corrigir', 'err'); return; }
+  document.getElementById('editar-modal').style.display = 'none';
+
+  // Ler a aba atual do script
+  addMsg('msgs', '📖 Lendo aba ' + window._abaAtual + '...', false);
+  addLoading('msgs');
+
+  var contextoAba = '';
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: window._sheetIdAtual, abasSelecionadas: [window._abaAtual] })
+    });
+    const data = await res.json();
+    removeLoading('msgs');
+    if (data.sucesso && data.abas && data.abas.length > 0) {
+      var aba = data.abas[0];
+      window._dadosAbaAtual = aba.exercicios;
+      contextoAba = '
+
+ABA ATUAL (' + aba.aba + ') — ' + aba.totalExercicios + ' exercícios:
+';
+      aba.exercicios.forEach(function(ex) {
+        contextoAba += '  DIA ' + ex.dia + ' | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadência ' + ex.cadencia + ' | RiR ' + ex.rir + '
+';
+      });
+    }
+  } catch(e) {
+    removeLoading('msgs');
+    addMsg('msgs', 'Erro ao ler aba: ' + e.message, false);
+    return;
+  }
+
+  // Mapa de linhas por dia
+  var linhasMap = {'SEG':5,'TER':229,'QUA':453,'QUI':677,'SEX':901,'SAB':1125,'DOM':1349};
+  var contextoLinhas = '';
+  var indiceTemp = {};
+  if (window._dadosAbaAtual) {
+    window._dadosAbaAtual.forEach(function(ex) {
+      var dia = ex.dia;
+      if (!indiceTemp[dia]) indiceTemp[dia] = 0;
+      var linhaReal = (linhasMap[dia] || 0) + indiceTemp[dia] * 14;
+      indiceTemp[dia]++;
+      contextoLinhas += '  Linha ' + linhaReal + ' | DIA ' + dia + ' | Ex' + indiceTemp[dia] + ' | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadência ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
+    });
+  }
+
+  var prompt = 'Você está editando a aba ' + window._abaAtual + ' do aluno ' + window._nomeAluno + '.\n\n' +
+    'PEDIDO: ' + instrucoes + '\n\n' +
+    'MAPA DA ABA (linha real | dia | posição | exercício | volume | RiR):\n' +
+    (contextoLinhas || contextoAba) + '\n' +
+    'Use o mapa para entender contexto de cada exercício — qual dia, grupo muscular, posição na sessão.\n' +
+    'Ao trocar, escolha exercício adequado ao grupo muscular e objetivo daquele dia.\n' +
+    'FASE DIÁLOGO: Se ambíguo, pergunte antes de aplicar.\n' +
+    'FASE GERAÇÃO: Quando confirmado, retorne JSON com apenas os exercícios alterados, campo "dia", aba "' + window._abaAtual + '".\n';
+
+  msgHistory.push({role:'user', content: prompt});
+  addMsg('msgs', '⏳ Aplicando correções...', false);
+  addLoading('msgs');
+  isLoading = true; document.getElementById('send-btn').disabled = true;
+
+  callClaude(msgHistory, getSystemPrompt()).then(function(reply) {
+    removeLoading('msgs');
+    var parsed = tryParseJSON(reply);
+    if (parsed && parsed.exercicios && parsed.aba) {
+      addMsg('msgs', '✅ ' + parsed.exercicios.length + ' exercício(s) corrigido(s) na aba ' + parsed.aba + '! Escrevendo...', false);
+      msgHistory.push({role:'assistant', content: reply});
+      escreverNaPlanilha(parsed.exercicios, parsed.aba);
+    } else {
+      addMsg('msgs', reply, false);
+      msgHistory.push({role:'assistant', content: reply});
+    }
+    isLoading = false; document.getElementById('send-btn').disabled = false;
+  }).catch(function(e) {
+    removeLoading('msgs');
+    addMsg('msgs', 'Erro: ' + e.message, false);
+    isLoading = false; document.getElementById('send-btn').disabled = false;
+  });
 }
 
 function getSheetId(url) {

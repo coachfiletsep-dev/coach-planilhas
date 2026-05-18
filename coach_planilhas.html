@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v26_5.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v26_7.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -302,6 +302,7 @@
           <button class="icon-btn" onclick="abrirHistorico()" title="Histórico de edições">📋</button>
           <button class="icon-btn" onclick="abrirRelatorio()" title="Relatório do aluno">📊</button>
           <button class="icon-btn" onclick="abrirComparar()" title="Comparar abas">🔀</button>
+          <button class="icon-btn" onclick="abrirSalvarTemplate()" title="Salvar aba atual como template">📌</button>
           <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;">✏️ Editar aba</button>
           <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
         </div>
@@ -730,6 +731,32 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="document.getElementById(&#39;templates-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL SALVAR TEMPLATE -->
+<div class="overlay" id="salvar-template-modal" style="display:none;">
+  <div class="modal" style="width:400px;">
+    <div class="modal-header">
+      <span class="modal-title">📌 Salvar aba como template</span>
+      <button class="icon-btn" onclick="document.getElementById(&#39;salvar-template-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="fl">
+        <label style="font-weight:600;">Qual aba salvar?</label>
+        <div id="tpl-abas-loading" style="font-size:12px;color:var(--text3);padding:8px;">Buscando abas...</div>
+        <select id="tpl-aba-select" style="display:none;padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"></select>
+      </div>
+      <div class="fl">
+        <label style="font-weight:600;">Nome do template</label>
+        <input type="text" id="salvar-template-nome" placeholder="Ex: Upper/Lower 4 dias, ABC 6x Intermediário..." style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="document.getElementById(&#39;salvar-template-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-green" onclick="salvarTemplateModal()">💾 Salvar</button>
     </div>
   </div>
 </div>
@@ -1873,6 +1900,97 @@ async function verificarDeload(sheetId, nomeAluno) {
 // ============================================================
 // TEMPLATES DE MESO
 // ============================================================
+
+async function abrirSalvarTemplate() {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno primeiro', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada para este aluno', 'err'); return; }
+
+  // Reset modal
+  document.getElementById('salvar-template-nome').value = '';
+  document.getElementById('tpl-abas-loading').style.display = 'block';
+  document.getElementById('tpl-abas-loading').textContent = 'Buscando abas...';
+  document.getElementById('tpl-aba-select').style.display = 'none';
+  document.getElementById('salvar-template-modal').style.display = 'flex';
+
+  try {
+    var res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
+    var data = await res.json();
+    var abas = data.abas || [];
+    var sel = document.getElementById('tpl-aba-select');
+    sel.innerHTML = '';
+    if (abas.length === 0) {
+      document.getElementById('tpl-abas-loading').textContent = 'Nenhuma aba encontrada.';
+      return;
+    }
+    abas.forEach(function(aba) {
+      var opt = document.createElement('option');
+      opt.value = aba;
+      opt.textContent = aba;
+      sel.appendChild(opt);
+    });
+    // Pré-selecionar aba atual se disponível
+    if (window._abaAtual && abas.indexOf(window._abaAtual) !== -1) {
+      sel.value = window._abaAtual;
+    }
+    document.getElementById('tpl-abas-loading').style.display = 'none';
+    sel.style.display = 'block';
+    setTimeout(function(){ document.getElementById('salvar-template-nome').focus(); }, 100);
+  } catch(e) {
+    document.getElementById('tpl-abas-loading').textContent = 'Erro ao buscar abas: ' + e.message;
+  }
+}
+
+async function salvarTemplateModal() {
+  var nome = document.getElementById('salvar-template-nome').value.trim();
+  if (!nome) { showToast('Digite um nome para o template', 'err'); return; }
+
+  var sel = document.getElementById('tpl-aba-select');
+  var abaSelecionada = sel.value;
+  if (!abaSelecionada) { showToast('Selecione uma aba', 'err'); return; }
+
+  var s = students.find(function(x){ return x.id === selectedId; });
+  var sheetId = getSheetId(s.sheet);
+
+  var btn = document.querySelector('#salvar-template-modal .btn-green');
+  btn.disabled = true; btn.textContent = 'Carregando...';
+
+  try {
+    var res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: sheetId, abasSelecionadas: [abaSelecionada] })
+    });
+    var data = await res.json();
+
+    if (!data.sucesso || !data.abas || data.abas.length === 0) {
+      showToast('Erro ao ler aba: ' + (data.erro || 'sem dados'), 'err');
+      btn.disabled = false; btn.textContent = '💾 Salvar';
+      return;
+    }
+
+    var exercicios = data.abas[0].exercicios;
+    var diasUnicos = [...new Set(exercicios.map(function(ex){ return ex.dia; }))];
+    var resumo = diasUnicos.join('/') + ' · ' + exercicios.length + ' exercícios';
+
+    var tpls = getTemplates();
+    tpls.unshift({
+      nome: nome,
+      data: new Date().toLocaleDateString('pt-BR'),
+      aba: abaSelecionada,
+      origem: s.name || '',
+      resumo: resumo,
+      exercicios: exercicios
+    });
+    saveTemplates(tpls);
+    document.getElementById('salvar-template-modal').style.display = 'none';
+    showToast('Template "' + nome + '" salvo!', 'ok');
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'err');
+  }
+  btn.disabled = false; btn.textContent = '💾 Salvar';
+}
+
 function abrirTemplates() {
   renderTemplates();
   document.getElementById('templates-modal').style.display = 'flex';
@@ -1899,14 +2017,16 @@ function renderTemplates() {
   tpls.forEach(function(tpl, idx) {
     var div = document.createElement('div');
     div.className = 'tpl-item';
+    var meta = tpl.resumo || ((tpl.exercicios ? tpl.exercicios.length : 0) + ' exercícios');
+    var origem = tpl.origem ? ' · de ' + tpl.origem : '';
     div.innerHTML =
       '<div style="flex:1;">' +
         '<div class="tpl-name">' + tpl.nome + '</div>' +
-        '<div class="tpl-meta">' + (tpl.exercicios ? tpl.exercicios.length : 0) + ' exercícios · Salvo em ' + tpl.data + '</div>' +
+        '<div class="tpl-meta">' + meta + origem + ' · ' + tpl.data + '</div>' +
       '</div>' +
-      '<div class="tpl-del" onclick="deletarTemplate(' + idx + ')" title="Deletar">🗑️</div>';
+      '<button class="tpl-del" onclick="deletarTemplate(' + idx + ')" title="Deletar" style="background:none;border:none;cursor:pointer;font-size:15px;padding:2px 4px;">🗑️</button>';
     div.onclick = function(e) {
-      if (e.target.classList.contains('tpl-del')) return;
+      if (e.target.closest('.tpl-del')) return;
       usarTemplate(tpl);
     };
     lista.appendChild(div);
@@ -1917,41 +2037,28 @@ async function salvarTemplate() {
   var nome = document.getElementById('template-nome-input').value.trim();
   if (!nome) { showToast('Digite um nome para o template', 'err'); return; }
 
-  var s = students.find(function(x){return x.id===selectedId;});
-  if (!s) { showToast('Selecione um aluno', 'err'); return; }
-  var sheetId = getSheetId(s.sheet);
-
-  // Ler aba atual para salvar como template
-  addLoading('msgs');
-  try {
-    var abaRes = await fetch(APPS_SCRIPT_URL + '?action=getAbaAtual&spreadsheetId=' + sheetId);
-    var abaData = await abaRes.json();
-    var abaAtual = abaData.aba || 'S1';
-
-    var res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: sheetId, abasSelecionadas: [abaAtual] })
-    });
-    var data = await res.json();
-    removeLoading('msgs');
-
-    if (data.sucesso && data.abas && data.abas.length > 0) {
-      var tpls = getTemplates();
-      tpls.unshift({
-        nome: nome,
-        data: new Date().toLocaleDateString('pt-BR'),
-        aba: abaAtual,
-        exercicios: data.abas[0].exercicios
-      });
-      saveTemplates(tpls);
-      renderTemplates();
-      document.getElementById('template-nome-input').value = '';
-      showToast('Template salvo!', 'ok');
-    }
-  } catch(e) {
-    removeLoading('msgs');
-    showToast('Erro ao salvar template: ' + e.message, 'err');
+  // Usa dados já carregados na memória — sem nova chamada ao Apps Script
+  if (!window._dadosAbaAtual || window._dadosAbaAtual.length === 0) {
+    showToast('Abra um aluno e carregue uma aba antes de salvar o template', 'err');
+    return;
   }
+
+  var diasUnicos = [...new Set(window._dadosAbaAtual.map(function(ex){ return ex.dia; }))];
+  var resumo = diasUnicos.join('/') + ' · ' + window._dadosAbaAtual.length + ' exercícios';
+
+  var tpls = getTemplates();
+  tpls.unshift({
+    nome: nome,
+    data: new Date().toLocaleDateString('pt-BR'),
+    aba: window._abaAtual || '',
+    origem: window._nomeAluno || '',
+    resumo: resumo,
+    exercicios: window._dadosAbaAtual
+  });
+  saveTemplates(tpls);
+  renderTemplates();
+  document.getElementById('template-nome-input').value = '';
+  showToast('Template "' + nome + '" salvo!', 'ok');
 }
 
 function deletarTemplate(idx) {

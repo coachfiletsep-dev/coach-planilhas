@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v26_3.html -->
+<!-- coach_planilhas_v25 — versão consolidada completa -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coach Planilhas v26</title>
+<title>Coach Planilhas v25</title>
 <style>
   :root {
     --green: #1D9E75;
@@ -242,8 +242,8 @@
     </div>
   </div>
   <div class="nav">
-    <button class="nav-btn active" onclick="showPage(&#39;alunos&#39;,this)">Alunos</button>
-    <button class="nav-btn" onclick="showPage(&#39;config&#39;,this)">Configuração</button>
+    <button class="nav-btn active" onclick="showPage('alunos',this)">Alunos</button>
+    <button class="nav-btn" onclick="showPage('config',this)">Configuração</button>
     <button class="auth-pill on" id="auth-pill" onclick="showAuthModal()">
       <div class="auth-dot on" id="auth-dot"></div>
       <span id="auth-label">Google conectado</span>
@@ -256,7 +256,7 @@
 <div id="deload-banner" style="display:none;" class="deload-banner">
   <div class="deload-icon">⚠️</div>
   <div class="deload-text" id="deload-text"></div>
-  <button class="deload-btn" onclick="document.getElementById(&#39;deload-banner&#39;).style.display=&#39;none&#39;">OK</button>
+  <button class="deload-btn" onclick="document.getElementById('deload-banner').style.display='none'">OK</button>
 </div>
 <div id="page-alunos" class="main">
   <div class="sidebar">
@@ -275,9 +275,9 @@
       <button class="add-btn" style="border-style:solid;color:#25D366;border-color:#25D366;" onclick="dispararRelatorios()">📊 Relatórios domingo</button>
       <button class="add-btn" style="border-style:solid;color:#25D366;border-color:#25D366;" onclick="dispararBoaSemana()">🌅 Boa semana</button>
       <div style="font-size:10px;color:var(--text3);padding:2px 4px;font-weight:600;margin-top:4px;">ATUALIZAR TODOS</div>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;seg_qui&#39;)">📅 Seg → qui</button>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;qui_dom&#39;)">📆 Qui → dom</button>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;semana_completa&#39;)">🗓️ Semana completa</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('seg_qui')">📅 Seg → qui</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('qui_dom')">📆 Qui → dom</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('semana_completa')">🗓️ Semana completa</button>
     </div>
     <div class="sidebar-footer" id="counter" style="flex-shrink:0;">0 alunos</div>
   </div>
@@ -303,31 +303,31 @@
           <button class="icon-btn" onclick="abrirRelatorio()" title="Relatório do aluno">📊</button>
           <button class="icon-btn" onclick="abrirComparar()" title="Comparar abas">🔀</button>
           <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;">✏️ Editar aba</button>
-          <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
+          <button class="btn-green" onclick="runAction('zero')">🔄 Novo meso IA</button>
         </div>
       </div>
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(&#39;treino&#39;,this)">Ações</button>
-        <button class="tab" onclick="switchTab(&#39;ia&#39;,this)">Assistente IA</button>
+        <button class="tab active" onclick="switchTab('treino',this)">Ações</button>
+        <button class="tab" onclick="switchTab('ia',this)">Assistente IA</button>
       </div>
       <div class="tab-body" id="tab-treino">
         <div class="ag">
-          <button class="ac" onclick="runSheetAction(&#39;seg_qui&#39;)">
+          <button class="ac" onclick="runSheetAction('seg_qui')">
             <div class="ac-icon">📅</div>
             <div class="ac-label">Semana seg → qui</div>
             <div class="ac-desc">Avança cargas e reps de segunda a quinta</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;qui_dom&#39;)">
+          <button class="ac" onclick="runSheetAction('qui_dom')">
             <div class="ac-icon">📆</div>
             <div class="ac-label">Semana qui → dom</div>
             <div class="ac-desc">Avança cargas e reps de quinta a domingo</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;semana_completa&#39;)">
+          <button class="ac" onclick="runSheetAction('semana_completa')">
             <div class="ac-icon">🗓️</div>
             <div class="ac-label">Semana completa</div>
             <div class="ac-desc">Avança toda a semana de uma vez</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;planilha_zero&#39;)">
+          <button class="ac" onclick="runSheetAction('planilha_zero')">
             <div class="ac-icon">📄</div>
             <div class="ac-label">Planilha do zero</div>
             <div class="ac-desc">Cria nova aba zerada para novo mesociclo</div>
@@ -352,7 +352,7 @@
             <button class="chip" onclick="analisarAjustesPlanilha()">📊 Analisar ajustes</button>
           </div>
           <div class="input-row">
-            <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+            <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
             <button class="send-btn" id="send-btn" onclick="sendMsg()">Enviar ↗</button>
           </div>
         </div>
@@ -371,7 +371,7 @@
             <button class="chip" onclick="useChip2(this)">Deload — quando e como?</button>
           </div>
           <div class="input-row">
-            <textarea class="ai-input" id="ai-input2" placeholder="Converse livremente sobre treino..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg2();}"></textarea>
+            <textarea class="ai-input" id="ai-input2" placeholder="Converse livremente sobre treino..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg2();}"></textarea>
             <button class="send-btn" onclick="sendMsg2()">Enviar ↗</button>
           </div>
         </div>
@@ -529,7 +529,7 @@
   <div class="modal" style="width:400px;">
     <div class="modal-header">
       <span class="modal-title">🔄 Novo Meso IA</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('meso-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div class="fl">
@@ -542,16 +542,6 @@
         </div>
       </div>
       <div class="fl">
-        <label>Tempo por sessão de treino</label>
-        <select id="meso-tempo" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-          <option value="">Não especificado</option>
-          <option value="45">45 minutos (até 15 séries/sessão)</option>
-          <option value="60" selected="">1 hora (até 20 séries/sessão)</option>
-          <option value="75">1h15 (até 24 séries/sessão)</option>
-          <option value="90">1h30 (até 28 séries/sessão)</option>
-        </select>
-      </div>
-      <div class="fl">
         <label>Instruções específicas (opcional)</label>
         <textarea id="meso-instrucoes" rows="4" placeholder="Ex: aumentar volume de ombros, manter rep range 8-10, trocar agachamento por bulgaro..." style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
       </div>
@@ -560,7 +550,7 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-ghost" onclick="document.getElementById('meso-modal').style.display='none'">Cancelar</button>
       <button class="btn-ghost" onclick="abrirTemplates()" style="margin-right:auto;">📌 Templates</button>
       <button class="btn-green" onclick="confirmarNovoMeso()">✨ Gerar meso</button>
     </div>
@@ -572,7 +562,7 @@
   <div class="modal" style="width:420px;">
     <div class="modal-header">
       <span class="modal-title">✏️ Editar aba atual</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;editar-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('editar-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div style="font-size:12px;color:var(--text2);padding:8px;background:var(--bg2);border-radius:var(--radius);margin-bottom:8px;">
@@ -590,7 +580,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;editar-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-ghost" onclick="document.getElementById('editar-modal').style.display='none'">Cancelar</button>
       <button class="btn-green" onclick="confirmarEdicao()">✏️ Aplicar correções</button>
     </div>
   </div>
@@ -631,7 +621,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       <span class="modal-title">📊 Relatório do aluno</span>
       <div style="display:flex;gap:6px;">
         <button class="btn-ghost" onclick="imprimirRelatorio()" style="font-size:11px;">🖨️ Imprimir / PDF</button>
-        <button class="icon-btn" onclick="document.getElementById(&#39;relatorio-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+        <button class="icon-btn" onclick="document.getElementById('relatorio-modal').style.display='none'" style="font-size:16px;">✕</button>
       </div>
     </div>
     <div class="modal-body" style="padding:0;">
@@ -671,14 +661,14 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   <div class="modal" style="width:460px;">
     <div class="modal-header">
       <span class="modal-title">📋 Histórico de edições</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;historico-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('historico-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body" id="historico-lista">
       <div style="font-size:12px;color:var(--text3);text-align:center;padding:20px;">Nenhuma edição registrada.</div>
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="limparHistorico()">🗑️ Limpar histórico</button>
-      <button class="btn-ghost" onclick="document.getElementById(&#39;historico-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+      <button class="btn-ghost" onclick="document.getElementById('historico-modal').style.display='none'">Fechar</button>
     </div>
   </div>
 </div>
@@ -688,7 +678,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   <div class="modal" style="width:600px;max-width:95vw;">
     <div class="modal-header">
       <span class="modal-title">🔀 Comparar abas</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;comparar-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('comparar-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-end;">
@@ -706,7 +696,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       <div id="comp-resultado" style="max-height:400px;overflow-y:auto;"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;comparar-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+      <button class="btn-ghost" onclick="document.getElementById('comparar-modal').style.display='none'">Fechar</button>
     </div>
   </div>
 </div>
@@ -716,7 +706,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   <div class="modal" style="width:420px;">
     <div class="modal-header">
       <span class="modal-title">📌 Templates de meso</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;templates-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('templates-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div id="templates-lista"></div>
@@ -729,7 +719,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;templates-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+      <button class="btn-ghost" onclick="document.getElementById('templates-modal').style.display='none'">Fechar</button>
     </div>
   </div>
 </div>
@@ -766,62 +756,17 @@ async function init() {
   anthropicKey = localStorage.getItem('coach_anthropic_key') || '';
   const raw = localStorage.getItem('coach_students_v2');
   if (raw) { try { students = JSON.parse(raw); } catch(e) { students = []; } }
+  // sem alunos hardcoded — carrega do localStorage
+  if (accessToken) {
+    setAuthConnected();
+  } else if (refreshToken) {
+    renovarToken().then(function(ok) { if (ok) showToast('Conectado automaticamente!', 'ok'); });
+  }
   updateConfigStatus();
   loadCoachPrefs();
   loadZapiConfig();
   renderList();
-
-  // Conectar Google
-  if (accessToken) {
-    setAuthConnected();
-  } else if (refreshToken) {
-    await renovarToken();
-  }
-
-  // Se lista vazia e conectado, importar automaticamente
-  if (students.length === 0 && accessToken) {
-    await importarBraineringAuto();
-  } else {
-    sincronizarSeConectado();
-  }
-}
-
-async function importarBraineringAuto() {
-  if (!accessToken) {
-    if (refreshToken) { const ok = await renovarToken(); if (!ok) return; }
-    else return;
-  }
-  const BRAINERING_ID = '1QH7IXHNqF_3QUYOkjYsTvEtoHVL4Ocg-_Az6Y5XxrMk';
-  try {
-    showToast('Carregando alunos...', 'ok');
-    const res = await fetch(
-      'https://sheets.googleapis.com/v4/spreadsheets/' + BRAINERING_ID +
-      '/values/' + encodeURIComponent('Alunos_cadastro') + '!A:K',
-      { headers: { 'Authorization': 'Bearer ' + accessToken } }
-    );
-    const data = await res.json();
-    if (data.error) {
-      if (data.error.code === 401) { const ok = await renovarToken(); if (ok) { await importarBraineringAuto(); } }
-      return;
-    }
-    const rows = data.values || [];
-    let importados = 0;
-    for (var i = 1; i < rows.length; i++) {
-      var row = rows[i];
-      var nome = row[1] || '', sheet = row[5] || '', status = (row[7] || '').toLowerCase(), obs = row[10] || '';
-      if (!nome || !sheet) continue;
-      var existe = students.find(function(s){ return s.sheet === sheet || s.name === nome; });
-      if (existe) continue;
-      students.push({ id: 'imp_' + Date.now() + '_' + i, name: nome, sheet: sheet, status: status === 'ativo' ? 'ativo' : 'inativo', obs: obs });
-      importados++;
-    }
-    if (importados > 0) {
-      saveAll();
-      renderList();
-      showToast(importados + ' alunos carregados!', 'ok');
-      sincronizarSeConectado();
-    }
-  } catch(e) { console.log('Auto-import falhou:', e.message); }
+  sincronizarSeConectado();
 }
 
 function saveAll() { localStorage.setItem('coach_students_v2', JSON.stringify(students)); }
@@ -866,7 +811,7 @@ function selectStudent(id) {
   const s = students.find(function(x){return x.id===id;}); if (!s) return;
   msgHistory = []; msgHistory2 = [];
   window._modoEdicao = false;
-  document.getElementById('msgs').innerHTML = '<div class="msg msg-ai"><strong>' + s.name + '</strong>' + (s.obs ? ' — ' + s.obs : '') + '</div>';
+  document.getElementById('msgs').innerHTML = '<div class="msg msg-ai">Pronto para trabalhar com <strong>' + s.name + '</strong>. ' + (s.obs||'') + ' Como posso ajudar?</div>';
   document.getElementById('msgs2').innerHTML = '<div class="msg msg-ai">Chat aberto para ' + s.name + '. Pergunte sobre programação, progressão ou qualquer ajuste.</div>';
   document.getElementById('ph-av').textContent = initials(s.name);
   document.getElementById('ph-name').textContent = s.name;
@@ -957,27 +902,17 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
 
 function getSystemPrompt() {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return '';
-  var prefs = localStorage.getItem('coach_prefs') || '';
-  return 'Assistente do Coach Felipe, personal trainer brasileiro especializado em forca e hipertrofia.\n\n' +
-    '=== REGRAS DE COMPORTAMENTO ===\n' +
-    'Seja direto e objetivo. Sem introducoes, sem "Claro!", sem "Otima pergunta!", sem resumos do que vai fazer.\n' +
-    'Va direto ao ponto. Respostas curtas quando o pedido e simples.\n' +
-    'JSON quando precisar gerar planilha. Texto quando for analise ou resposta.\n\n' +
+  return 'Voce e um especialista em treinamento de forca e hipertrofia que assiste o Coach Felipe, personal trainer brasileiro.\n\n' +
     '=== BASE CIENTIFICA ===\n' +
-    'PRESTES: Periodizacao ondulatoria, volume progressivo, deload a cada 4-6 semanas.\n' +
-    'SCHOENFELD: Tensao mecanica, rep ranges 6-30 proximos a falha, frequencia 2x/semana.\n' +
-    'KRAUSE: Progressao sistematica de carga, RiR 0-3.\n' +
-    'PACHOLOK: Cadencia 4 digitos (ex: 3010). Excentrica lenta.\n' +
-    'SALLES: So series proximas a falha contam. Gestao de fadiga.\n' +
-    'GENTIL: Poucos exercicios multiarticulares bem executados.\n\n' +
-    '=== REGRA DE VOLUME POR TEMPO DE SESSAO ===\n' +
-    'Se o aluno tem 45min: maximo 15 series totais por sessao.\n' +
-    'Se o aluno tem 60min: maximo 20 series totais por sessao.\n' +
-    'Se o aluno tem 75min: maximo 24 series totais por sessao.\n' +
-    'Se o aluno tem 90min: maximo 28 series totais por sessao.\n' +
-    'Distribua exercicios e series respeitando esse limite. Prefira menos exercicios bem feitos.\n\n' +
+    'JONATO PRESTES: Periodizacao ondulatoria diaria/semanal. Volume progressivo por mesociclo com deload a cada 4-6 semanas.\n' +
+    'BRAD SCHOENFELD: Tres mecanismos de hipertrofia — tensao mecanica, estresse metabolico, dano muscular. Rep ranges 6-30 proximos a falha. Frequencia 2x/semana por musculo.\n' +
+    'WALTER KRAUSE JR: Progressao sistematica de carga por bloco. RiR 0-3 para volume efetivo.\n' +
+    'PACHOLOK: Cadencia como variavel. Excentrica lenta (3-4s). Formato: excentrica/pausa/concentrica/pausa (ex: 3010).\n' +
+    'BELMIRO SALLES: Apenas series proximas a falha contam. Gestao de fadiga. Priorizacao de grupos lagging.\n' +
+    'PAULO GENTIL: Evidencias > tradicao. Poucos exercicios multiarticulares bem executados com progressao.\n\n' +
     '=== ALUNO ATUAL ===\n' +
-    'Nome: ' + s.name + '\n' + (s.obs ? 'Observacoes: ' + s.obs + '\n' : '') + '\n' +
+    'Nome: ' + s.name + '\n' + (s.obs ? 'Observacoes: ' + s.obs + '\n' : '') +
+    'Planilha: ' + (s.sheet || 'nao informada') + '\n\n' +
     '=== BIBLIOTECA DE EXERCICIOS — use APENAS estes nomes EXATOS ===\n' +
     'PEITO: SUPINO RETO BARRA, SUPINO INCLINADO BARRA, SUPINO RETO COM HALTER, SUPINO INCLINADO COM HALTER, SUPINO INCLINADO ARTICULADO, CRUCIFIXO RETO COM HALTER, PEC DECK\n' +
     'COSTAS: PUXADA FRENTE ABERTA, PUXADA UNILATERAL MAQUINA, REMADA ALTERNADA COM HALTERES BANCO, REMADA SERROTE APOIO BAIXO, FACEPULL, DUMBBELL SCAPTION 120\n' +
@@ -989,13 +924,17 @@ function getSystemPrompt() {
     'GMAX: ELEVACAO PELVICA COM BARRA, ELEVACAO PELVICA NA MAQUINA, ELEVACAO PELVICA UNI COM HALTER\n' +
     'GMEDIO: CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA\n' +
     'ABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n\n' +
-    '=== FLUXO NOVO MESOCICLO ===\n' +
-    'Se faltar info essencial: pergunte apenas o necessario (divisao, objetivo, restricoes). Maximo 3 perguntas.\n' +
-    'Se tiver info suficiente: gere direto o JSON sem pedir confirmacao.\n' +
-    'JSON: {"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Hipertrofia","series":4,"repeticoes":"8-10","cadencia":"3010","rir":"2","criterio":"controle excentrico"}]}\n' +
-    'Campo dia: SEG, TER, QUA, QUI, SEX, SAB ou DOM. RiR: 0-3. Cadencia: 4 digitos.\n' +
-    'Nunca inclua texto antes ou depois do JSON quando for gerar planilha.' +
-    (prefs.trim() ? '\n\n=== PREFERENCIAS DO COACH FELIPE (respeite sempre) ===\n' + prefs.trim() : '');
+    '=== FLUXO OBRIGATORIO PARA NOVO MESOCICLO ===\n' +
+    'FASE 1 - COLETA: Confirme divisao, dias, exercicios/sessao, objetivo, restricoes.\n' +
+    'FASE 2 - CONFIRMACAO: Resuma e pergunte "Posso gerar agora?"\n' +
+    'FASE 3 - JSON: Apenas apos confirmacao, retorne:\n' +
+    '{"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Hipertrofia","series":4,"repeticoes":"8-10","cadencia":"3010","rir":"2","criterio":"controle excentrico"}]}\n' +
+    'Campo dia: SEG, TER, QUA, QUI, SEX, SAB ou DOM. RiR: 0-3. Cadencia: 4 digitos.\n\n' +
+    'Para perguntas que nao sejam sobre programacao, responda normalmente em texto.' +
+    (function() {
+      var prefs = localStorage.getItem('coach_prefs') || '';
+      return prefs.trim() ? '\n\n=== PREFERENCIAS DO COACH FELIPE (respeite sempre) ===\n' + prefs.trim() + '\n' : '';
+    })();
 }
 
 function tryParseJSON(text) {
@@ -1219,16 +1158,14 @@ async function confirmarNovoMeso() {
     }
   }
 
-  var tempoSelecionado = document.getElementById('meso-tempo') ? document.getElementById('meso-tempo').value : '';
-  var limiteSeries = {'45':'15','60':'20','75':'24','90':'28'};
-  var limiteTexto = tempoSelecionado ? ' | Limite: ' + limiteSeries[tempoSelecionado] + ' series/sessao (aluno tem ' + tempoSelecionado + 'min)' : '';
-  var prompt = 'Monte o novo mesociclo para ' + window._nomeAluno + '.\nAba: ' + window._proximaAba + ' (OBRIGATORIO)' + limiteTexto + '\n';
-  if (instrucoes) prompt += 'Instrucoes: ' + instrucoes + '\n';
+  var prompt = 'Monte o novo mesociclo para ' + window._nomeAluno + '.\nAba para escrever: ' + window._proximaAba + ' (OBRIGATÓRIO)\n';
+  if (instrucoes) prompt += 'Instruções específicas: ' + instrucoes + '\n';
   if (window._obsAluno) prompt += 'Observações do aluno: ' + window._obsAluno + '\n';
   prompt += contextoAbas;
 
   document.getElementById('ai-input').value = prompt;
-  sendMsg();
+  document.getElementById('ai-input').focus();
+  showToast('Revise e adicione detalhes, depois clique em Enviar.', 'ok');
 }
 
 function switchTab(tab, el) {
@@ -2065,14 +2002,27 @@ async function gerarRelatorioHTML() {
       return;
     }
 
-    conteudo.innerHTML = ''; await gerarRelatorioComparativoAsync(s.name, data, conteudo);
+    if (abasSel.length > 1) {
+      // Modo comparativo — IA gera a análise
+      conteudo.innerHTML = '';
+      await gerarRelatorioComparativoAsync(s.name, data, conteudo);
+    } else {
+      var html = montarHTMLRelatorio(s.name, data);
+      conteudo.innerHTML = html;
+    }
   } catch(e) {
     conteudo.innerHTML = '<div style="color:var(--red);padding:20px;">Erro: ' + e.message + '</div>';
   }
 }
 
 
-
+function montarHTMLRelatorio(nomeAluno, data) {
+  // Se múltiplas abas: gerar relatório comparativo com IA
+  if (data.abas && data.abas.length > 1) {
+    return montarRelatorioComparativoIA(nomeAluno, data);
+  }
+  return montarRelatorioSemanal(nomeAluno, data.abas[0], data);
+}
 
 // ──────────────────────────────────────────────────────────────
 // RELATÓRIO COMPARATIVO — usa Claude para analisar múltiplas semanas
@@ -2083,144 +2033,419 @@ function montarRelatorioComparativoIA(nomeAluno, data) {
 }
 
 async function gerarRelatorioComparativoAsync(nomeAluno, data, containerEl) {
-  containerEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:24px;margin-bottom:12px">✨</div><div style="font-size:14px;font-weight:500;">Gerando relatório...</div></div>';
+  containerEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:24px;margin-bottom:12px">✨</div><div style="font-size:14px;font-weight:500;margin-bottom:6px">Analisando ' + data.abas.length + ' semanas...</div><div style="font-size:12px;color:var(--text3)">A IA está comparando cargas, progressões e frequência</div></div>';
+
   var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
-  var histExercicios = {}, freqPorSemana = [];
-  var totalVLGeral = 0, totalCalGeral = 0, totalTempoMet = 0, sessoesMet = 0;
+
+  // ── Montar contexto estruturado ──
+  var histExercicios = {};
+  var freqPorSemana = [];
+
   data.abas.forEach(function(aba) {
     var realizados = 0, total = 0;
-    var r = aba.resumoSemana || {};
-    totalVLGeral += r.totalVolumeLoad || 0;
-    totalCalGeral += (r.totalCaloriasForca||0) + (r.totalCaloirasMetabolico||0);
-    totalTempoMet += r.totalTempoMetabolico || 0;
-    sessoesMet += r.sessoesMetabolico || 0;
     diasOrdem.forEach(function(dia) {
-      var d = aba.dias[dia]; if (!d || d.totalExercicios === 0) return; total++;
+      var d = aba.dias[dia];
+      if (!d || d.totalExercicios === 0) return;
+      total++;
       if (d.treinou) realizados++;
       d.exercicios.forEach(function(ex) {
-        if (!ex.realizado || !ex.seriesAtual || ex.seriesAtual.length === 0) return;
-        var cargas = ex.seriesAtual.map(function(s){return Number(s.carga)||0;}).filter(function(c){return c>0;});
-        if (cargas.length === 0) return;
-        var cargaMax = Math.max.apply(null, cargas);
-        if (!histExercicios[ex.nome]) histExercicios[ex.nome] = [];
-        histExercicios[ex.nome].push({ aba: aba.aba, cargaMax: cargaMax });
+        if (!ex.realizado || ex.seriesAtual.length === 0) return;
+        var key = ex.nome;
+        if (!histExercicios[key]) histExercicios[key] = [];
+        var cargaMax = Math.max.apply(null, ex.seriesAtual.map(function(s){return s.carga;}));
+        var repsMax  = Math.max.apply(null, ex.seriesAtual.map(function(s){return s.reps;}));
+        histExercicios[key].push({ aba: aba.aba, cargaMax: cargaMax, repsMax: repsMax, vl: ex.volumeLoad||0 });
       });
     });
     freqPorSemana.push({ aba: aba.aba, realizados: realizados, total: total });
   });
-  var progressoes = [], atencao = [];
+
+  // ── Calcular progressões por exercício ──
+  var progressoes = []; // exercícios que evoluíram
+  var atencao = [];     // exercícios que regrediram ou estagnaram
   Object.keys(histExercicios).forEach(function(nome) {
-    var hist = histExercicios[nome]; if (hist.length < 2) return;
+    var hist = histExercicios[nome];
+    if (hist.length < 2) return;
     var primeira = hist[0], ultima = hist[hist.length - 1];
-    var diffCarga = Math.round((ultima.cargaMax - primeira.cargaMax) * 10) / 10;
-    var item = { nome: nome, de: primeira.aba, para: ultima.aba, cargaDe: primeira.cargaMax, cargaPara: ultima.cargaMax, diffCarga: diffCarga };
-    if (diffCarga > 0) progressoes.push(item); else if (diffCarga < 0) atencao.push(item);
+    var diffCarga = ultima.cargaMax - primeira.cargaMax;
+    var diffReps  = ultima.repsMax  - primeira.repsMax;
+    var item = {
+      nome: nome,
+      de: primeira.aba, para: ultima.aba,
+      cargaDe: primeira.cargaMax, cargaPara: ultima.cargaMax,
+      repsDe: primeira.repsMax, repsPara: ultima.repsMax,
+      diffCarga: diffCarga, diffReps: diffReps
+    };
+    if (diffCarga > 0) progressoes.push(item);
+    else if (diffCarga < 0) atencao.push(item);
+    else if (diffReps > 0) progressoes.push(item);
+    else if (diffReps < 0) atencao.push(item);
+    else atencao.push(item); // estagnado
   });
-  progressoes.sort(function(a,b){ return b.diffCarga - a.diffCarga; });
-  atencao.sort(function(a,b){ return a.diffCarga - b.diffCarga; });
+
+  progressoes.sort(function(a,b){ return (b.diffCarga + b.diffReps*0.1) - (a.diffCarga + a.diffReps*0.1); });
+  atencao.sort(function(a,b){ return (a.diffCarga + a.diffReps*0.1) - (b.diffCarga + b.diffReps*0.1); });
+
   var abas = data.abas.map(function(a){return a.aba;}).join(', ');
-  var isSemanal = data.abas.length === 1;
-  var totalTreinos = freqPorSemana.reduce(function(acc,f){return acc+f.realizados;},0);
-  var totalDias = freqPorSemana.reduce(function(acc,f){return acc+f.total;},0);
-  var pctFreqGeral = totalDias > 0 ? Math.round((totalTreinos/totalDias)*100) : 0;
-  var resumoTexto = pctFreqGeral >= 80 ? 'Excelente frequência e progressões confirmadas.' : 'Semana concluída. Analisando evolução e pontos de atenção.';
-  var encerramentoTexto = 'Continue firme. Cada semana conta. — Felipe';
-  try {
-    var freqStr = freqPorSemana.map(function(f){ return f.aba+': '+f.realizados+'/'+f.total; }).join(', ');
-    var progStr = progressoes.slice(0,5).map(function(p){ return p.nome+' +'+p.diffCarga+'kg'; }).join(', ');
-    var atStr = atencao.slice(0,3).map(function(p){ return p.nome+' '+p.diffCarga+'kg'; }).join(', ');
-    var ctx = 'Aluno: '+nomeAluno+' | '+abas+'\nFrequência: '+freqStr+'\nProgressões: '+(progStr||'nenhuma')+'\nAtenção: '+(atStr||'nenhuma');
-    var prompt = ctx+'\n\nJSON: {"resumo":"2-3 frases motivacionais diretas como coach falando com o aluno","encerramento":"1 frase curta de incentivo assinada — Felipe"}\nRetorne APENAS JSON valido.';
-    var res = await fetch(PROXY_URL, {method:'POST',headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01'},body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:250,system:'Retorne APENAS JSON valido sem markdown.',messages:[{role:'user',content:prompt}]})});
-    var rd = await res.json();
-    if (!rd.error) { var txt=rd.content[0].text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim(); var parsed=JSON.parse(txt); if(parsed.resumo) resumoTexto=parsed.resumo; if(parsed.encerramento) encerramentoTexto=parsed.encerramento; }
-  } catch(e) {}
-  containerEl.innerHTML = montarLayoutRelatorio(nomeAluno, abas, isSemanal, {
-    resumo: resumoTexto, encerramento: encerramentoTexto,
-    freqPorSemana: freqPorSemana, pctFreqGeral: pctFreqGeral,
-    totalTreinos: totalTreinos, totalDias: totalDias,
-    totalVL: Math.round(totalVLGeral), totalCal: Math.round(totalCalGeral),
-    totalTempoMet: totalTempoMet, sessoesMet: sessoesMet,
-    progressoes: progressoes.slice(0,8), atencao: atencao.slice(0,4)
+  var primeiroNome = nomeAluno.split(' ')[0];
+
+  // ── Montar HTML diretamente (sem IA para a estrutura, IA só para o texto) ──
+  // Pedir à IA apenas o texto narrativo (resumo + encerramento)
+  var contextoTexto = 'Aluno: ' + nomeAluno + '\nSemanas: ' + abas + '\n\n';
+  contextoTexto += 'Frequência:\n';
+  freqPorSemana.forEach(function(f){ contextoTexto += '  ' + f.aba + ': ' + f.realizados + '/' + f.total + ' treinos\n'; });
+  contextoTexto += '\nExercícios que mais evoluíram (carga):\n';
+  progressoes.slice(0,5).forEach(function(p){
+    contextoTexto += '  ' + p.nome + ': ' + p.cargaDe + 'kg → ' + p.cargaPara + 'kg (' + (p.diffCarga>=0?'+':'') + p.diffCarga + 'kg)\n';
   });
+  contextoTexto += '\nExercícios a melhorar:\n';
+  atencao.slice(0,3).forEach(function(p){
+    contextoTexto += '  ' + p.nome + ': ' + p.cargaDe + 'kg → ' + p.cargaPara + 'kg\n';
+  });
+
+  var promptTexto = contextoTexto + '\nEscreva APENAS dois textos curtos em português:\n' +
+    '1. RESUMO: 2-3 frases motivacionais e diretas sobre a evolução geral do aluno. Mencione a frequência e a progressão de carga. Tom: coach falando com o aluno diretamente.\n' +
+    '2. ENCERRAMENTO: 1-2 frases de incentivo para continuar. Assine como "— Felipe".\n\n' +
+    'Formato de resposta (JSON):\n{"resumo": "texto aqui", "encerramento": "texto aqui — Felipe"}\n' +
+    'Retorne APENAS o JSON, sem explicações.';
+
+  var resumoTexto = 'Sua evolução entre as semanas analisadas mostra consistência e dedicação, ' + primeiroNome + '. Os números confirmam: você está progredindo.';
+  var encerramentoTexto = 'Continue firme. Cada semana é um tijolo a mais na construção do seu resultado. — Felipe';
+
+  try {
+    var res = await fetch('https://coach-proxy.coachfiletsep.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 600,
+        system: 'Você é um coach de treino que escreve textos motivacionais curtos. Retorne APENAS JSON válido.',
+        messages: [{ role: 'user', content: promptTexto }]
+      })
+    });
+    var rd = await res.json();
+    if (!rd.error) {
+      var txt = rd.content[0].text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+      var parsed = JSON.parse(txt);
+      if (parsed.resumo) resumoTexto = parsed.resumo;
+      if (parsed.encerramento) encerramentoTexto = parsed.encerramento;
+    }
+  } catch(e) {}
+
+  // ── Montar HTML estruturado ──
+  var hoje = new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+  var html = montarWrapperComparativo(nomeAluno, abas, '', {
+    resumo: resumoTexto,
+    encerramento: encerramentoTexto,
+    freqPorSemana: freqPorSemana,
+    progressoes: progressoes.slice(0,6),
+    atencao: atencao.slice(0,3)
+  });
+  containerEl.innerHTML = html;
 }
 
-function montarLayoutRelatorio(nomeAluno, abas, isSemanal, dados) {
-  var hoje = new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
-  function fmtN(n){ if(!n||n===0) return '—'; if(n>=1000) return (n/1000).toFixed(1).replace('.',',')+' k'; return Number(n).toLocaleString('pt-BR'); }
+function montarWrapperComparativo(nomeAluno, abas, htmlIA, dados) {
+  var hoje = new Date().toLocaleDateString('pt-BR', {day:'numeric',month:'long',year:'numeric'});
+  
   var freqHtml = '';
-  dados.freqPorSemana.forEach(function(f) {
-    var pct = f.total > 0 ? Math.round((f.realizados/f.total)*100) : 0;
-    var cor = pct===100?'#1D9E75':pct>=75?'#3B82F6':'#F59E0B';
-    freqHtml += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
-      '<span style="font-size:11px;font-weight:700;width:32px;color:#6B6B66;flex-shrink:0">'+f.aba+'</span>' +
-      '<div style="flex:1;background:#ECEAE4;border-radius:4px;height:10px;overflow:hidden">' +
-      '<div style="height:10px;border-radius:4px;background:'+cor+';width:'+pct+'%"></div></div>' +
-      '<span style="font-size:12px;font-weight:700;color:'+cor+';width:80px;text-align:right">'+f.realizados+'/'+f.total+' treinos</span></div>';
-  });
+  if (dados && dados.freqPorSemana) {
+    dados.freqPorSemana.forEach(function(f) {
+      var pct = f.total > 0 ? Math.round((f.realizados/f.total)*100) : 0;
+      freqHtml += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
+        '<span style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;width:32px;color:#6B6B66">' + f.aba + '</span>' +
+        '<div style="flex:1;background:#ECEAE4;border-radius:4px;height:10px;position:relative;overflow:hidden">' +
+          '<div style="position:absolute;top:0;left:0;height:10px;border-radius:4px;background:#1D9E75;width:' + pct + '%"></div>' +
+        '</div>' +
+        '<span style="font-size:12px;font-weight:600;color:#1D9E75;width:60px;text-align:right">' + f.realizados + '/' + f.total + ' treinos</span>' +
+      '</div>';
+    });
+  }
+
   var progHtml = '';
-  if (dados.progressoes.length > 0) {
+  if (dados && dados.progressoes && dados.progressoes.length > 0) {
     dados.progressoes.forEach(function(p) {
+      var badge = p.diffCarga > 0 ? '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;background:#1D9E75;color:#fff">+' + p.diffCarga + 'kg</span>'
+                                  : '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;background:#3B82F6;color:#fff">+' + p.diffReps + ' reps</span>';
       progHtml += '<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;margin-bottom:7px;background:#F0FAF5;border:1px solid #C6EFE0">' +
-        '<span style="font-size:16px;width:22px;text-align:center;flex-shrink:0">↑</span>' +
-        '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+p.nome+'</div>' +
-        '<div style="font-size:11px;color:#6B6B66;margin-top:2px">'+p.de+' → '+p.para+' · '+p.cargaDe+'kg → '+p.cargaPara+'kg</div></div>' +
-        '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;background:#1D9E75;color:#fff;white-space:nowrap;flex-shrink:0">+'+p.diffCarga+'kg</span></div>';
+        '<span style="font-size:18px;width:24px;text-align:center">↑</span>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:13px;font-weight:600;color:#1a1a18">' + p.nome + '</div>' +
+          '<div style="font-size:11px;color:#6B6B66;margin-top:2px">' + p.de + ' → ' + p.para + ' · ' + p.cargaDe + 'kg → ' + p.cargaPara + 'kg</div>' +
+        '</div>' +
+        badge +
+      '</div>';
     });
   } else {
-    progHtml = '<p style="font-size:13px;color:#6B6B66;padding:8px 0">'+(isSemanal?'Primeira semana — sem comparativo de carga ainda.':'Sem progressões identificadas.')+'</p>';
+    progHtml = '<p style="font-size:13px;color:#6B6B66">Dados insuficientes para calcular progressão entre as semanas.</p>';
   }
+
   var atencaoHtml = '';
-  if (dados.atencao.length > 0) {
-    dados.atencao.forEach(function(p) {
+  if (dados && dados.atencao && dados.atencao.length > 0) {
+    dados.atencao.slice(0,3).forEach(function(p) {
+      var diff = p.diffCarga !== 0 ? p.diffCarga + 'kg' : 'sem progresso';
       atencaoHtml += '<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;margin-bottom:7px;background:#FFFBF0;border:1px solid #FDE68A">' +
-        '<span style="font-size:16px;width:22px;text-align:center;flex-shrink:0">⚠️</span>' +
-        '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+p.nome+'</div>' +
-        '<div style="font-size:11px;color:#6B6B66;margin-top:2px">'+p.de+' → '+p.para+' · '+p.cargaDe+'kg → '+p.cargaPara+'kg ('+p.diffCarga+'kg)</div></div></div>';
+        '<span style="font-size:18px;width:24px;text-align:center">⚠️</span>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:13px;font-weight:600;color:#1a1a18">' + p.nome + '</div>' +
+          '<div style="font-size:11px;color:#6B6B66;margin-top:2px">' + p.de + ' → ' + p.para + ' · ' + diff + '</div>' +
+        '</div>' +
+      '</div>';
     });
   }
-  var metHtml = '';
-  var metricas = [];
-  if (dados.totalVL > 0) metricas.push({icon:'⚡',val:fmtN(dados.totalVL)+' kg',label:'Volume Load'});
-  if (dados.totalCal > 0) metricas.push({icon:'🔥',val:fmtN(dados.totalCal)+' kcal',label:'Calorias'});
-  if (dados.sessoesMet > 0) metricas.push({icon:'🏃',val:dados.sessoesMet+' sessões',label:dados.totalTempoMet>0?dados.totalTempoMet+' min aeróbio':'Aeróbio'});
-  if (metricas.length > 0) {
-    metHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:24px">';
-    metricas.forEach(function(m){ metHtml += '<div style="background:#F5F4F0;border-radius:10px;padding:14px 16px;text-align:center"><div style="font-size:20px;margin-bottom:4px">'+m.icon+'</div><div style="font-size:18px;font-weight:700;color:#1D9E75">'+m.val+'</div><div style="font-size:10px;color:#6B6B66;margin-top:2px">'+m.label+'</div></div>'; });
-    metHtml += '</div>';
+
+  var resumo = dados && dados.resumo ? dados.resumo : '';
+  var encerramento = dados && dados.encerramento ? dados.encerramento : '';
+
+  return `<style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap');
+    .rw{font-family:'DM Sans',sans-serif;color:#1a1a18;max-width:720px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .rw h2{font-family:'DM Serif Display',serif;font-size:20px;color:#1a1a18;margin:28px 0 14px;padding-bottom:8px;border-bottom:2px solid #1D9E75}
+    .rw p{font-size:13px;line-height:1.8;color:#3a3a38;margin-bottom:10px}
+    .rh2{background:#1D9E75;padding:36px 48px 32px;border-radius:12px 12px 0 0;position:relative;overflow:hidden}
+    .rh2::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.08)}
+    .rb2{background:#fff;padding:32px 48px 36px;border-radius:0 0 12px 12px;border:1px solid #E8E6DF;border-top:none}
+    .resumo-b{font-size:14px;line-height:1.8;color:#1a1a18;padding:18px 22px;background:#F0FAF5;border-left:4px solid #1D9E75;border-radius:0 8px 8px 0;margin-bottom:8px}
+    .enc-b{background:#F5F4F0;border-radius:10px;padding:18px 22px;margin-top:24px;border-left:4px solid #C9A84C}
+    .enc-b p{font-size:13px;line-height:1.8;color:#2C2C2A}
+    .enc-b .assin{font-size:12px;font-weight:600;color:#C9A84C;margin-top:10px}
+    .rf2{text-align:right;padding:12px 0 0;font-size:10px;color:#BEBCB5}
+    @media print{.rw{max-width:100%}.rh2,.rb2{border-radius:0}}
+  </style>
+  <div class="rw">
+    <div class="rh2">
+      <div style="font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:8px">Relatório Comparativo</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:36px;color:#fff;margin-bottom:4px">${nomeAluno}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:6px">Análise de evolução entre semanas</div>
+      <div style="display:inline-block;background:rgba(255,255,255,.18);padding:4px 14px;border-radius:99px;font-size:12px;font-weight:600;color:#fff">${abas}</div>
+    </div>
+    <div class="rb2">
+      <div class="resumo-b">${resumo}</div>
+
+      <h2>📈 Progressão de carga</h2>
+      ${progHtml}
+
+      ${atencaoHtml.length > 0 ? '<h2>⚠️ Pontos de atenção</h2>' + atencaoHtml : ''}
+
+      <h2>🏋️ Frequência por semana</h2>
+      <div style="margin-bottom:8px">${freqHtml}</div>
+
+      <div class="enc-b">
+        <p>${encerramento}</p>
+      </div>
+      <div class="rf2">${hoje}</div>
+    </div>
+  </div>`;
+}
+
+// ──────────────────────────────────────────────────────────────
+// RELATÓRIO SEMANAL (1 aba) — layout bonito 2 páginas
+// ──────────────────────────────────────────────────────────────
+function montarRelatorioSemanal(nomeAluno, aba, data) {
+  function fmt(n) {
+    if (!n) return '0';
+    if (n >= 1000) return (n/1000).toFixed(1).replace('.',',') + 'k';
+    return Number(n).toLocaleString('pt-BR');
   }
-  var css = '<style>@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap");' +
-    '.rw{font-family:"DM Sans",sans-serif;color:#1a1a18;max-width:680px;margin:0 auto}' +
-    '.rw h2{font-family:"DM Serif Display",serif;font-size:19px;color:#1a1a18;margin:24px 0 12px;padding-bottom:7px;border-bottom:2px solid #1D9E75}' +
-    '.rh{background:#1D9E75;padding:32px 40px 28px;border-radius:12px 12px 0 0}' +
-    '.rb{background:#fff;padding:28px 40px 32px;border-radius:0 0 12px 12px;border:1px solid #E8E6DF;border-top:none}' +
-    '.resumo-b{font-size:14px;line-height:1.8;color:#1a1a18;padding:16px 20px;background:#F0FAF5;border-left:4px solid #1D9E75;border-radius:0 8px 8px 0;margin-bottom:20px}' +
-    '.enc-b{background:#F5F4F0;border-radius:10px;padding:16px 20px;margin-top:20px;border-left:4px solid #C9A84C}' +
-    '.rf{text-align:right;padding:10px 0 0;font-size:10px;color:#BEBCB5}</style>';
-  return css +
-    '<div class="rw"><div class="rh">' +
-    '<div style="font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:6px">'+(isSemanal?'Relatório Semanal':'Relatório Comparativo')+'</div>' +
-    '<div style="font-family:\'DM Serif Display\',serif;font-size:32px;color:#fff;line-height:1.1;margin-bottom:4px">'+nomeAluno+'</div>' +
-    '<div style="display:inline-block;background:rgba(255,255,255,.2);padding:3px 14px;border-radius:99px;font-size:12px;font-weight:600;color:#fff">'+abas+'</div>' +
-    '</div><div class="rb">' +
-    '<div class="resumo-b">'+dados.resumo+'</div>' +
-    metHtml +
-    '<h2>📈 Progressão de carga</h2>' + progHtml +
-    (dados.atencao.length > 0 ? '<h2>⚠️ Pontos de atenção</h2>' + atencaoHtml : '') +
-    '<h2>🏋️ Frequência</h2>' + freqHtml +
-    '<div class="enc-b"><p style="font-size:13px;line-height:1.8;color:#2C2C2A">'+dados.encerramento+'</p></div>' +
-    '<div class="rf">'+hoje+'</div>' +
-    '</div></div>';
+
+  var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+  var diasNomes = {SEG:'Seg',TER:'Ter',QUA:'Qua',QUI:'Qui',SEX:'Sex',SAB:'Sáb',DOM:'Dom'};
+
+  var totalExs = 0, totalProg = 0, totalRec = 0, totalVL = 0;
+  var destaques = [], todosExs = [];
+  var diasRealizados = 0, diasComTreino = 0;
+
+  diasOrdem.forEach(function(dia) {
+    var diaData = aba.dias[dia];
+    if (!diaData) return;
+    if (diaData.totalExercicios > 0) diasComTreino++;
+    if (diaData.treinou) diasRealizados++;
+    diaData.exercicios.forEach(function(ex) {
+      if (!ex.realizado) return;
+      totalExs++;
+      totalVL += ex.volumeLoad || 0;
+      var status = 'manteve';
+      if (ex.recordeCarga || ex.recordeVolumeLoad) { status = 'record'; totalRec++; totalProg++; }
+      else if (ex.progressaoCarga) { status = 'carga'; totalProg++; }
+      else if (ex.progressaoReps)  { status = 'reps';  totalProg++; }
+      var seriesStr = ex.seriesAtual.map(function(s){ return s.reps; }).join('/');
+      var cargaMax = ex.seriesAtual.length > 0 ? Math.max.apply(null, ex.seriesAtual.map(function(s){return s.carga;})) : 0;
+      var detalhe = cargaMax > 0 ? cargaMax + 'kg × ' + seriesStr + ' reps' : seriesStr + ' reps';
+      todosExs.push({ dia:dia, nome:ex.nome, series:detalhe, vl:ex.volumeLoad||0, status:status });
+      if (status !== 'manteve') destaques.push({ nome:ex.nome, status:status, detalhe:detalhe });
+    });
+  });
+
+  var pctProg = totalExs > 0 ? Math.round((totalProg/totalExs)*100) : 0;
+  destaques.sort(function(a,b){ var o={record:0,carga:1,reps:2}; return (o[a.status]||3)-(o[b.status]||3); });
+  var topDestaques = destaques.slice(0, 5);
+
+  var icons = {record:'🏆', carga:'↑', reps:'○'};
+  var tagLabel = {record:'Recorde!', carga:'↑ Carga', reps:'↑ Reps'};
+  var stColor = {record:'#C9A84C', carga:'#1D9E75', reps:'#3B82F6', manteve:'#BEBCB5'};
+  var stIcon  = {record:'★', carga:'↑', reps:'↑', manteve:'→'};
+
+  var primeiroNome = nomeAluno.split(' ')[0];
+  var msg = pctProg >= 80
+    ? 'Semana excepcional, ' + primeiroNome + '! Você progrediu em ' + pctProg + '% dos exercícios e completou ' + diasRealizados + ' de ' + diasComTreino + ' treinos. Essa consistência é o que constrói resultados duradouros.'
+    : pctProg >= 50
+    ? 'Boa semana, ' + primeiroNome + '! ' + diasRealizados + ' de ' + diasComTreino + ' treinos realizados e ' + pctProg + '% dos exercícios em evolução. Foque nos exercícios em que ainda não atingiu o limite de repetições.'
+    : 'Semana desafiadora, ' + primeiroNome + ', mas você apareceu — e isso é o que importa. ' + diasRealizados + ' treinos realizados. Vamos retomar o ritmo na próxima semana.';
+
+  var hoje = new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+
+  var css = `<style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body,div{font-family:'DM Sans',sans-serif;color:#2C2C2A;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .page{width:210mm;min-height:297mm;margin:0 auto 20px;background:#fff;position:relative;overflow:hidden}
+    .p1h{background:#2C2C2A;padding:40px 48px 36px;position:relative;overflow:hidden}
+    .p1h::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;border-radius:50%;background:#1D9E75;opacity:.15}
+    .coach-lbl{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#9FDFC8;margin-bottom:8px}
+    .a-nome{font-family:'DM Serif Display',serif;font-size:42px;color:#fff;line-height:1.1;margin-bottom:6px}
+    .s-lbl{font-size:13px;color:rgba(255,255,255,.5)}
+    .s-num{color:#9FDFC8;font-weight:600}
+    .hr{position:absolute;top:40px;right:48px;text-align:right}
+    .hr .dt{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px}
+    .hr .cn{font-size:13px;color:rgba(255,255,255,.7);font-weight:500}
+    .cg{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #ECEAE4}
+    .cs{padding:22px 18px;border-right:1px solid #ECEAE4}
+    .cs:last-child{border-right:none}
+    .ci{font-size:18px;margin-bottom:8px;display:block}
+    .cv{font-family:'DM Serif Display',serif;font-size:30px;line-height:1;margin-bottom:3px}
+    .cv.v{color:#1D9E75}.cv.o{color:#C9A84C}
+    .cl{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#6B6B66}
+    .cs2{font-size:10px;color:#6B6B66;margin-top:2px}
+    .sec{padding:22px 48px 0}
+    .st{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#6B6B66;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+    .st::after{content:'';flex:1;height:1px;background:#ECEAE4}
+    .dg{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:20px}
+    .db{text-align:center}
+    .dn{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B6B66;margin-bottom:5px}
+    .dc{width:34px;height:34px;border-radius:50%;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+    .dc.ok{background:#1D9E75;color:#fff}
+    .dc.no{background:#ECEAE4;color:#BEBCB5}
+    .dc.off{border:1.5px dashed #DDDBD4;color:#DDDBD4}
+    .de{font-size:9px;color:#6B6B66}
+    .pl{display:flex;flex-direction:column;gap:7px;margin-bottom:20px}
+    .pi{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px}
+    .pi.carga{background:#E8F7F2}.pi.record{background:#FDF6E3}.pi.reps{background:#EBF5FF}.pi.manteve{background:#F5F4F0}
+    .pb{font-size:16px;flex-shrink:0;width:24px;text-align:center}
+    .pn{flex:1;font-size:12px;font-weight:500}
+    .pd{font-size:10px;color:#6B6B66}
+    .pt{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:99px;white-space:nowrap}
+    .pt.carga{background:#1D9E75;color:#fff}.pt.record{background:#C9A84C;color:#fff}.pt.reps{background:#3B82F6;color:#fff}
+    .pft{position:absolute;bottom:0;left:0;right:0;height:6px;background:linear-gradient(90deg,#1D9E75 0%,#9FDFC8 60%,#C9A84C 100%)}
+    .p2h{padding:30px 48px 18px;border-bottom:1px solid #ECEAE4;display:flex;align-items:flex-end;justify-content:space-between}
+    .p2t{font-family:'DM Serif Display',serif;font-size:26px}
+    .p2s{font-size:12px;color:#6B6B66;margin-top:3px}
+    .xt{width:100%;border-collapse:collapse;font-size:11px}
+    .xt thead tr{border-bottom:2px solid #2C2C2A}
+    .xt th{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B6B66;padding:0 8px 8px 0;text-align:left}
+    .xt th:last-child{text-align:right}
+    .xt tbody tr{border-bottom:1px solid #ECEAE4}
+    .xt td{padding:7px 8px 7px 0;vertical-align:middle}
+    .xt td:last-child{text-align:right}
+    .dtag{display:inline-block;font-size:8px;font-weight:700;letter-spacing:.06em;padding:2px 5px;border-radius:3px;background:#F5F4F0;color:#6B6B66;margin-right:5px}
+    .cm{margin:0 48px 32px;padding:18px 22px;background:#2C2C2A;border-radius:10px;position:relative;overflow:hidden}
+    .cm::before{content:'"';font-family:'DM Serif Display',serif;font-size:100px;color:rgba(255,255,255,.05);position:absolute;top:-15px;left:14px;line-height:1}
+    .cmt{font-size:13px;line-height:1.75;color:rgba(255,255,255,.85);position:relative}
+    .cma{margin-top:10px;font-size:11px;font-weight:600;color:#9FDFC8;position:relative}
+    .pf{position:absolute;bottom:0;left:0;right:0;padding:14px 48px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #ECEAE4}
+    .fl{font-size:11px;font-weight:600;color:#6B6B66}
+    .fl span{color:#1D9E75}
+    .fp{font-size:10px;color:#BEBCB5}
+    @media print{body{background:#fff}.page{margin:0;page-break-after:always}.page:last-child{page-break-after:auto}}
+  </style>`;
+
+  var h = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' + css + '</head><body>';
+
+  // PÁGINA 1
+  h += '<div class="page">';
+  h += '<div class="p1h"><div class="coach-lbl">Relatório de Treino</div>';
+  h += '<div class="a-nome">' + nomeAluno + '</div>';
+  h += '<div class="s-lbl">Semana <span class="s-num">' + aba.aba + '</span></div>';
+  h += '<div class="hr"><div class="dt">' + hoje + '</div><div class="cn">Coach Felipe Luiz</div></div></div>';
+
+  // Cards
+  h += '<div class="cg">';
+  h += '<div class="cs"><span class="ci">🏋️</span><div class="cv v">' + diasRealizados + '/' + diasComTreino + '</div><div class="cl">Frequência</div><div class="cs2">treinos realizados</div></div>';
+  h += '<div class="cs"><span class="ci">📈</span><div class="cv v">' + pctProg + '%</div><div class="cl">Progressão</div><div class="cs2">dos exercícios evoluíram</div></div>';
+  h += '<div class="cs"><span class="ci">🏆</span><div class="cv o">' + totalRec + '</div><div class="cl">Recordes</div><div class="cs2">novos máximos pessoais</div></div>';
+  h += '<div class="cs"><span class="ci">⚡</span><div class="cv">' + fmt(totalVL) + '</div><div class="cl">Volume Load</div><div class="cs2">kg totais movidos</div></div>';
+  h += '</div>';
+
+  // Dias
+  h += '<div class="sec"><div class="st">Frequência da semana</div><div class="dg">';
+  diasOrdem.forEach(function(dia) {
+    var d = aba.dias[dia];
+    var cls = !d || d.totalExercicios===0 ? 'off' : d.treinou ? 'ok' : 'no';
+    var ic = d && d.treinou ? '✓' : (d && d.totalExercicios>0 ? '✗' : '·');
+    var ex = d && d.totalExercicios>0 ? d.totalExercicios+' ex' : '';
+    h += '<div class="db"><div class="dn">' + diasNomes[dia] + '</div><div class="dc ' + cls + '">' + ic + '</div><div class="de">' + ex + '</div></div>';
+  });
+  h += '</div></div>';
+
+  // Destaques
+  h += '<div class="sec"><div class="st">Destaques da semana</div><div class="pl">';
+  topDestaques.forEach(function(ex) {
+    h += '<div class="pi ' + ex.status + '"><span class="pb">' + (icons[ex.status]||'→') + '</span>';
+    h += '<div><div class="pn">' + ex.nome + '</div><div class="pd">' + ex.detalhe + '</div></div>';
+    h += '<span class="pt ' + ex.status + '">' + (tagLabel[ex.status]||'') + '</span></div>';
+  });
+  if (!topDestaques.length) h += '<div style="font-size:12px;color:#6B6B66;padding:10px 0">Nenhuma progressão registrada.</div>';
+  h += '</div></div>';
+  h += '<div class="pft"></div></div>';
+
+  // PÁGINA 2
+  h += '<div class="page">';
+  h += '<div class="p2h"><div><div class="p2t">Detalhamento completo</div><div class="p2s">Todos os exercícios · ' + aba.aba + '</div></div></div>';
+  h += '<div class="sec"><div class="st">Todos os exercícios</div>';
+  h += '<table class="xt"><thead><tr><th>Exercício</th><th>Resultado</th><th>Vol. Load</th><th>Status</th></tr></thead><tbody>';
+  todosExs.forEach(function(ex) {
+    var ic = '<span style="font-size:13px;font-weight:700;color:' + (stColor[ex.status]||'#BEBCB5') + '">' + (stIcon[ex.status]||'→') + '</span>';
+    h += '<tr><td><span class="dtag">' + ex.dia + '</span><span style="font-weight:500">' + ex.nome + '</span></td>';
+    h += '<td style="color:#6B6B66;font-size:10px">' + ex.series + '</td>';
+    h += '<td style="font-weight:500">' + fmt(ex.vl) + ' kg</td><td>' + ic + '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+
+  h += '<div class="cm"><div class="cmt">' + msg + '</div><div class="cma">— Coach Felipe Luiz</div></div>';
+  h += '<div class="pf"><div class="fl">Coach <span>Felipe</span></div><div class="fp">2 / 2</div></div>';
+  h += '</div></body></html>';
+  return h;
+}
+
+
+function _card(val, label) {
+  return '<div class="rel-card"><div class="rel-card-val">' + val + '</div><div class="rel-card-label">' + label + '</div></div>';
+}
+
+function _fmt(n) {
+  if (!n) return '0';
+  return Number(n).toLocaleString('pt-BR');
 }
 
 function imprimirRelatorio() {
-  var inner = document.getElementById('rel-conteudo').innerHTML;
+  var conteudo = document.getElementById('rel-conteudo');
+  var inner = conteudo.innerHTML;
+  // Verificar se é relatório completo (tem DOCTYPE) ou comparativo (tem rel-wrap)
   var win = window.open('', '_blank');
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:20px;background:#f5f5f5">'+inner+'</body></html>');
-  win.document.close(); setTimeout(function(){ win.print(); }, 800);
+  if (inner.trim().startsWith('<!DOCTYPE')) {
+    win.document.write(inner);
+  } else {
+    win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório</title></head><body style="margin:0;padding:20px;font-family:sans-serif">' + inner + '</body></html>');
+  }
+  win.document.close();
+  setTimeout(function(){ win.print(); }, 800);
 }
 
-function sincronizarAlunosApp() {
+
+
+// ============================================================
+// SINCRONIZAÇÃO ALUNOS_APP NO BRAINERING
+// Usa o Apps Script como intermediário — não depende do token OAuth
+// ============================================================
+async function sincronizarAlunosApp() {
   try {
     var res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
@@ -2623,6 +2848,5 @@ async function analisarAjustesPlanilha() {
 
 init();
 </script>
-
 
 </body></html>

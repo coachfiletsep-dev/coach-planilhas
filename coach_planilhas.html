@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v24_1.html -->
+<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v25.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coach Planilhas v24</title>
+<title>Coach Planilhas v25</title>
 <style>
   :root {
     --green: #1D9E75;
@@ -2091,10 +2091,11 @@ async function gerarRelatorioComparativoAsync(nomeAluno, data, containerEl) {
     '3. Os 2-3 exercícios que precisam de atenção (sem progressão ou regressão)\n' +
     '4. Um insight sobre frequência de treinos\n' +
     '5. Uma frase de encerramento motivacional assinada pelo Coach Felipe\n\n' +
-    'Use este CSS já disponível (não inclua <style>): fontes DM Serif Display e DM Sans, verde #1D9E75, ouro #C9A84C, cinza escuro #2C2C2A.\n' +
-    'Layout: limpo, com cards, badges coloridos, barras de progresso simples em HTML inline. Sem tabelas. Máximo 2 páginas A4 quando impresso.\n' +
-    'Tom: direto, motivacional, como uma mensagem do coach — não técnico demais. O aluno deve entender tudo.\n' +
+    'Use as classes CSS disponíveis (não inclua <style>):\\n- .resumo-box: caixa verde clara para resumo executivo\\n- .card-ev: card de exercício (add .record ou .atencao para variações)\\n- .ce-icon .ce-body .ce-nome .ce-det .ce-badge: dentro do card-ev\\n- .bg-verde .bg-ouro .bg-azul .bg-alerta .bg-cinza: badges coloridos\\n- .freq-grid .freq-card .fc-sem .fc-val .fc-lbl: grid de frequência\\n- .barra-wrap .barra-fill (style width:X%): barras de progresso\\n- .coach-enc p .assin: bloco de encerramento (fundo cinza, borda ouro)\\n- h2: títulos de seção | p: parágrafos\\n' +
+    'REGRAS OBRIGATÓRIAS: fundo branco, texto escuro, NUNCA itálico no corpo, NUNCA fundo escuro no texto principal. Máximo 2 páginas A4.\\n' +
+    'Tom: direto e motivacional. Linguagem simples — o aluno deve entender tudo sem jargões técnicos.\\n' +
     'Semanas analisadas: ' + abas + '\n' +
+    'A assinatura do coach deve ser sempre "— Felipe", nunca "Coach Planilhas".\\n' +
     'IMPORTANTE: retorne APENAS o HTML, sem explicações, sem markdown, sem blocos de código.';
 
   try {
@@ -2123,58 +2124,60 @@ async function gerarRelatorioComparativoAsync(nomeAluno, data, containerEl) {
 }
 
 function montarWrapperComparativo(nomeAluno, abas, htmlIA) {
+  var hoje = new Date().toLocaleDateString('pt-BR', {day:'numeric',month:'long',year:'numeric'});
   return `<style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
-    .rel-wrap{font-family:'DM Sans',sans-serif;color:#2C2C2A;max-width:720px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .rel-wrap h1,.rel-wrap h2,.rel-wrap h3{font-family:'DM Serif Display',serif}
-    .rel-header-comp{background:#2C2C2A;padding:36px 48px 32px;border-radius:12px 12px 0 0;position:relative;overflow:hidden;margin-bottom:0}
-    .rel-header-comp::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:#1D9E75;opacity:.12}
-    .rel-header-comp .tag{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#9FDFC8;margin-bottom:8px}
-    .rel-header-comp h1{font-family:'DM Serif Display',serif;font-size:36px;color:#fff;margin-bottom:4px}
-    .rel-header-comp .sub{font-size:12px;color:rgba(255,255,255,.45)}
-    .rel-header-comp .semanas{font-size:13px;color:#9FDFC8;font-weight:500;margin-top:4px}
-    .rel-body-comp{background:#fff;padding:36px 48px 40px;border-radius:0 0 12px 12px;border:1px solid #ECEAE4;border-top:none}
-    .rel-body-comp h2{font-family:'DM Serif Display',serif;font-size:22px;color:#2C2C2A;margin:28px 0 14px}
-    .rel-body-comp h3{font-size:14px;font-weight:600;color:#2C2C2A;margin:20px 0 10px}
-    .rel-body-comp p{font-size:13px;line-height:1.75;color:#3A3A38;margin-bottom:12px}
-    .rel-body-comp .resumo{font-size:15px;line-height:1.8;color:#2C2C2A;padding:20px 24px;background:#F5F4F0;border-left:4px solid #1D9E75;border-radius:0 8px 8px 0;margin-bottom:24px}
-    .card-prog{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:8px;margin-bottom:8px;background:#E8F7F2}
-    .card-prog.atencao{background:#FEF9EC}
-    .card-prog.record{background:#FDF6E3}
-    .card-prog .cp-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center}
-    .card-prog .cp-nome{flex:1;font-size:13px;font-weight:500}
-    .card-prog .cp-det{font-size:11px;color:#6B6B66;margin-top:2px}
-    .card-prog .cp-badge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:99px;white-space:nowrap}
-    .badge-verde{background:#1D9E75;color:#fff}
-    .badge-ouro{background:#C9A84C;color:#fff}
-    .badge-azul{background:#3B82F6;color:#fff}
-    .badge-cinza{background:#DDDBD4;color:#6B6B66}
-    .badge-alerta{background:#F59E0B;color:#fff}
-    .barra-wrap{background:#ECEAE4;border-radius:4px;height:8px;margin:6px 0;position:relative}
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap');
+    .rel-wrap *{box-sizing:border-box;margin:0;padding:0}
+    .rel-wrap{font-family:'DM Sans',sans-serif;color:#1a1a18;max-width:720px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .rel-wrap h1,.rel-wrap h2,.rel-wrap h3{font-family:'DM Serif Display',serif;font-style:normal}
+    .rh{background:#1D9E75;padding:36px 48px 32px;border-radius:12px 12px 0 0;position:relative;overflow:hidden}
+    .rh::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.08)}
+    .rh .tag{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,0.7);margin-bottom:8px}
+    .rh h1{font-family:'DM Serif Display',serif;font-size:36px;color:#fff;margin-bottom:4px;font-style:normal}
+    .rh .sub{font-size:12px;color:rgba(255,255,255,0.65);margin-bottom:4px}
+    .rh .semanas-badge{display:inline-block;background:rgba(255,255,255,0.18);padding:4px 12px;border-radius:99px;font-size:12px;font-weight:600;color:#fff;margin-top:6px}
+    .rb{background:#fff;padding:36px 48px 40px;border-radius:0 0 12px 12px;border:1px solid #E8E6DF;border-top:none}
+    .rb h2{font-family:'DM Serif Display',serif;font-size:22px;color:#1a1a18;margin:28px 0 14px;font-style:normal;border-bottom:2px solid #1D9E75;padding-bottom:8px}
+    .rb h3{font-size:14px;font-weight:600;color:#1a1a18;margin:18px 0 10px}
+    .rb p{font-size:13px;line-height:1.8;color:#3a3a38;margin-bottom:12px}
+    .resumo-box{font-size:14px;line-height:1.8;color:#1a1a18;padding:20px 24px;background:#F0FAF5;border-left:4px solid #1D9E75;border-radius:0 8px 8px 0;margin-bottom:24px;font-weight:400}
+    .card-ev{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:8px;margin-bottom:8px;border:1px solid #E8F7F2;background:#F8FDFB}
+    .card-ev.atencao{background:#FFFBF0;border-color:#FDE68A}
+    .card-ev.record{background:#FFFDF0;border-color:#FCD34D}
+    .card-ev .ce-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center}
+    .card-ev .ce-body{flex:1}
+    .card-ev .ce-nome{font-size:13px;font-weight:600;color:#1a1a18;margin-bottom:2px}
+    .card-ev .ce-det{font-size:11px;color:#6B6B66}
+    .card-ev .ce-badge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+    .bg-verde{background:#1D9E75;color:#fff}
+    .bg-ouro{background:#C9A84C;color:#fff}
+    .bg-azul{background:#3B82F6;color:#fff}
+    .bg-alerta{background:#F59E0B;color:#fff}
+    .bg-cinza{background:#E5E3DC;color:#6B6B66}
+    .freq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:12px 0 20px}
+    .freq-card{text-align:center;padding:16px 10px;background:#F5F4F0;border-radius:8px;border:1px solid #ECEAE4}
+    .freq-card .fc-sem{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#6B6B66;margin-bottom:4px}
+    .freq-card .fc-val{font-family:'DM Serif Display',serif;font-size:28px;color:#1D9E75;line-height:1;margin-bottom:2px}
+    .freq-card .fc-lbl{font-size:10px;color:#9B9B96}
+    .barra-wrap{background:#ECEAE4;border-radius:4px;height:8px;margin:6px 0;position:relative;overflow:hidden}
     .barra-fill{height:8px;border-radius:4px;background:#1D9E75;position:absolute;top:0;left:0}
-    .freq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:12px 0}
-    .freq-card{text-align:center;padding:16px 12px;background:#F5F4F0;border-radius:8px}
-    .freq-card .semana{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#6B6B66;margin-bottom:4px}
-    .freq-card .valor{font-family:'DM Serif Display',serif;font-size:28px;color:#1D9E75}
-    .freq-card .label{font-size:10px;color:#9B9B96}
-    .coach-enc{background:#2C2C2A;border-radius:10px;padding:20px 24px;margin-top:28px;position:relative;overflow:hidden}
-    .coach-enc::before{content:'"';font-family:'DM Serif Display',serif;font-size:100px;color:rgba(255,255,255,.05);position:absolute;top:-15px;left:14px;line-height:1}
-    .coach-enc p{font-size:13px;line-height:1.75;color:rgba(255,255,255,.82);position:relative}
-    .coach-enc .assin{font-size:11px;font-weight:600;color:#9FDFC8;margin-top:10px;position:relative}
-    .rel-footer-comp{text-align:center;padding:16px;font-size:10px;color:#BEBCB5;letter-spacing:.05em}
-    @media print{.rel-wrap{max-width:100%}.rel-header-comp{border-radius:0}.rel-body-comp{border-radius:0}}
+    .coach-enc{background:#F5F4F0;border-radius:10px;padding:20px 24px;margin-top:28px;border-left:4px solid #C9A84C}
+    .coach-enc p{font-size:13px;line-height:1.8;color:#2C2C2A;font-style:normal}
+    .coach-enc .assin{font-size:12px;font-weight:600;color:#C9A84C;margin-top:12px}
+    .rf{text-align:center;padding:16px;font-size:10px;color:#BEBCB5;letter-spacing:.05em;margin-top:8px}
+    @media print{.rel-wrap{max-width:100%}.rh{border-radius:0}.rb{border-radius:0}}
   </style>
   <div class="rel-wrap">
-    <div class="rel-header-comp">
+    <div class="rh">
       <div class="tag">Relatório Comparativo</div>
       <h1>${nomeAluno}</h1>
-      <div class="sub">Análise de evolução</div>
-      <div class="semanas">${abas}</div>
+      <div class="sub">Análise de evolução entre semanas</div>
+      <div class="semanas-badge">${abas}</div>
     </div>
-    <div class="rel-body-comp">
+    <div class="rb">
       ${htmlIA}
     </div>
-    <div class="rel-footer-comp">Coach Planilhas · gerado em ${new Date().toLocaleDateString('pt-BR', {day:'numeric',month:'long',year:'numeric'})}</div>
+    <div class="rf">Coach Felipe Luiz · ${hoje}</div>
   </div>`;
 }
 
@@ -2351,7 +2354,7 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   h += '</tbody></table></div>';
 
   h += '<div class="cm"><div class="cmt">' + msg + '</div><div class="cma">— Coach Felipe Luiz</div></div>';
-  h += '<div class="pf"><div class="fl">Coach<span>Planilhas</span></div><div class="fp">2 / 2</div></div>';
+  h += '<div class="pf"><div class="fl">Coach <span>Felipe</span></div><div class="fp">2 / 2</div></div>';
   h += '</div></body></html>';
   return h;
 }
@@ -2726,7 +2729,7 @@ function montarMensagemRelatorio(nomeAluno, relData) {
     diasComProblema.forEach(function(d){ msg += '• ' + d + '\n'; });
   }
 
-  msg += '\n_Parabéns pela semana! Continuamos evoluindo 💪_\n_Coach Felipe_';
+  msg += '\n_Parabéns pela semana! Continuamos evoluindo 💪_\n_— Coach Felipe';
   return msg;
 }
 

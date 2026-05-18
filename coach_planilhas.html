@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v23_2.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v23_3.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -331,6 +331,11 @@
             <div class="ac-icon">📄</div>
             <div class="ac-label">Planilha do zero</div>
             <div class="ac-desc">Cria nova aba zerada para novo mesociclo</div>
+          </button>
+          <button class="ac" onclick="analisarAjustesPlanilha()">
+            <div class="ac-icon">📊</div>
+            <div class="ac-label">Analisar ajustes</div>
+            <div class="ac-desc">Sugere aumentar carga ou subir reps com base na semana anterior</div>
           </button>
         </div>
         <div class="ai-box">
@@ -2537,9 +2542,11 @@ function montarMensagemRelatorio(nomeAluno, relData) {
 
 
 // ============================================================
-// ANALISAR AJUSTES — lê reps anteriores (cols G-J) e escreve
+// ANALISAR AJUSTES
+// Lê reps realizadas semana anterior (cols G-J) e escreve
 // "Aumentar carga" ou "Subir reps" na col B linha Ajustes
-// Todo o processamento acontece no Apps Script
+// Regra: todas no limite superior do range → Aumentar carga
+//        pelo menos uma abaixo → Subir reps
 // ============================================================
 async function analisarAjustesPlanilha() {
   const s = students.find(function(x){return x.id===selectedId;});
@@ -2566,12 +2573,12 @@ async function analisarAjustesPlanilha() {
     removeLoading('msgs');
 
     if (!data.sucesso) {
-      addMsg('msgs', '⚠️ ' + (data.erro || 'Erro ao analisar. Verifique se o patch foi aplicado no Apps Script.'), false);
+      addMsg('msgs', '⚠️ ' + (data.erro || 'Erro ao analisar. Verifique se o code.gs foi atualizado e reimplantado.'), false);
       return;
     }
 
     if (data.escritos === 0) {
-      addMsg('msgs', '⚠️ Nenhum exercício com dados anteriores encontrado na aba ' + abaAtual + '. As colunas G-J precisam estar preenchidas.', false);
+      addMsg('msgs', '⚠️ Nenhum exercício com dados anteriores encontrado na aba ' + abaAtual + '. As colunas G-J precisam estar preenchidas com os dados da semana anterior.', false);
       return;
     }
 
@@ -2588,7 +2595,7 @@ async function analisarAjustesPlanilha() {
       html += '<strong>' + dia + '</strong><br>';
       porDia[dia].forEach(function(r) {
         var emoji = r.ajuste === 'Aumentar carga' ? '🟢' : '🔵';
-        html += emoji + ' ' + r.nome + ' — reps: ' + (r.reps||[]).join('/') + ' (limite ' + r.rangeMax + ') → <strong>' + r.ajuste + '</strong><br>';
+        html += emoji + ' ' + r.nome + ' — reps anteriores: ' + (r.reps||[]).join('/') + ' (limite ' + r.rangeMax + ') → <strong>' + r.ajuste + '</strong><br>';
       });
       html += '<br>';
     });

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v24.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v24_1.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1997,260 +1997,363 @@ async function gerarRelatorioHTML() {
       body: JSON.stringify({ gerarRelatorio: true, spreadsheetId: sheetId, abasSelecionadas: abasSel })
     });
     var data = await res.json();
-    if (!data.sucesso) { conteudo.innerHTML = '<div style="color:var(--red);padding:20px;">Erro: ' + (data.erro||'desconhecido') + '</div>'; return; }
-    conteudo.innerHTML = montarHTMLRelatorio(s.name, data);
+    if (!data.sucesso) {
+      conteudo.innerHTML = '<div style="color:var(--red);padding:20px;">Erro: ' + (data.erro||'desconhecido') + '</div>';
+      return;
+    }
+
+    if (abasSel.length > 1) {
+      // Modo comparativo — IA gera a análise
+      conteudo.innerHTML = '';
+      await gerarRelatorioComparativoAsync(s.name, data, conteudo);
+    } else {
+      var html = montarHTMLRelatorio(s.name, data);
+      conteudo.innerHTML = html;
+    }
   } catch(e) {
     conteudo.innerHTML = '<div style="color:var(--red);padding:20px;">Erro: ' + e.message + '</div>';
   }
 }
 
-function montarHTMLRelatorio(nomeAluno, data) {
-  var VERDE = '#1D9E75', VERDE_LIGHT = '#E8F7F2', VERDE_MID = '#9FDFC8';
-  var OURO = '#C9A84C', OURO_LIGHT = '#FDF6E3', CINZA = '#2C2C2A';
-  var CINZA_MID = '#6B6B66', CINZA_LIGHT = '#F5F4F0', AZUL = '#3B82F6';
-  var VERMELHO = '#E24B4A';
 
+function montarHTMLRelatorio(nomeAluno, data) {
+  // Se múltiplas abas: gerar relatório comparativo com IA
+  if (data.abas && data.abas.length > 1) {
+    return montarRelatorioComparativoIA(nomeAluno, data);
+  }
+  return montarRelatorioSemanal(nomeAluno, data.abas[0], data);
+}
+
+// ──────────────────────────────────────────────────────────────
+// RELATÓRIO COMPARATIVO — usa Claude para analisar múltiplas semanas
+// ──────────────────────────────────────────────────────────────
+function montarRelatorioComparativoIA(nomeAluno, data) {
+  // Retorna HTML de loading; o relatório real é gerado assincronamente
+  return '__COMPARATIVO_ASYNC__';
+}
+
+async function gerarRelatorioComparativoAsync(nomeAluno, data, containerEl) {
+  containerEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:24px;margin-bottom:12px">✨</div><div style="font-size:14px;font-weight:500;margin-bottom:6px">Analisando ' + data.abas.length + ' semanas...</div><div style="font-size:12px;color:var(--text3)">A IA está comparando cargas, progressões e frequência</div></div>';
+
+  // Montar contexto compacto para a IA
+  var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+
+  var contexto = 'Analise a evolução do aluno ' + nomeAluno + ' entre as semanas selecionadas.\n\n';
+
+  // Por exercício, coletar histórico de carga máxima e reps ao longo das semanas
+  var histExercicios = {};
+
+  data.abas.forEach(function(aba) {
+    diasOrdem.forEach(function(dia) {
+      var diaData = aba.dias[dia];
+      if (!diaData) return;
+      diaData.exercicios.forEach(function(ex) {
+        if (!ex.realizado || ex.seriesAtual.length === 0) return;
+        var key = ex.nome;
+        if (!histExercicios[key]) histExercicios[key] = [];
+        var cargaMax = Math.max.apply(null, ex.seriesAtual.map(function(s){return s.carga;}));
+        var repsMax  = Math.max.apply(null, ex.seriesAtual.map(function(s){return s.reps;}));
+        var vl = ex.volumeLoad || 0;
+        histExercicios[key].push({ aba: aba.aba, dia: dia, cargaMax: cargaMax, repsMax: repsMax, vl: vl });
+      });
+    });
+  });
+
+  // Frequência por semana
+  contexto += '=== FREQUÊNCIA ===\n';
+  data.abas.forEach(function(aba) {
+    var realizados = 0, total = 0;
+    diasOrdem.forEach(function(dia) {
+      var d = aba.dias[dia];
+      if (!d || d.totalExercicios === 0) return;
+      total++;
+      if (d.treinou) realizados++;
+    });
+    contexto += aba.aba + ': ' + realizados + '/' + total + ' treinos\n';
+  });
+
+  // Histórico de exercícios
+  contexto += '\n=== EVOLUÇÃO POR EXERCÍCIO ===\n';
+  Object.keys(histExercicios).forEach(function(nome) {
+    var hist = histExercicios[nome];
+    if (hist.length < 2) return; // só interessa se aparece em 2+ semanas
+    contexto += nome + ':\n';
+    hist.forEach(function(h) {
+      contexto += '  ' + h.aba + ': ' + h.cargaMax + 'kg × ' + h.repsMax + ' reps (VL: ' + h.vl + 'kg)\n';
+    });
+  });
+
+  var abas = data.abas.map(function(a){return a.aba;}).join(', ');
+
+  var prompt = contexto + '\n\nCom base nesses dados, gere um relatório comparativo em HTML puro (sem <!DOCTYPE>, sem <html>, sem <head>, sem <body>) com:\n' +
+    '1. Um resumo executivo em 2-3 frases motivacionais e diretas sobre a evolução geral\n' +
+    '2. Os 3-5 exercícios com MAIOR progressão de carga (destaque visual)\n' +
+    '3. Os 2-3 exercícios que precisam de atenção (sem progressão ou regressão)\n' +
+    '4. Um insight sobre frequência de treinos\n' +
+    '5. Uma frase de encerramento motivacional assinada pelo Coach Felipe\n\n' +
+    'Use este CSS já disponível (não inclua <style>): fontes DM Serif Display e DM Sans, verde #1D9E75, ouro #C9A84C, cinza escuro #2C2C2A.\n' +
+    'Layout: limpo, com cards, badges coloridos, barras de progresso simples em HTML inline. Sem tabelas. Máximo 2 páginas A4 quando impresso.\n' +
+    'Tom: direto, motivacional, como uma mensagem do coach — não técnico demais. O aluno deve entender tudo.\n' +
+    'Semanas analisadas: ' + abas + '\n' +
+    'IMPORTANTE: retorne APENAS o HTML, sem explicações, sem markdown, sem blocos de código.';
+
+  try {
+    var res = await fetch('https://coach-proxy.coachfiletsep.workers.dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 4000,
+        system: 'Você é um assistente especialista em treino de força que gera relatórios HTML bonitos e motivacionais para alunos de personal trainer. Retorne APENAS HTML puro, sem markdown, sem explicações.',
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    var respData = await res.json();
+    if (respData.error) throw new Error(respData.error.message);
+    var htmlIA = respData.content[0].text || '';
+    // Limpar possível markdown
+    htmlIA = htmlIA.replace(/```html\s*/gi, '').replace(/```\s*/g, '').trim();
+
+    // Envolver em template bonito
+    var wrapper = montarWrapperComparativo(nomeAluno, data.abas.map(function(a){return a.aba;}).join(' · '), htmlIA);
+    containerEl.innerHTML = wrapper;
+  } catch(e) {
+    containerEl.innerHTML = '<div style="color:var(--red);padding:20px;font-size:13px">Erro ao gerar análise: ' + e.message + '</div>';
+  }
+}
+
+function montarWrapperComparativo(nomeAluno, abas, htmlIA) {
+  return `<style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+    .rel-wrap{font-family:'DM Sans',sans-serif;color:#2C2C2A;max-width:720px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .rel-wrap h1,.rel-wrap h2,.rel-wrap h3{font-family:'DM Serif Display',serif}
+    .rel-header-comp{background:#2C2C2A;padding:36px 48px 32px;border-radius:12px 12px 0 0;position:relative;overflow:hidden;margin-bottom:0}
+    .rel-header-comp::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:#1D9E75;opacity:.12}
+    .rel-header-comp .tag{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#9FDFC8;margin-bottom:8px}
+    .rel-header-comp h1{font-family:'DM Serif Display',serif;font-size:36px;color:#fff;margin-bottom:4px}
+    .rel-header-comp .sub{font-size:12px;color:rgba(255,255,255,.45)}
+    .rel-header-comp .semanas{font-size:13px;color:#9FDFC8;font-weight:500;margin-top:4px}
+    .rel-body-comp{background:#fff;padding:36px 48px 40px;border-radius:0 0 12px 12px;border:1px solid #ECEAE4;border-top:none}
+    .rel-body-comp h2{font-family:'DM Serif Display',serif;font-size:22px;color:#2C2C2A;margin:28px 0 14px}
+    .rel-body-comp h3{font-size:14px;font-weight:600;color:#2C2C2A;margin:20px 0 10px}
+    .rel-body-comp p{font-size:13px;line-height:1.75;color:#3A3A38;margin-bottom:12px}
+    .rel-body-comp .resumo{font-size:15px;line-height:1.8;color:#2C2C2A;padding:20px 24px;background:#F5F4F0;border-left:4px solid #1D9E75;border-radius:0 8px 8px 0;margin-bottom:24px}
+    .card-prog{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:8px;margin-bottom:8px;background:#E8F7F2}
+    .card-prog.atencao{background:#FEF9EC}
+    .card-prog.record{background:#FDF6E3}
+    .card-prog .cp-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center}
+    .card-prog .cp-nome{flex:1;font-size:13px;font-weight:500}
+    .card-prog .cp-det{font-size:11px;color:#6B6B66;margin-top:2px}
+    .card-prog .cp-badge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:99px;white-space:nowrap}
+    .badge-verde{background:#1D9E75;color:#fff}
+    .badge-ouro{background:#C9A84C;color:#fff}
+    .badge-azul{background:#3B82F6;color:#fff}
+    .badge-cinza{background:#DDDBD4;color:#6B6B66}
+    .badge-alerta{background:#F59E0B;color:#fff}
+    .barra-wrap{background:#ECEAE4;border-radius:4px;height:8px;margin:6px 0;position:relative}
+    .barra-fill{height:8px;border-radius:4px;background:#1D9E75;position:absolute;top:0;left:0}
+    .freq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:12px 0}
+    .freq-card{text-align:center;padding:16px 12px;background:#F5F4F0;border-radius:8px}
+    .freq-card .semana{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#6B6B66;margin-bottom:4px}
+    .freq-card .valor{font-family:'DM Serif Display',serif;font-size:28px;color:#1D9E75}
+    .freq-card .label{font-size:10px;color:#9B9B96}
+    .coach-enc{background:#2C2C2A;border-radius:10px;padding:20px 24px;margin-top:28px;position:relative;overflow:hidden}
+    .coach-enc::before{content:'"';font-family:'DM Serif Display',serif;font-size:100px;color:rgba(255,255,255,.05);position:absolute;top:-15px;left:14px;line-height:1}
+    .coach-enc p{font-size:13px;line-height:1.75;color:rgba(255,255,255,.82);position:relative}
+    .coach-enc .assin{font-size:11px;font-weight:600;color:#9FDFC8;margin-top:10px;position:relative}
+    .rel-footer-comp{text-align:center;padding:16px;font-size:10px;color:#BEBCB5;letter-spacing:.05em}
+    @media print{.rel-wrap{max-width:100%}.rel-header-comp{border-radius:0}.rel-body-comp{border-radius:0}}
+  </style>
+  <div class="rel-wrap">
+    <div class="rel-header-comp">
+      <div class="tag">Relatório Comparativo</div>
+      <h1>${nomeAluno}</h1>
+      <div class="sub">Análise de evolução</div>
+      <div class="semanas">${abas}</div>
+    </div>
+    <div class="rel-body-comp">
+      ${htmlIA}
+    </div>
+    <div class="rel-footer-comp">Coach Planilhas · gerado em ${new Date().toLocaleDateString('pt-BR', {day:'numeric',month:'long',year:'numeric'})}</div>
+  </div>`;
+}
+
+// ──────────────────────────────────────────────────────────────
+// RELATÓRIO SEMANAL (1 aba) — layout bonito 2 páginas
+// ──────────────────────────────────────────────────────────────
+function montarRelatorioSemanal(nomeAluno, aba, data) {
   function fmt(n) {
     if (!n) return '0';
     if (n >= 1000) return (n/1000).toFixed(1).replace('.',',') + 'k';
     return Number(n).toLocaleString('pt-BR');
   }
 
-  var css = `
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'DM Sans',sans-serif;background:#F0EFE9;color:#2C2C2A;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .page{width:210mm;min-height:297mm;margin:0 auto 20px;background:#fff;position:relative;overflow:hidden}
-    .p1-header{background:#2C2C2A;padding:40px 48px 36px;position:relative;overflow:hidden}
-    .p1-header::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;border-radius:50%;background:#1D9E75;opacity:.15}
-    .coach-label{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#9FDFC8;margin-bottom:8px}
-    .aluno-nome{font-family:'DM Serif Display',serif;font-size:42px;color:#fff;line-height:1.1;margin-bottom:6px}
-    .semana-label{font-size:13px;color:rgba(255,255,255,.5)}
-    .semana-num{color:#9FDFC8;font-weight:600}
-    .header-right{position:absolute;top:40px;right:48px;text-align:right}
-    .data-rel{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px}
-    .coach-nome{font-size:13px;color:rgba(255,255,255,.7);font-weight:500}
-    .cards-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid #ECEAE4}
-    .card-stat{padding:24px 20px;border-right:1px solid #ECEAE4}
-    .card-stat:last-child{border-right:none}
-    .card-stat-icon{font-size:18px;margin-bottom:10px;display:block}
-    .card-stat-val{font-family:'DM Serif Display',serif;font-size:32px;color:#2C2C2A;line-height:1;margin-bottom:4px}
-    .card-stat-val.verde{color:#1D9E75}.card-stat-val.ouro{color:#C9A84C}
-    .card-stat-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#6B6B66}
-    .card-stat-sub{font-size:11px;color:#6B6B66;margin-top:2px}
-    .sec{padding:24px 48px 0}
-    .sec-title{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#6B6B66;margin-bottom:16px;display:flex;align-items:center;gap:10px}
-    .sec-title::after{content:'';flex:1;height:1px;background:#ECEAE4}
-    .dias-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:24px}
-    .dia-box{text-align:center}
-    .dia-nome{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#6B6B66;margin-bottom:6px}
-    .dia-circ{width:36px;height:36px;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
-    .dia-circ.ok{background:#1D9E75;color:#fff}
-    .dia-circ.no{background:#ECEAE4;color:#BEBCB5}
-    .dia-circ.off{border:1.5px dashed #DDDBD4;color:#DDDBD4}
-    .dia-ex{font-size:9px;color:#6B6B66}
-    .prog-list{display:flex;flex-direction:column;gap:7px;margin-bottom:24px}
-    .prog-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px}
-    .prog-item.carga{background:#E8F7F2}.prog-item.record{background:#FDF6E3}.prog-item.reps{background:#EBF5FF}.prog-item.manteve{background:#F5F4F0}
-    .prog-badge{font-size:16px;flex-shrink:0;width:24px;text-align:center}
-    .prog-nome{flex:1;font-size:12px;font-weight:500}
-    .prog-det{font-size:10px;color:#6B6B66}
-    .prog-tag{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:99px;white-space:nowrap}
-    .prog-tag.carga{background:#1D9E75;color:#fff}.prog-tag.record{background:#C9A84C;color:#fff}.prog-tag.reps{background:#3B82F6;color:#fff}.prog-tag.manteve{background:#DDDBD4;color:#6B6B66}
-    .p1-footer{position:absolute;bottom:0;left:0;right:0;height:6px;background:linear-gradient(90deg,#1D9E75 0%,#9FDFC8 60%,#C9A84C 100%)}
-    .p2-header{padding:32px 48px 20px;border-bottom:1px solid #ECEAE4;display:flex;align-items:flex-end;justify-content:space-between}
-    .p2-title{font-family:'DM Serif Display',serif;font-size:28px}
-    .p2-sub{font-size:12px;color:#6B6B66;margin-top:4px}
-    .ex-table{width:100%;border-collapse:collapse;font-size:11px}
-    .ex-table thead tr{border-bottom:2px solid #2C2C2A}
-    .ex-table th{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#6B6B66;padding:0 8px 10px 0;text-align:left}
-    .ex-table th:last-child{text-align:right}
-    .ex-table tbody tr{border-bottom:1px solid #ECEAE4}
-    .ex-table td{padding:8px 8px 8px 0;vertical-align:middle}
-    .ex-table td:last-child{text-align:right}
-    .dia-tag{display:inline-block;font-size:8px;font-weight:700;letter-spacing:.08em;padding:2px 6px;border-radius:4px;background:#F5F4F0;color:#6B6B66;margin-right:6px}
-    .ex-nome{font-weight:500}
-    .st-icon{font-size:14px;font-weight:700}
-    .comp-row{display:grid;grid-template-columns:90px 1fr 60px;align-items:center;gap:10px;margin-bottom:8px}
-    .comp-label{font-size:10px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .comp-bar-bg{background:#ECEAE4;border-radius:4px;height:8px;position:relative}
-    .comp-bar{height:8px;border-radius:4px;position:absolute;top:0;left:0;transition:width .3s}
-    .comp-bar.atual{background:#1D9E75;z-index:2}
-    .comp-bar.ant{background:#DDDBD4;z-index:1}
-    .comp-val{font-size:10px;font-weight:600;text-align:right}
-    .comp-val.up{color:#1D9E75}.comp-val.down{color:#E24B4A}
-    .coach-msg{margin:0 48px 32px;padding:20px 24px;background:#2C2C2A;border-radius:12px;position:relative;overflow:hidden}
-    .coach-msg::before{content:'"';font-family:'DM Serif Display',serif;font-size:120px;color:rgba(255,255,255,.05);position:absolute;top:-20px;left:16px;line-height:1}
-    .coach-msg-text{font-size:13px;line-height:1.7;color:rgba(255,255,255,.85);position:relative}
-    .coach-assin{margin-top:12px;font-size:11px;font-weight:600;color:#9FDFC8;position:relative}
-    .p2-footer{padding:16px 48px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #ECEAE4;position:absolute;bottom:0;left:0;right:0}
-    .footer-logo{font-size:11px;font-weight:600;color:#6B6B66}
-    .footer-logo span{color:#1D9E75}
-    .footer-pg{font-size:10px;color:#BEBCB5}
-    @media print{body{background:#fff}.page{margin:0;page-break-after:always}.page:last-child{page-break-after:auto}}
-    </style>`;
-
   var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
   var diasNomes = {SEG:'Seg',TER:'Ter',QUA:'Qua',QUI:'Qui',SEX:'Sex',SAB:'Sáb',DOM:'Dom'};
-  var DIAS_NOMES_FULL = {SEG:'Segunda',TER:'Terça',QUA:'Quarta',QUI:'Quinta',SEX:'Sexta',SAB:'Sábado',DOM:'Domingo'};
 
-  var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' + css + '</head><body>';
+  var totalExs = 0, totalProg = 0, totalRec = 0, totalVL = 0;
+  var destaques = [], todosExs = [];
+  var diasRealizados = 0, diasComTreino = 0;
 
-  data.abas.forEach(function(aba, abaIdx) {
-    // Calcular métricas
-    var totalExs = 0, totalProg = 0, totalRec = 0, totalVL = 0;
-    var destaques = [], todosExs = [];
-    var diasRealizados = 0, diasComTreino = 0;
-
-    diasOrdem.forEach(function(dia) {
-      var diaData = aba.dias[dia];
-      if (!diaData) return;
-      if (diaData.totalExercicios > 0) diasComTreino++;
-      if (diaData.treinou) diasRealizados++;
-
-      diaData.exercicios.forEach(function(ex) {
-        if (!ex.realizado) return;
-        totalExs++;
-        totalVL += ex.volumeLoad || 0;
-        var status = 'manteve';
-        if (ex.recordeCarga || ex.recordeVolumeLoad) { status = 'record'; totalRec++; totalProg++; }
-        else if (ex.progressaoCarga) { status = 'carga'; totalProg++; }
-        else if (ex.progressaoReps) { status = 'reps'; totalProg++; }
-
-        var seriesStr = ex.seriesAtual.map(function(s){ return s.reps; }).join('/');
-        var cargaMax = ex.seriesAtual.length > 0 ? Math.max.apply(null, ex.seriesAtual.map(function(s){return s.carga;})) : 0;
-        var detalhe = cargaMax > 0 ? cargaMax + 'kg × ' + seriesStr + ' reps' : seriesStr + ' reps';
-
-        todosExs.push({ dia:dia, nome:ex.nome, series:detalhe, vl:ex.volumeLoad, status:status });
-        if (status !== 'manteve') destaques.push({ dia:dia, nome:ex.nome, status:status, detalhe:detalhe });
-      });
+  diasOrdem.forEach(function(dia) {
+    var diaData = aba.dias[dia];
+    if (!diaData) return;
+    if (diaData.totalExercicios > 0) diasComTreino++;
+    if (diaData.treinou) diasRealizados++;
+    diaData.exercicios.forEach(function(ex) {
+      if (!ex.realizado) return;
+      totalExs++;
+      totalVL += ex.volumeLoad || 0;
+      var status = 'manteve';
+      if (ex.recordeCarga || ex.recordeVolumeLoad) { status = 'record'; totalRec++; totalProg++; }
+      else if (ex.progressaoCarga) { status = 'carga'; totalProg++; }
+      else if (ex.progressaoReps)  { status = 'reps';  totalProg++; }
+      var seriesStr = ex.seriesAtual.map(function(s){ return s.reps; }).join('/');
+      var cargaMax = ex.seriesAtual.length > 0 ? Math.max.apply(null, ex.seriesAtual.map(function(s){return s.carga;})) : 0;
+      var detalhe = cargaMax > 0 ? cargaMax + 'kg × ' + seriesStr + ' reps' : seriesStr + ' reps';
+      todosExs.push({ dia:dia, nome:ex.nome, series:detalhe, vl:ex.volumeLoad||0, status:status });
+      if (status !== 'manteve') destaques.push({ nome:ex.nome, status:status, detalhe:detalhe });
     });
-
-    var pctProg = totalExs > 0 ? Math.round((totalProg/totalExs)*100) : 0;
-    var abasLabel = data.abas.map(function(a){return a.aba;}).join(' · ');
-    var hoje = new Date().toLocaleDateString('pt-BR', {day:'numeric',month:'long',year:'numeric'});
-
-    // Ordenar destaques: record > carga > reps
-    destaques.sort(function(a,b){
-      var o = {record:0,carga:1,reps:2};
-      return (o[a.status]||3)-(o[b.status]||3);
-    });
-    var topDestaques = destaques.slice(0, 5);
-
-    // ════ PÁGINA 1 ════
-    html += '<div class="page">';
-    html += '<div class="p1-header">';
-    html += '<div class="coach-label">Relatório de Treino</div>';
-    html += '<div class="aluno-nome">' + nomeAluno + '</div>';
-    html += '<div class="semana-label">Semana <span class="semana-num">' + aba.aba + '</span></div>';
-    html += '<div class="header-right"><div class="data-rel">' + hoje + '</div><div class="coach-nome">Coach Felipe Luiz</div></div>';
-    html += '</div>';
-
-    // Cards
-    html += '<div class="cards-grid">';
-    html += '<div class="card-stat"><span class="card-stat-icon">🏋️</span><div class="card-stat-val verde">' + diasRealizados + '/' + diasComTreino + '</div><div class="card-stat-label">Frequência</div><div class="card-stat-sub">treinos realizados</div></div>';
-    html += '<div class="card-stat"><span class="card-stat-icon">📈</span><div class="card-stat-val verde">' + pctProg + '%</div><div class="card-stat-label">Progressão</div><div class="card-stat-sub">dos exercícios evoluíram</div></div>';
-    html += '<div class="card-stat"><span class="card-stat-icon">🏆</span><div class="card-stat-val ouro">' + totalRec + '</div><div class="card-stat-label">Recordes</div><div class="card-stat-sub">novos máximos pessoais</div></div>';
-    html += '<div class="card-stat"><span class="card-stat-icon">⚡</span><div class="card-stat-val">' + fmt(totalVL) + '</div><div class="card-stat-label">Volume Load</div><div class="card-stat-sub">kg totais movidos</div></div>';
-    html += '</div>';
-
-    // Frequência por dia
-    html += '<div class="sec"><div class="sec-title">Frequência da semana</div><div class="dias-grid">';
-    diasOrdem.forEach(function(dia) {
-      var diaData = aba.dias[dia];
-      var classe = !diaData || diaData.totalExercicios === 0 ? 'off' : diaData.treinou ? 'ok' : 'no';
-      var icon = diaData && diaData.treinou ? '✓' : (diaData && diaData.totalExercicios > 0 ? '✗' : '·');
-      var exCount = diaData && diaData.totalExercicios > 0 ? diaData.totalExercicios + ' ex' : '';
-      html += '<div class="dia-box"><div class="dia-nome">' + diasNomes[dia] + '</div>';
-      html += '<div class="dia-circ ' + classe + '">' + icon + '</div>';
-      html += '<div class="dia-ex">' + exCount + '</div></div>';
-    });
-    html += '</div></div>';
-
-    // Destaques
-    html += '<div class="sec"><div class="sec-title">Destaques da semana</div><div class="prog-list">';
-    var icons = {record:'🏆', carga:'↑', reps:'○'};
-    var tagLabel = {record:'Recorde!', carga:'↑ Carga', reps:'↑ Reps'};
-    topDestaques.forEach(function(ex) {
-      html += '<div class="prog-item ' + ex.status + '">';
-      html += '<span class="prog-badge">' + (icons[ex.status]||'→') + '</span>';
-      html += '<div><div class="prog-nome">' + ex.nome + '</div><div class="prog-det">' + ex.detalhe + '</div></div>';
-      html += '<span class="prog-tag ' + ex.status + '">' + (tagLabel[ex.status]||'') + '</span>';
-      html += '</div>';
-    });
-    if (topDestaques.length === 0) {
-      html += '<div style="font-size:12px;color:#6B6B66;padding:12px 0">Nenhuma progressão registrada nesta semana.</div>';
-    }
-    html += '</div></div>';
-    html += '<div class="p1-footer"></div></div>';
-
-    // ════ PÁGINA 2 ════
-    html += '<div class="page">';
-    html += '<div class="p2-header"><div><div class="p2-title">Detalhamento completo</div><div class="p2-sub">Todos os exercícios · ' + aba.aba + '</div></div></div>';
-
-    // Tabela
-    html += '<div class="sec"><div class="sec-title">Progressão por exercício</div>';
-    html += '<table class="ex-table"><thead><tr><th>Exercício</th><th>Resultado</th><th>Vol. Load</th><th>Status</th></tr></thead><tbody>';
-    todosExs.forEach(function(ex) {
-      var stIcon = ex.status === 'record' ? '<span class="st-icon" style="color:#C9A84C">★</span>' :
-                   ex.status === 'carga'  ? '<span class="st-icon" style="color:#1D9E75">↑</span>' :
-                   ex.status === 'reps'   ? '<span class="st-icon" style="color:#3B82F6">↑</span>' :
-                   '<span class="st-icon" style="color:#BEBCB5">→</span>';
-      html += '<tr><td><span class="dia-tag">' + ex.dia + '</span><span class="ex-nome">' + ex.nome + '</span></td>';
-      html += '<td style="color:#6B6B66;font-size:10px">' + ex.series + '</td>';
-      html += '<td style="font-weight:500">' + fmt(ex.vl) + ' kg</td>';
-      html += '<td>' + stIcon + '</td></tr>';
-    });
-    html += '</tbody></table></div>';
-
-    // Comparativo entre semanas (se múltiplas abas)
-    if (data.abas.length > 1 && abaIdx === data.abas.length - 1) {
-      html += '<div class="sec"><div class="sec-title">Comparativo entre semanas</div>';
-      // Volume load por semana
-      var maxVL = 0;
-      data.abas.forEach(function(a) {
-        var vl = 0;
-        diasOrdem.forEach(function(dia){
-          var d = a.dias[dia];
-          if (d) d.exercicios.forEach(function(ex){ vl += ex.volumeLoad||0; });
-        });
-        if (vl > maxVL) maxVL = vl;
-      });
-      data.abas.forEach(function(a) {
-        var vl = 0;
-        diasOrdem.forEach(function(dia){
-          var d = a.dias[dia];
-          if (d) d.exercicios.forEach(function(ex){ vl += ex.volumeLoad||0; });
-        });
-        var pct = maxVL > 0 ? Math.round((vl/maxVL)*100) : 0;
-        html += '<div class="comp-row">';
-        html += '<div class="comp-label">' + a.aba + '</div>';
-        html += '<div class="comp-bar-bg"><div class="comp-bar atual" style="width:' + pct + '%"></div></div>';
-        html += '<div class="comp-val">' + fmt(vl) + ' kg</div>';
-        html += '</div>';
-      });
-      html += '</div>';
-    }
-
-    // Mensagem do coach
-    var primeiroNome = nomeAluno.split(' ')[0];
-    var msg = '';
-    if (pctProg >= 80) {
-      msg = 'Semana excepcional, ' + primeiroNome + '! Você progrediu em ' + pctProg + '% dos exercícios e completou ' + diasRealizados + ' de ' + diasComTreino + ' treinos. Essa consistência é exatamente o que constrói resultados duradouros. Continue respeitando a cadência e o RiR — cada repetição bem executada conta.';
-    } else if (pctProg >= 50) {
-      msg = 'Boa semana, ' + primeiroNome + '! ' + diasRealizados + ' de ' + diasComTreino + ' treinos realizados e ' + pctProg + '% dos exercícios em evolução. Há espaço para avançar ainda mais — foque nos exercícios em que ainda não atingiu o limite de repetições. O progresso é consistente e estamos no caminho certo.';
-    } else {
-      msg = 'Semana desafiadora, ' + primeiroNome + ', mas você apareceu — e isso é o que importa. ' + diasRealizados + ' treinos realizados. Vamos ajustar a estratégia para a próxima semana e retomar o ritmo de evolução. Cada semana é uma nova oportunidade.';
-    }
-
-    html += '<div class="coach-msg"><div class="coach-msg-text">' + msg + '</div><div class="coach-assin">— Coach Felipe Luiz</div></div>';
-    html += '<div class="p2-footer"><div class="footer-logo">Coach<span>Planilhas</span></div><div class="footer-pg">' + (abaIdx*2+2) + ' / ' + (data.abas.length*2) + '</div></div>';
-    html += '</div>';
   });
 
-  html += '</body></html>';
-  return html;
+  var pctProg = totalExs > 0 ? Math.round((totalProg/totalExs)*100) : 0;
+  destaques.sort(function(a,b){ var o={record:0,carga:1,reps:2}; return (o[a.status]||3)-(o[b.status]||3); });
+  var topDestaques = destaques.slice(0, 5);
+
+  var icons = {record:'🏆', carga:'↑', reps:'○'};
+  var tagLabel = {record:'Recorde!', carga:'↑ Carga', reps:'↑ Reps'};
+  var stColor = {record:'#C9A84C', carga:'#1D9E75', reps:'#3B82F6', manteve:'#BEBCB5'};
+  var stIcon  = {record:'★', carga:'↑', reps:'↑', manteve:'→'};
+
+  var primeiroNome = nomeAluno.split(' ')[0];
+  var msg = pctProg >= 80
+    ? 'Semana excepcional, ' + primeiroNome + '! Você progrediu em ' + pctProg + '% dos exercícios e completou ' + diasRealizados + ' de ' + diasComTreino + ' treinos. Essa consistência é o que constrói resultados duradouros.'
+    : pctProg >= 50
+    ? 'Boa semana, ' + primeiroNome + '! ' + diasRealizados + ' de ' + diasComTreino + ' treinos realizados e ' + pctProg + '% dos exercícios em evolução. Foque nos exercícios em que ainda não atingiu o limite de repetições.'
+    : 'Semana desafiadora, ' + primeiroNome + ', mas você apareceu — e isso é o que importa. ' + diasRealizados + ' treinos realizados. Vamos retomar o ritmo na próxima semana.';
+
+  var hoje = new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+
+  var css = `<style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body,div{font-family:'DM Sans',sans-serif;color:#2C2C2A;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .page{width:210mm;min-height:297mm;margin:0 auto 20px;background:#fff;position:relative;overflow:hidden}
+    .p1h{background:#2C2C2A;padding:40px 48px 36px;position:relative;overflow:hidden}
+    .p1h::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;border-radius:50%;background:#1D9E75;opacity:.15}
+    .coach-lbl{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#9FDFC8;margin-bottom:8px}
+    .a-nome{font-family:'DM Serif Display',serif;font-size:42px;color:#fff;line-height:1.1;margin-bottom:6px}
+    .s-lbl{font-size:13px;color:rgba(255,255,255,.5)}
+    .s-num{color:#9FDFC8;font-weight:600}
+    .hr{position:absolute;top:40px;right:48px;text-align:right}
+    .hr .dt{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px}
+    .hr .cn{font-size:13px;color:rgba(255,255,255,.7);font-weight:500}
+    .cg{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #ECEAE4}
+    .cs{padding:22px 18px;border-right:1px solid #ECEAE4}
+    .cs:last-child{border-right:none}
+    .ci{font-size:18px;margin-bottom:8px;display:block}
+    .cv{font-family:'DM Serif Display',serif;font-size:30px;line-height:1;margin-bottom:3px}
+    .cv.v{color:#1D9E75}.cv.o{color:#C9A84C}
+    .cl{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#6B6B66}
+    .cs2{font-size:10px;color:#6B6B66;margin-top:2px}
+    .sec{padding:22px 48px 0}
+    .st{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#6B6B66;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+    .st::after{content:'';flex:1;height:1px;background:#ECEAE4}
+    .dg{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:20px}
+    .db{text-align:center}
+    .dn{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6B6B66;margin-bottom:5px}
+    .dc{width:34px;height:34px;border-radius:50%;margin:0 auto 3px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+    .dc.ok{background:#1D9E75;color:#fff}
+    .dc.no{background:#ECEAE4;color:#BEBCB5}
+    .dc.off{border:1.5px dashed #DDDBD4;color:#DDDBD4}
+    .de{font-size:9px;color:#6B6B66}
+    .pl{display:flex;flex-direction:column;gap:7px;margin-bottom:20px}
+    .pi{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px}
+    .pi.carga{background:#E8F7F2}.pi.record{background:#FDF6E3}.pi.reps{background:#EBF5FF}.pi.manteve{background:#F5F4F0}
+    .pb{font-size:16px;flex-shrink:0;width:24px;text-align:center}
+    .pn{flex:1;font-size:12px;font-weight:500}
+    .pd{font-size:10px;color:#6B6B66}
+    .pt{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:99px;white-space:nowrap}
+    .pt.carga{background:#1D9E75;color:#fff}.pt.record{background:#C9A84C;color:#fff}.pt.reps{background:#3B82F6;color:#fff}
+    .pft{position:absolute;bottom:0;left:0;right:0;height:6px;background:linear-gradient(90deg,#1D9E75 0%,#9FDFC8 60%,#C9A84C 100%)}
+    .p2h{padding:30px 48px 18px;border-bottom:1px solid #ECEAE4;display:flex;align-items:flex-end;justify-content:space-between}
+    .p2t{font-family:'DM Serif Display',serif;font-size:26px}
+    .p2s{font-size:12px;color:#6B6B66;margin-top:3px}
+    .xt{width:100%;border-collapse:collapse;font-size:11px}
+    .xt thead tr{border-bottom:2px solid #2C2C2A}
+    .xt th{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B6B66;padding:0 8px 8px 0;text-align:left}
+    .xt th:last-child{text-align:right}
+    .xt tbody tr{border-bottom:1px solid #ECEAE4}
+    .xt td{padding:7px 8px 7px 0;vertical-align:middle}
+    .xt td:last-child{text-align:right}
+    .dtag{display:inline-block;font-size:8px;font-weight:700;letter-spacing:.06em;padding:2px 5px;border-radius:3px;background:#F5F4F0;color:#6B6B66;margin-right:5px}
+    .cm{margin:0 48px 32px;padding:18px 22px;background:#2C2C2A;border-radius:10px;position:relative;overflow:hidden}
+    .cm::before{content:'"';font-family:'DM Serif Display',serif;font-size:100px;color:rgba(255,255,255,.05);position:absolute;top:-15px;left:14px;line-height:1}
+    .cmt{font-size:13px;line-height:1.75;color:rgba(255,255,255,.85);position:relative}
+    .cma{margin-top:10px;font-size:11px;font-weight:600;color:#9FDFC8;position:relative}
+    .pf{position:absolute;bottom:0;left:0;right:0;padding:14px 48px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #ECEAE4}
+    .fl{font-size:11px;font-weight:600;color:#6B6B66}
+    .fl span{color:#1D9E75}
+    .fp{font-size:10px;color:#BEBCB5}
+    @media print{body{background:#fff}.page{margin:0;page-break-after:always}.page:last-child{page-break-after:auto}}
+  </style>`;
+
+  var h = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' + css + '</head><body>';
+
+  // PÁGINA 1
+  h += '<div class="page">';
+  h += '<div class="p1h"><div class="coach-lbl">Relatório de Treino</div>';
+  h += '<div class="a-nome">' + nomeAluno + '</div>';
+  h += '<div class="s-lbl">Semana <span class="s-num">' + aba.aba + '</span></div>';
+  h += '<div class="hr"><div class="dt">' + hoje + '</div><div class="cn">Coach Felipe Luiz</div></div></div>';
+
+  // Cards
+  h += '<div class="cg">';
+  h += '<div class="cs"><span class="ci">🏋️</span><div class="cv v">' + diasRealizados + '/' + diasComTreino + '</div><div class="cl">Frequência</div><div class="cs2">treinos realizados</div></div>';
+  h += '<div class="cs"><span class="ci">📈</span><div class="cv v">' + pctProg + '%</div><div class="cl">Progressão</div><div class="cs2">dos exercícios evoluíram</div></div>';
+  h += '<div class="cs"><span class="ci">🏆</span><div class="cv o">' + totalRec + '</div><div class="cl">Recordes</div><div class="cs2">novos máximos pessoais</div></div>';
+  h += '<div class="cs"><span class="ci">⚡</span><div class="cv">' + fmt(totalVL) + '</div><div class="cl">Volume Load</div><div class="cs2">kg totais movidos</div></div>';
+  h += '</div>';
+
+  // Dias
+  h += '<div class="sec"><div class="st">Frequência da semana</div><div class="dg">';
+  diasOrdem.forEach(function(dia) {
+    var d = aba.dias[dia];
+    var cls = !d || d.totalExercicios===0 ? 'off' : d.treinou ? 'ok' : 'no';
+    var ic = d && d.treinou ? '✓' : (d && d.totalExercicios>0 ? '✗' : '·');
+    var ex = d && d.totalExercicios>0 ? d.totalExercicios+' ex' : '';
+    h += '<div class="db"><div class="dn">' + diasNomes[dia] + '</div><div class="dc ' + cls + '">' + ic + '</div><div class="de">' + ex + '</div></div>';
+  });
+  h += '</div></div>';
+
+  // Destaques
+  h += '<div class="sec"><div class="st">Destaques da semana</div><div class="pl">';
+  topDestaques.forEach(function(ex) {
+    h += '<div class="pi ' + ex.status + '"><span class="pb">' + (icons[ex.status]||'→') + '</span>';
+    h += '<div><div class="pn">' + ex.nome + '</div><div class="pd">' + ex.detalhe + '</div></div>';
+    h += '<span class="pt ' + ex.status + '">' + (tagLabel[ex.status]||'') + '</span></div>';
+  });
+  if (!topDestaques.length) h += '<div style="font-size:12px;color:#6B6B66;padding:10px 0">Nenhuma progressão registrada.</div>';
+  h += '</div></div>';
+  h += '<div class="pft"></div></div>';
+
+  // PÁGINA 2
+  h += '<div class="page">';
+  h += '<div class="p2h"><div><div class="p2t">Detalhamento completo</div><div class="p2s">Todos os exercícios · ' + aba.aba + '</div></div></div>';
+  h += '<div class="sec"><div class="st">Todos os exercícios</div>';
+  h += '<table class="xt"><thead><tr><th>Exercício</th><th>Resultado</th><th>Vol. Load</th><th>Status</th></tr></thead><tbody>';
+  todosExs.forEach(function(ex) {
+    var ic = '<span style="font-size:13px;font-weight:700;color:' + (stColor[ex.status]||'#BEBCB5') + '">' + (stIcon[ex.status]||'→') + '</span>';
+    h += '<tr><td><span class="dtag">' + ex.dia + '</span><span style="font-weight:500">' + ex.nome + '</span></td>';
+    h += '<td style="color:#6B6B66;font-size:10px">' + ex.series + '</td>';
+    h += '<td style="font-weight:500">' + fmt(ex.vl) + ' kg</td><td>' + ic + '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+
+  h += '<div class="cm"><div class="cmt">' + msg + '</div><div class="cma">— Coach Felipe Luiz</div></div>';
+  h += '<div class="pf"><div class="fl">Coach<span>Planilhas</span></div><div class="fp">2 / 2</div></div>';
+  h += '</div></body></html>';
+  return h;
 }
 
 
@@ -2264,21 +2367,19 @@ function _fmt(n) {
 }
 
 function imprimirRelatorio() {
-  var conteudo = document.getElementById('rel-conteudo').innerHTML;
-  // Verificar se é o novo formato (começa com DOCTYPE)
-  if (conteudo.trim().startsWith('<!DOCTYPE')) {
-    var win = window.open('', '_blank');
-    win.document.write(conteudo);
-    win.document.close();
-    setTimeout(function(){ win.print(); }, 800);
+  var conteudo = document.getElementById('rel-conteudo');
+  var inner = conteudo.innerHTML;
+  // Verificar se é relatório completo (tem DOCTYPE) ou comparativo (tem rel-wrap)
+  var win = window.open('', '_blank');
+  if (inner.trim().startsWith('<!DOCTYPE')) {
+    win.document.write(inner);
   } else {
-    // Formato antigo
-    var win = window.open('', '_blank');
-    win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório</title></head><body>' + conteudo + '</body></html>');
-    win.document.close();
-    setTimeout(function(){ win.print(); }, 500);
+    win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório</title></head><body style="margin:0;padding:20px;font-family:sans-serif">' + inner + '</body></html>');
   }
+  win.document.close();
+  setTimeout(function(){ win.print(); }, 800);
 }
+
 
 
 // ============================================================
@@ -2658,7 +2759,7 @@ async function analisarAjustesPlanilha() {
       return;
     }
     if (data.escritos === 0) {
-      addMsg('msgs', '⚠️ Nenhum exercício com dados anteriores encontrado na aba ' + abaAtual + '. As colunas G-J precisam estar preenchidas.', false);
+      addMsg('msgs', '⚠️ Nenhum exercício com dados anteriores encontrado na aba ' + abaAtual + '.', false);
       return;
     }
     var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
@@ -2673,13 +2774,11 @@ async function analisarAjustesPlanilha() {
       html += '<strong>' + dia + '</strong><br>';
       porDia[dia].forEach(function(r) {
         var emoji = r.ajuste === 'Aumentar carga' ? '🟢' : '🔵';
-        html += emoji + ' ' + r.nome + ' — reps anteriores: ' + (r.reps||[]).join('/') + ' (limite ' + r.rangeMax + ') → <strong>' + r.ajuste + '</strong><br>';
+        html += emoji + ' ' + r.nome + ' — reps: ' + (r.reps||[]).join('/') + ' (limite ' + r.rangeMax + ') → <strong>' + r.ajuste + '</strong><br>';
       });
       html += '<br>';
     });
-    if (data.semDados > 0) {
-      html += '<small style="opacity:.6">' + data.semDados + ' exercício(s) sem dados anteriores ignorado(s).</small>';
-    }
+    if (data.semDados > 0) html += '<small style="opacity:.6">' + data.semDados + ' exercício(s) sem dados anteriores ignorado(s).</small>';
     addMsg('msgs', html, false);
     showToast('Ajustes aplicados na planilha!', 'ok');
   } catch(e) {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v25.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v25_1.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2035,32 +2035,12 @@ function montarRelatorioComparativoIA(nomeAluno, data) {
 async function gerarRelatorioComparativoAsync(nomeAluno, data, containerEl) {
   containerEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:24px;margin-bottom:12px">✨</div><div style="font-size:14px;font-weight:500;margin-bottom:6px">Analisando ' + data.abas.length + ' semanas...</div><div style="font-size:12px;color:var(--text3)">A IA está comparando cargas, progressões e frequência</div></div>';
 
-  // Montar contexto compacto para a IA
   var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
 
-  var contexto = 'Analise a evolução do aluno ' + nomeAluno + ' entre as semanas selecionadas.\n\n';
-
-  // Por exercício, coletar histórico de carga máxima e reps ao longo das semanas
+  // ── Montar contexto estruturado ──
   var histExercicios = {};
+  var freqPorSemana = [];
 
-  data.abas.forEach(function(aba) {
-    diasOrdem.forEach(function(dia) {
-      var diaData = aba.dias[dia];
-      if (!diaData) return;
-      diaData.exercicios.forEach(function(ex) {
-        if (!ex.realizado || ex.seriesAtual.length === 0) return;
-        var key = ex.nome;
-        if (!histExercicios[key]) histExercicios[key] = [];
-        var cargaMax = Math.max.apply(null, ex.seriesAtual.map(function(s){return s.carga;}));
-        var repsMax  = Math.max.apply(null, ex.seriesAtual.map(function(s){return s.reps;}));
-        var vl = ex.volumeLoad || 0;
-        histExercicios[key].push({ aba: aba.aba, dia: dia, cargaMax: cargaMax, repsMax: repsMax, vl: vl });
-      });
-    });
-  });
-
-  // Frequência por semana
-  contexto += '=== FREQUÊNCIA ===\n';
   data.abas.forEach(function(aba) {
     var realizados = 0, total = 0;
     diasOrdem.forEach(function(dia) {
@@ -2068,35 +2048,69 @@ async function gerarRelatorioComparativoAsync(nomeAluno, data, containerEl) {
       if (!d || d.totalExercicios === 0) return;
       total++;
       if (d.treinou) realizados++;
+      d.exercicios.forEach(function(ex) {
+        if (!ex.realizado || ex.seriesAtual.length === 0) return;
+        var key = ex.nome;
+        if (!histExercicios[key]) histExercicios[key] = [];
+        var cargaMax = Math.max.apply(null, ex.seriesAtual.map(function(s){return s.carga;}));
+        var repsMax  = Math.max.apply(null, ex.seriesAtual.map(function(s){return s.reps;}));
+        histExercicios[key].push({ aba: aba.aba, cargaMax: cargaMax, repsMax: repsMax, vl: ex.volumeLoad||0 });
+      });
     });
-    contexto += aba.aba + ': ' + realizados + '/' + total + ' treinos\n';
+    freqPorSemana.push({ aba: aba.aba, realizados: realizados, total: total });
   });
 
-  // Histórico de exercícios
-  contexto += '\n=== EVOLUÇÃO POR EXERCÍCIO ===\n';
+  // ── Calcular progressões por exercício ──
+  var progressoes = []; // exercícios que evoluíram
+  var atencao = [];     // exercícios que regrediram ou estagnaram
   Object.keys(histExercicios).forEach(function(nome) {
     var hist = histExercicios[nome];
-    if (hist.length < 2) return; // só interessa se aparece em 2+ semanas
-    contexto += nome + ':\n';
-    hist.forEach(function(h) {
-      contexto += '  ' + h.aba + ': ' + h.cargaMax + 'kg × ' + h.repsMax + ' reps (VL: ' + h.vl + 'kg)\n';
-    });
+    if (hist.length < 2) return;
+    var primeira = hist[0], ultima = hist[hist.length - 1];
+    var diffCarga = ultima.cargaMax - primeira.cargaMax;
+    var diffReps  = ultima.repsMax  - primeira.repsMax;
+    var item = {
+      nome: nome,
+      de: primeira.aba, para: ultima.aba,
+      cargaDe: primeira.cargaMax, cargaPara: ultima.cargaMax,
+      repsDe: primeira.repsMax, repsPara: ultima.repsMax,
+      diffCarga: diffCarga, diffReps: diffReps
+    };
+    if (diffCarga > 0) progressoes.push(item);
+    else if (diffCarga < 0) atencao.push(item);
+    else if (diffReps > 0) progressoes.push(item);
+    else if (diffReps < 0) atencao.push(item);
+    else atencao.push(item); // estagnado
   });
 
-  var abas = data.abas.map(function(a){return a.aba;}).join(', ');
+  progressoes.sort(function(a,b){ return (b.diffCarga + b.diffReps*0.1) - (a.diffCarga + a.diffReps*0.1); });
+  atencao.sort(function(a,b){ return (a.diffCarga + a.diffReps*0.1) - (b.diffCarga + b.diffReps*0.1); });
 
-  var prompt = contexto + '\n\nCom base nesses dados, gere um relatório comparativo em HTML puro (sem <!DOCTYPE>, sem <html>, sem <head>, sem <body>) com:\n' +
-    '1. Um resumo executivo em 2-3 frases motivacionais e diretas sobre a evolução geral\n' +
-    '2. Os 3-5 exercícios com MAIOR progressão de carga (destaque visual)\n' +
-    '3. Os 2-3 exercícios que precisam de atenção (sem progressão ou regressão)\n' +
-    '4. Um insight sobre frequência de treinos\n' +
-    '5. Uma frase de encerramento motivacional assinada pelo Coach Felipe\n\n' +
-    'Use as classes CSS disponíveis (não inclua <style>):\\n- .resumo-box: caixa verde clara para resumo executivo\\n- .card-ev: card de exercício (add .record ou .atencao para variações)\\n- .ce-icon .ce-body .ce-nome .ce-det .ce-badge: dentro do card-ev\\n- .bg-verde .bg-ouro .bg-azul .bg-alerta .bg-cinza: badges coloridos\\n- .freq-grid .freq-card .fc-sem .fc-val .fc-lbl: grid de frequência\\n- .barra-wrap .barra-fill (style width:X%): barras de progresso\\n- .coach-enc p .assin: bloco de encerramento (fundo cinza, borda ouro)\\n- h2: títulos de seção | p: parágrafos\\n' +
-    'REGRAS OBRIGATÓRIAS: fundo branco, texto escuro, NUNCA itálico no corpo, NUNCA fundo escuro no texto principal. Máximo 2 páginas A4.\\n' +
-    'Tom: direto e motivacional. Linguagem simples — o aluno deve entender tudo sem jargões técnicos.\\n' +
-    'Semanas analisadas: ' + abas + '\n' +
-    'A assinatura do coach deve ser sempre "— Felipe", nunca "Coach Planilhas".\\n' +
-    'IMPORTANTE: retorne APENAS o HTML, sem explicações, sem markdown, sem blocos de código.';
+  var abas = data.abas.map(function(a){return a.aba;}).join(', ');
+  var primeiroNome = nomeAluno.split(' ')[0];
+
+  // ── Montar HTML diretamente (sem IA para a estrutura, IA só para o texto) ──
+  // Pedir à IA apenas o texto narrativo (resumo + encerramento)
+  var contextoTexto = 'Aluno: ' + nomeAluno + '\nSemanas: ' + abas + '\n\n';
+  contextoTexto += 'Frequência:\n';
+  freqPorSemana.forEach(function(f){ contextoTexto += '  ' + f.aba + ': ' + f.realizados + '/' + f.total + ' treinos\n'; });
+  contextoTexto += '\nExercícios que mais evoluíram (carga):\n';
+  progressoes.slice(0,5).forEach(function(p){
+    contextoTexto += '  ' + p.nome + ': ' + p.cargaDe + 'kg → ' + p.cargaPara + 'kg (' + (p.diffCarga>=0?'+':'') + p.diffCarga + 'kg)\n';
+  });
+  contextoTexto += '\nExercícios a melhorar:\n';
+  atencao.slice(0,3).forEach(function(p){
+    contextoTexto += '  ' + p.nome + ': ' + p.cargaDe + 'kg → ' + p.cargaPara + 'kg\n';
+  });
+
+  var promptTexto = contextoTexto + '\nEscreva APENAS dois textos curtos em português:\n' +
+    '1. RESUMO: 2-3 frases motivacionais e diretas sobre a evolução geral do aluno. Mencione a frequência e a progressão de carga. Tom: coach falando com o aluno diretamente.\n' +
+    '2. ENCERRAMENTO: 1-2 frases de incentivo para continuar. Assine como "— Felipe".\n\n' +
+    'Formato de resposta (JSON):\n{"resumo": "texto aqui", "encerramento": "texto aqui — Felipe"}\n' +
+    'Retorne APENAS o JSON, sem explicações.';
+
+  var resumoTexto = 'Sua evolução entre as semanas analisadas mostra consistência e dedicação, ' + primeiroNome + '. Os números confirmam: você está progredindo.';
+  var encerramentoTexto = 'Continue firme. Cada semana é um tijolo a mais na construção do seu resultado. — Felipe';
 
   try {
     var res = await fetch('https://coach-proxy.coachfiletsep.workers.dev', {
@@ -2104,80 +2118,122 @@ async function gerarRelatorioComparativoAsync(nomeAluno, data, containerEl) {
       headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 4000,
-        system: 'Você é um assistente especialista em treino de força que gera relatórios HTML bonitos e motivacionais para alunos de personal trainer. Retorne APENAS HTML puro, sem markdown, sem explicações.',
-        messages: [{ role: 'user', content: prompt }]
+        max_tokens: 600,
+        system: 'Você é um coach de treino que escreve textos motivacionais curtos. Retorne APENAS JSON válido.',
+        messages: [{ role: 'user', content: promptTexto }]
       })
     });
-    var respData = await res.json();
-    if (respData.error) throw new Error(respData.error.message);
-    var htmlIA = respData.content[0].text || '';
-    // Limpar possível markdown
-    htmlIA = htmlIA.replace(/```html\s*/gi, '').replace(/```\s*/g, '').trim();
+    var rd = await res.json();
+    if (!rd.error) {
+      var txt = rd.content[0].text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+      var parsed = JSON.parse(txt);
+      if (parsed.resumo) resumoTexto = parsed.resumo;
+      if (parsed.encerramento) encerramentoTexto = parsed.encerramento;
+    }
+  } catch(e) {}
 
-    // Envolver em template bonito
-    var wrapper = montarWrapperComparativo(nomeAluno, data.abas.map(function(a){return a.aba;}).join(' · '), htmlIA);
-    containerEl.innerHTML = wrapper;
-  } catch(e) {
-    containerEl.innerHTML = '<div style="color:var(--red);padding:20px;font-size:13px">Erro ao gerar análise: ' + e.message + '</div>';
-  }
+  // ── Montar HTML estruturado ──
+  var hoje = new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+  var html = montarWrapperComparativo(nomeAluno, abas, '', {
+    resumo: resumoTexto,
+    encerramento: encerramentoTexto,
+    freqPorSemana: freqPorSemana,
+    progressoes: progressoes.slice(0,6),
+    atencao: atencao.slice(0,3)
+  });
+  containerEl.innerHTML = html;
 }
 
-function montarWrapperComparativo(nomeAluno, abas, htmlIA) {
+function montarWrapperComparativo(nomeAluno, abas, htmlIA, dados) {
   var hoje = new Date().toLocaleDateString('pt-BR', {day:'numeric',month:'long',year:'numeric'});
+  
+  var freqHtml = '';
+  if (dados && dados.freqPorSemana) {
+    dados.freqPorSemana.forEach(function(f) {
+      var pct = f.total > 0 ? Math.round((f.realizados/f.total)*100) : 0;
+      freqHtml += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
+        '<span style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;width:32px;color:#6B6B66">' + f.aba + '</span>' +
+        '<div style="flex:1;background:#ECEAE4;border-radius:4px;height:10px;position:relative;overflow:hidden">' +
+          '<div style="position:absolute;top:0;left:0;height:10px;border-radius:4px;background:#1D9E75;width:' + pct + '%"></div>' +
+        '</div>' +
+        '<span style="font-size:12px;font-weight:600;color:#1D9E75;width:60px;text-align:right">' + f.realizados + '/' + f.total + ' treinos</span>' +
+      '</div>';
+    });
+  }
+
+  var progHtml = '';
+  if (dados && dados.progressoes && dados.progressoes.length > 0) {
+    dados.progressoes.forEach(function(p) {
+      var badge = p.diffCarga > 0 ? '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;background:#1D9E75;color:#fff">+' + p.diffCarga + 'kg</span>'
+                                  : '<span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;background:#3B82F6;color:#fff">+' + p.diffReps + ' reps</span>';
+      progHtml += '<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;margin-bottom:7px;background:#F0FAF5;border:1px solid #C6EFE0">' +
+        '<span style="font-size:18px;width:24px;text-align:center">↑</span>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:13px;font-weight:600;color:#1a1a18">' + p.nome + '</div>' +
+          '<div style="font-size:11px;color:#6B6B66;margin-top:2px">' + p.de + ' → ' + p.para + ' · ' + p.cargaDe + 'kg → ' + p.cargaPara + 'kg</div>' +
+        '</div>' +
+        badge +
+      '</div>';
+    });
+  } else {
+    progHtml = '<p style="font-size:13px;color:#6B6B66">Dados insuficientes para calcular progressão entre as semanas.</p>';
+  }
+
+  var atencaoHtml = '';
+  if (dados && dados.atencao && dados.atencao.length > 0) {
+    dados.atencao.slice(0,3).forEach(function(p) {
+      var diff = p.diffCarga !== 0 ? p.diffCarga + 'kg' : 'sem progresso';
+      atencaoHtml += '<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;margin-bottom:7px;background:#FFFBF0;border:1px solid #FDE68A">' +
+        '<span style="font-size:18px;width:24px;text-align:center">⚠️</span>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:13px;font-weight:600;color:#1a1a18">' + p.nome + '</div>' +
+          '<div style="font-size:11px;color:#6B6B66;margin-top:2px">' + p.de + ' → ' + p.para + ' · ' + diff + '</div>' +
+        '</div>' +
+      '</div>';
+    });
+  }
+
+  var resumo = dados && dados.resumo ? dados.resumo : '';
+  var encerramento = dados && dados.encerramento ? dados.encerramento : '';
+
   return `<style>
     @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap');
-    .rel-wrap *{box-sizing:border-box;margin:0;padding:0}
-    .rel-wrap{font-family:'DM Sans',sans-serif;color:#1a1a18;max-width:720px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .rel-wrap h1,.rel-wrap h2,.rel-wrap h3{font-family:'DM Serif Display',serif;font-style:normal}
-    .rh{background:#1D9E75;padding:36px 48px 32px;border-radius:12px 12px 0 0;position:relative;overflow:hidden}
-    .rh::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,0.08)}
-    .rh .tag{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,0.7);margin-bottom:8px}
-    .rh h1{font-family:'DM Serif Display',serif;font-size:36px;color:#fff;margin-bottom:4px;font-style:normal}
-    .rh .sub{font-size:12px;color:rgba(255,255,255,0.65);margin-bottom:4px}
-    .rh .semanas-badge{display:inline-block;background:rgba(255,255,255,0.18);padding:4px 12px;border-radius:99px;font-size:12px;font-weight:600;color:#fff;margin-top:6px}
-    .rb{background:#fff;padding:36px 48px 40px;border-radius:0 0 12px 12px;border:1px solid #E8E6DF;border-top:none}
-    .rb h2{font-family:'DM Serif Display',serif;font-size:22px;color:#1a1a18;margin:28px 0 14px;font-style:normal;border-bottom:2px solid #1D9E75;padding-bottom:8px}
-    .rb h3{font-size:14px;font-weight:600;color:#1a1a18;margin:18px 0 10px}
-    .rb p{font-size:13px;line-height:1.8;color:#3a3a38;margin-bottom:12px}
-    .resumo-box{font-size:14px;line-height:1.8;color:#1a1a18;padding:20px 24px;background:#F0FAF5;border-left:4px solid #1D9E75;border-radius:0 8px 8px 0;margin-bottom:24px;font-weight:400}
-    .card-ev{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:8px;margin-bottom:8px;border:1px solid #E8F7F2;background:#F8FDFB}
-    .card-ev.atencao{background:#FFFBF0;border-color:#FDE68A}
-    .card-ev.record{background:#FFFDF0;border-color:#FCD34D}
-    .card-ev .ce-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center}
-    .card-ev .ce-body{flex:1}
-    .card-ev .ce-nome{font-size:13px;font-weight:600;color:#1a1a18;margin-bottom:2px}
-    .card-ev .ce-det{font-size:11px;color:#6B6B66}
-    .card-ev .ce-badge{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:99px;white-space:nowrap;flex-shrink:0}
-    .bg-verde{background:#1D9E75;color:#fff}
-    .bg-ouro{background:#C9A84C;color:#fff}
-    .bg-azul{background:#3B82F6;color:#fff}
-    .bg-alerta{background:#F59E0B;color:#fff}
-    .bg-cinza{background:#E5E3DC;color:#6B6B66}
-    .freq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:12px 0 20px}
-    .freq-card{text-align:center;padding:16px 10px;background:#F5F4F0;border-radius:8px;border:1px solid #ECEAE4}
-    .freq-card .fc-sem{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#6B6B66;margin-bottom:4px}
-    .freq-card .fc-val{font-family:'DM Serif Display',serif;font-size:28px;color:#1D9E75;line-height:1;margin-bottom:2px}
-    .freq-card .fc-lbl{font-size:10px;color:#9B9B96}
-    .barra-wrap{background:#ECEAE4;border-radius:4px;height:8px;margin:6px 0;position:relative;overflow:hidden}
-    .barra-fill{height:8px;border-radius:4px;background:#1D9E75;position:absolute;top:0;left:0}
-    .coach-enc{background:#F5F4F0;border-radius:10px;padding:20px 24px;margin-top:28px;border-left:4px solid #C9A84C}
-    .coach-enc p{font-size:13px;line-height:1.8;color:#2C2C2A;font-style:normal}
-    .coach-enc .assin{font-size:12px;font-weight:600;color:#C9A84C;margin-top:12px}
-    .rf{text-align:center;padding:16px;font-size:10px;color:#BEBCB5;letter-spacing:.05em;margin-top:8px}
-    @media print{.rel-wrap{max-width:100%}.rh{border-radius:0}.rb{border-radius:0}}
+    .rw{font-family:'DM Sans',sans-serif;color:#1a1a18;max-width:720px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .rw h2{font-family:'DM Serif Display',serif;font-size:20px;color:#1a1a18;margin:28px 0 14px;padding-bottom:8px;border-bottom:2px solid #1D9E75}
+    .rw p{font-size:13px;line-height:1.8;color:#3a3a38;margin-bottom:10px}
+    .rh2{background:#1D9E75;padding:36px 48px 32px;border-radius:12px 12px 0 0;position:relative;overflow:hidden}
+    .rh2::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.08)}
+    .rb2{background:#fff;padding:32px 48px 36px;border-radius:0 0 12px 12px;border:1px solid #E8E6DF;border-top:none}
+    .resumo-b{font-size:14px;line-height:1.8;color:#1a1a18;padding:18px 22px;background:#F0FAF5;border-left:4px solid #1D9E75;border-radius:0 8px 8px 0;margin-bottom:8px}
+    .enc-b{background:#F5F4F0;border-radius:10px;padding:18px 22px;margin-top:24px;border-left:4px solid #C9A84C}
+    .enc-b p{font-size:13px;line-height:1.8;color:#2C2C2A}
+    .enc-b .assin{font-size:12px;font-weight:600;color:#C9A84C;margin-top:10px}
+    .rf2{text-align:right;padding:12px 0 0;font-size:10px;color:#BEBCB5}
+    @media print{.rw{max-width:100%}.rh2,.rb2{border-radius:0}}
   </style>
-  <div class="rel-wrap">
-    <div class="rh">
-      <div class="tag">Relatório Comparativo</div>
-      <h1>${nomeAluno}</h1>
-      <div class="sub">Análise de evolução entre semanas</div>
-      <div class="semanas-badge">${abas}</div>
+  <div class="rw">
+    <div class="rh2">
+      <div style="font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:8px">Relatório Comparativo</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:36px;color:#fff;margin-bottom:4px">${nomeAluno}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:6px">Análise de evolução entre semanas</div>
+      <div style="display:inline-block;background:rgba(255,255,255,.18);padding:4px 14px;border-radius:99px;font-size:12px;font-weight:600;color:#fff">${abas}</div>
     </div>
-    <div class="rb">
-      ${htmlIA}
+    <div class="rb2">
+      <div class="resumo-b">${resumo}</div>
+
+      <h2>📈 Progressão de carga</h2>
+      ${progHtml}
+
+      ${atencaoHtml.length > 0 ? '<h2>⚠️ Pontos de atenção</h2>' + atencaoHtml : ''}
+
+      <h2>🏋️ Frequência por semana</h2>
+      <div style="margin-bottom:8px">${freqHtml}</div>
+
+      <div class="enc-b">
+        <p>${encerramento}</p>
+      </div>
+      <div class="rf2">${hoje}</div>
     </div>
-    <div class="rf">Coach Felipe Luiz · ${hoje}</div>
   </div>`;
 }
 

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v21_8.html -->
+<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v23_2.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coach Planilhas v21</title>
+<title>Coach Planilhas v23</title>
 <style>
   :root {
     --green: #1D9E75;
@@ -344,6 +344,7 @@
             <button class="chip" onclick="useChip(this)">Analisar mesociclo</button>
             <button class="chip" onclick="useChip(this)">Sugerir progressão de carga</button>
             <button class="chip" onclick="useChip(this)">Montar novo meso completo</button>
+            <button class="chip" onclick="analisarAjustesPlanilha()">📊 Analisar ajustes</button>
           </div>
           <div class="input-row">
             <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
@@ -750,10 +751,7 @@ async function init() {
   anthropicKey = localStorage.getItem('coach_anthropic_key') || '';
   const raw = localStorage.getItem('coach_students_v2');
   if (raw) { try { students = JSON.parse(raw); } catch(e) { students = []; } }
-  if (students.length === 0) {
-    students = [{id:'caian',name:'Caian Maroni',sheet:'https://docs.google.com/spreadsheets/d/1vVoFG7dTgZ6Z7wTSxmeMhDDxdu-rX4zy0LTSqg_47F8/edit',status:'ativo',obs:'Proximo meso: +20% series semanais de ombros sem aumentar total por sessao'}];
-    saveAll();
-  }
+  // sem alunos hardcoded — carrega do localStorage ou aguarda cadastro/importação
   if (accessToken) {
     setAuthConnected();
   } else if (refreshToken) {
@@ -2001,184 +1999,151 @@ async function gerarRelatorioHTML() {
   }
 }
 
-function _cardPDF(val, label) {
-  return '<div style="background:#f7f7f5;border-radius:8px;padding:10px;text-align:center;border:0.5px solid #eee;">' +
-    '<div style="font-size:18px;font-weight:700;color:#1D9E75;">' + val + '</div>' +
-    '<div style="font-size:10px;color:#9b9b96;margin-top:2px;">' + label + '</div></div>';
-}
-
-function _fmtN(n) { if (!n) return '0'; return Number(n).toLocaleString('pt-BR'); }
-
 function montarHTMLRelatorio(nomeAluno, data) {
-  var DIAS_NOMES = {SEG:'Seg',TER:'Ter',QUA:'Qua',QUI:'Qui',SEX:'Sex',SAB:'Sab',DOM:'Dom'};
-  var DIAS_ORDEM = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
   var html = '';
+  var DIAS_NOMES = {SEG:'Segunda-feira',TER:'Terça-feira',QUA:'Quarta-feira',QUI:'Quinta-feira',SEX:'Sexta-feira',SAB:'Sábado',DOM:'Domingo'};
 
-  // Verificar progressão série a série (mesmo critério do relatório WhatsApp)
-  function calcProg(seriesAtual, seriesAnt) {
-    if (!seriesAtual || !seriesAnt || seriesAtual.length === 0 || seriesAnt.length === 0) return null;
-    var progCarga = false, regrediu = false, progReps = false, regrediuReps = false, temComp = false;
-    for (var i = 0; i < Math.min(seriesAtual.length, seriesAnt.length); i++) {
-      var cA = seriesAtual[i].carga||0, cB = seriesAnt[i].carga||0;
-      var rA = seriesAtual[i].reps||0, rB = seriesAnt[i].reps||0;
-      if (cB === 0) continue;
-      temComp = true;
-      if (cA > cB) progCarga = true;
-      if (cA < cB) regrediu = true;
-      if (rA > rB) progReps = true;
-      if (rA < rB) regrediuReps = true;
-    }
-    if (!temComp) return null;
-    if (progCarga && !regrediu) return 'carga';
-    if (!progCarga && !regrediu && progReps && !regrediuReps) return 'reps';
-    return null;
-  }
-
-  // Coletar todos os exercícios únicos (por nome+dia) de todas as abas
-  var exMap = {}; // { 'SEG|SUPINO RETO BARRA': { dia, nome } }
   data.abas.forEach(function(aba) {
+    // ---- Cabeçalho ----
+    html += '<div class="rel-header">';
+    html += '<div class="rel-aluno">' + nomeAluno + '</div>';
+    html += '<div class="rel-semana">Semana ' + aba.aba + ' &nbsp;·&nbsp; Gerado em ' + new Date().toLocaleDateString('pt-BR') + '</div>';
+    html += '</div>';
+
+    // ---- Cards de resumo ----
+    var pctFreq = aba.diasComExercicios > 0 ? Math.round((aba.diasRealizados/aba.diasComExercicios)*100) : 0;
+    html += '<div class="rel-section">';
+    html += '<div class="rel-section-title">Resumo da semana</div>';
+    html += '<div class="rel-cards">';
+    html += _card(aba.diasRealizados + '/' + aba.diasComExercicios, 'Treinos realizados');
+    html += _card(pctFreq + '%', 'Frequência');
+    html += _card(_fmt(aba.resumoSemana.totalVolumeLoad) + ' kg', 'Volume Load Total');
+    html += _card(_fmt(aba.resumoSemana.totalCaloriasForca + aba.resumoSemana.totalCaloirasMetabolico) + ' kcal', 'Calorias totais');
+    html += '</div>';
+
+    // Cards aeróbio/força
+    html += '<div class="rel-cards">';
+    html += _card(aba.resumoSemana.totalTempoForca ? aba.resumoSemana.totalTempoForca + ' min' : '—', 'Tempo força');
+    html += _card(aba.resumoSemana.totalCaloriasForca ? _fmt(aba.resumoSemana.totalCaloriasForca) + ' kcal' : '—', 'Calorias força');
+    html += _card(aba.resumoSemana.sessoesMetabolico > 0 ? aba.resumoSemana.sessoesMetabolico + ' sessão(ões)' : '—', 'Sessões aeróbias');
+    html += _card(aba.resumoSemana.totalTempoMetabolico ? aba.resumoSemana.totalTempoMetabolico + ' min' : '—', 'Tempo aeróbio');
+    html += '</div>';
+    html += '</div>';
+
+    // ---- Progressões e destaques ----
+    var progressoes = [], records = [], naoRealizados = [];
+    Object.keys(aba.dias).forEach(function(dia) {
+      aba.dias[dia].exercicios.forEach(function(ex) {
+        if (!ex.realizado) { naoRealizados.push(ex.nome); return; }
+        if (ex.progressaoCarga) progressoes.push('⬆️ <strong>' + ex.nome + '</strong> — progressão de carga');
+        else if (ex.progressaoReps) progressoes.push('⬆️ <strong>' + ex.nome + '</strong> — progressão de repetições');
+        if (ex.recordeCarga) records.push('🏆 <strong>' + ex.nome + '</strong> — novo recorde de carga!');
+        else if (ex.recordeVolumeLoad) records.push('🏆 <strong>' + ex.nome + '</strong> — novo recorde de volume load!');
+      });
+    });
+
+    if (records.length > 0) {
+      html += '<div class="rel-section"><div class="rel-section-title">🏆 Recordes da semana</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:5px;">';
+      records.forEach(function(r){ html += '<div style="font-size:12px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius);">' + r + '</div>'; });
+      html += '</div></div>';
+    }
+
+    if (progressoes.length > 0) {
+      html += '<div class="rel-section"><div class="rel-section-title">📈 Progressões confirmadas</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:5px;">';
+      progressoes.forEach(function(p){ html += '<div style="font-size:12px;padding:6px 10px;background:var(--bg2);border-radius:var(--radius);">' + p + '</div>'; });
+      html += '</div></div>';
+    }
+
+    // ---- Detalhes por dia ----
+    html += '<div class="rel-section"><div class="rel-section-title">Detalhes por dia</div>';
+    var DIAS_ORDEM = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
     DIAS_ORDEM.forEach(function(dia) {
       var diaData = aba.dias[dia];
       if (!diaData) return;
-      diaData.exercicios.forEach(function(ex) {
-        var key = dia + '|' + ex.nome;
-        if (!exMap[key]) exMap[key] = { dia: dia, nome: ex.nome };
-      });
-    });
-  });
 
-  // Ordenar por dia e nome
-  var exKeys = Object.keys(exMap).sort();
-  var abas = data.abas;
+      var pct = diaData.percentualRealizado;
+      var pctClass = pct >= 100 ? 'ok' : pct >= 50 ? 'parcial' : 'zero';
+      html += '<div class="rel-dia">';
+      html += '<div class="rel-dia-header">';
+      html += '<span class="rel-dia-nome">' + DIAS_NOMES[dia] + '</span>';
+      if (diaData.treinou) {
+        html += '<span class="rel-dia-pct ' + pctClass + '">' + pct + '% realizado</span>';
+      } else {
+        html += '<span class="rel-dia-pct zero">Não treinou</span>';
+      }
+      html += '</div>';
 
-  // ---- CABEÇALHO ----
-  html += '<div style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;max-width:740px;margin:0 auto;color:#1a1a18;">';
+      // Tabela de exercícios
+      if (diaData.exercicios.length > 0) {
+        html += '<table class="rel-ex-table"><thead><tr>';
+        html += '<th>Exercício</th><th>Séries realizadas</th><th>Volume Load</th><th>Status</th>';
+        html += '</tr></thead><tbody>';
 
-  // Header
-  html += '<div style="text-align:center;padding:20px 0 12px;border-bottom:2px solid #1D9E75;margin-bottom:16px;">';
-  html += '<div style="font-size:20px;font-weight:700;">' + nomeAluno + '</div>';
-  html += '<div style="font-size:12px;color:#6b6b66;margin-top:3px;">';
-  html += 'Semanas: ' + abas.map(function(a){return a.aba;}).join(', ');
-  html += ' &nbsp;·&nbsp; Gerado em ' + new Date().toLocaleDateString('pt-BR');
-  html += '</div></div>';
+        diaData.exercicios.forEach(function(ex) {
+          html += '<tr>';
+          html += '<td><strong>' + ex.nome + '</strong><br><span style="color:var(--text3);font-size:10px;">' + ex.seriesProgramadas + ' séries · ' + ex.repsProgramadas + ' reps</span></td>';
 
-  // ---- CARDS DE RESUMO (última aba) ----
-  var ultima = abas[abas.length-1];
-  var r = ultima.resumoSemana;
-  var pctFreq = ultima.diasComExercicios > 0 ? Math.round((ultima.diasRealizados/ultima.diasComExercicios)*100) : 0;
+          // Séries realizadas
+          if (ex.seriesAtual.length > 0) {
+            var seriesStr = ex.seriesAtual.map(function(s){ return s.carga + 'kg×' + s.reps; }).join(' | ');
+            html += '<td style="font-size:10px;">' + seriesStr + '</td>';
+          } else {
+            html += '<td style="color:var(--text3);">—</td>';
+          }
 
-  // Calcular % progressão
-  var totalReal = 0, totalProg = 0;
-  DIAS_ORDEM.forEach(function(dia) {
-    var d = ultima.dias[dia]; if (!d) return;
-    d.exercicios.forEach(function(ex) {
-      if (!ex.realizado) return;
-      totalReal++;
-      if (calcProg(ex.seriesAtual, ex.seriesAnteriores)) totalProg++;
-    });
-  });
-  var pctProg = totalReal > 0 ? Math.round((totalProg/totalReal)*100) : 0;
-  var calTotal = (r.totalCaloriasForca||0) + (r.totalCaloirasMetabolico||0);
+          // Volume load
+          html += '<td>' + (ex.volumeLoad > 0 ? _fmt(ex.volumeLoad) + ' kg' : '—') + '</td>';
 
-  html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">';
-  html += _cardPDF(ultima.diasRealizados + '/' + ultima.diasComExercicios, 'Frequência (' + pctFreq + '%)');
-  html += _cardPDF(pctProg + '%', 'Progressão de carga');
-  html += _cardPDF(_fmtN(r.totalVolumeLoad) + ' kg', 'Volume Load');
-  html += _cardPDF(calTotal > 0 ? _fmtN(calTotal) + ' kcal' : '—', 'Calorias');
-  html += '</div>';
-
-  // Aeróbio
-  if (r.sessoesMetabolico > 0) {
-    html += '<div style="font-size:11px;color:#6b6b66;margin-bottom:14px;padding:6px 10px;background:#f7f7f5;border-radius:6px;">';
-    html += '🏃 Aeróbio: ' + r.sessoesMetabolico + ' sessão(ões)';
-    if (r.totalTempoMetabolico) html += ' · ' + r.totalTempoMetabolico + ' min';
-    if (r.totalCaloirasMetabolico) html += ' · ' + r.totalCaloirasMetabolico + ' kcal';
-    html += '</div>';
-  }
-
-  // ---- TABELA COMPARATIVA ----
-  html += '<div style="font-size:10px;font-weight:700;color:#9b9b96;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Evolução por exercício</div>';
-  html += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
-
-  // Cabeçalho da tabela
-  html += '<thead><tr style="background:#f0f0ec;">';
-  html += '<th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid #ddd;font-weight:600;">Dia</th>';
-  html += '<th style="padding:5px 8px;text-align:left;border-bottom:0.5px solid #ddd;font-weight:600;">Exercício</th>';
-  abas.forEach(function(aba) {
-    html += '<th style="padding:5px 8px;text-align:center;border-bottom:0.5px solid #ddd;font-weight:600;">' + aba.aba + '</th>';
-  });
-  html += '<th style="padding:5px 8px;text-align:center;border-bottom:0.5px solid #ddd;font-weight:600;">Prog.</th>';
-  html += '</tr></thead><tbody>';
-
-  // Linhas por exercício
-  var diaAtual = '';
-  exKeys.forEach(function(key, idx) {
-    var ex = exMap[key];
-    var bg = idx % 2 === 0 ? '#fff' : '#fafafa';
-
-    html += '<tr style="background:' + bg + ';">';
-
-    // Dia (só mostra quando muda)
-    if (ex.dia !== diaAtual) {
-      diaAtual = ex.dia;
-      html += '<td style="padding:5px 8px;border-bottom:0.5px solid #eee;font-weight:700;color:#1D9E75;white-space:nowrap;">' + DIAS_NOMES[ex.dia] + '</td>';
-    } else {
-      html += '<td style="padding:5px 8px;border-bottom:0.5px solid #eee;color:#ccc;">↳</td>';
-    }
-
-    // Nome do exercício
-    html += '<td style="padding:5px 8px;border-bottom:0.5px solid #eee;">' + ex.nome + '</td>';
-
-    // Máx carga por aba
-    var maxCargaAnterior = null;
-    var ultimaProg = null;
-    abas.forEach(function(aba, aIdx) {
-      var diaData = aba.dias[ex.dia];
-      var exData = diaData ? diaData.exercicios.find(function(e){ return e.nome === ex.nome; }) : null;
-      var maxCarga = null;
-      if (exData && exData.seriesAtual && exData.seriesAtual.length > 0) {
-        maxCarga = Math.max.apply(null, exData.seriesAtual.map(function(s){ return s.carga||0; }));
+          // Badges
+          html += '<td style="white-space:nowrap;">';
+          if (!ex.realizado) {
+            html += '<span class="rel-badge nao-fez">Não realizado</span>';
+          } else {
+            if (ex.recordeCarga || ex.recordeVolumeLoad) html += '<span class="rel-badge record">🏆 Recorde</span> ';
+            if (ex.progressaoCarga) html += '<span class="rel-badge prog-carga">↑ Carga</span> ';
+            if (ex.progressaoReps)  html += '<span class="rel-badge prog-reps">↑ Reps</span>';
+          }
+          html += '</td></tr>';
+        });
+        html += '</tbody></table>';
       }
 
-      var cor = '#1a1a18';
-      var prefixo = '';
-      if (maxCarga !== null && maxCargaAnterior !== null && maxCarga > maxCargaAnterior) {
-        cor = '#166534'; prefixo = '↑ ';
-      } else if (maxCarga !== null && maxCargaAnterior !== null && maxCarga < maxCargaAnterior) {
-        cor = '#991b1b'; prefixo = '↓ ';
+      // Pós treino
+      var pt = diaData.posTreino;
+      if (pt.forca || pt.metabolico) {
+        html += '<div class="rel-pos-treino">';
+        if (pt.forca) {
+          html += '<div class="rel-pos-box">';
+          html += '<div class="rel-pos-title">💪 Treino de Força</div>';
+          html += '<div class="rel-pos-grid">';
+          if (pt.forca.tempo) html += '<div class="rel-pos-item"><span class="rel-pos-key">Tempo</span><span class="rel-pos-val">' + pt.forca.tempo + ' min</span></div>';
+          if (pt.forca.fcMedia) html += '<div class="rel-pos-item"><span class="rel-pos-key">FC Média</span><span class="rel-pos-val">' + pt.forca.fcMedia + ' bpm</span></div>';
+          if (pt.forca.calorias) html += '<div class="rel-pos-item"><span class="rel-pos-key">Calorias</span><span class="rel-pos-val">' + _fmt(pt.forca.calorias) + ' kcal</span></div>';
+          if (pt.forca.pse) html += '<div class="rel-pos-item"><span class="rel-pos-key">PSE</span><span class="rel-pos-val">' + pt.forca.pse + '/10</span></div>';
+          html += '</div></div>';
+        }
+        if (pt.metabolico) {
+          html += '<div class="rel-pos-box">';
+          html += '<div class="rel-pos-title">🏃 Aeróbio</div>';
+          html += '<div class="rel-pos-grid">';
+          if (pt.metabolico.tempo) html += '<div class="rel-pos-item"><span class="rel-pos-key">Tempo</span><span class="rel-pos-val">' + pt.metabolico.tempo + ' min</span></div>';
+          if (pt.metabolico.fcMedia) html += '<div class="rel-pos-item"><span class="rel-pos-key">FC Média</span><span class="rel-pos-val">' + pt.metabolico.fcMedia + ' bpm</span></div>';
+          if (pt.metabolico.calorias) html += '<div class="rel-pos-item"><span class="rel-pos-key">Calorias</span><span class="rel-pos-val">' + _fmt(pt.metabolico.calorias) + ' kcal</span></div>';
+          if (pt.metabolico.pse) html += '<div class="rel-pos-item"><span class="rel-pos-key">PSE</span><span class="rel-pos-val">' + pt.metabolico.pse + '/10</span></div>';
+          html += '</div></div>';
+        }
+        html += '</div>';
       }
 
-      html += '<td style="padding:5px 8px;border-bottom:0.5px solid #eee;text-align:center;color:' + cor + ';font-weight:' + (prefixo === '↑ ' ? '700' : '400') + ';">';
-      html += maxCarga !== null ? prefixo + maxCarga + 'kg' : '<span style="color:#ccc;">—</span>';
-      html += '</td>';
-
-      if (maxCarga !== null) maxCargaAnterior = maxCarga;
-
-      // Progressão da última aba
-      if (aIdx === abas.length - 1 && exData) {
-        ultimaProg = calcProg(exData.seriesAtual, exData.seriesAnteriores);
-      }
+      html += '</div>'; // .rel-dia
     });
-
-    // Coluna progressão
-    if (ultimaProg === 'carga') {
-      html += '<td style="padding:5px 8px;border-bottom:0.5px solid #eee;text-align:center;color:#166534;font-weight:700;">✅ Carga</td>';
-    } else if (ultimaProg === 'reps') {
-      html += '<td style="padding:5px 8px;border-bottom:0.5px solid #eee;text-align:center;color:#1e40af;font-weight:700;">✅ Reps</td>';
-    } else {
-      html += '<td style="padding:5px 8px;border-bottom:0.5px solid #eee;text-align:center;color:#9b9b96;">—</td>';
-    }
-
-    html += '</tr>';
+    html += '</div>'; // .rel-section
   });
 
-  html += '</tbody></table>';
-  html += '</div>';
   return html;
 }
-
-
-function _fmtN(n) { if (!n) return "0"; return Number(n).toLocaleString("pt-BR"); }
 
 function _card(val, label) {
   return '<div class="rel-card"><div class="rel-card-val">' + val + '</div><div class="rel-card-label">' + label + '</div></div>';
@@ -2570,6 +2535,75 @@ function montarMensagemRelatorio(nomeAluno, relData) {
   return msg;
 }
 
+
+// ============================================================
+// ANALISAR AJUSTES — lê reps anteriores (cols G-J) e escreve
+// "Aumentar carga" ou "Subir reps" na col B linha Ajustes
+// Todo o processamento acontece no Apps Script
+// ============================================================
+async function analisarAjustesPlanilha() {
+  const s = students.find(function(x){return x.id===selectedId;});
+  if (!s) { showToast('Selecione um aluno primeiro', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
+
+  var abaAtual = 'S1';
+  try {
+    var resAba = await fetch(APPS_SCRIPT_URL + '?action=getAbaAtual&spreadsheetId=' + sheetId);
+    var dataAba = await resAba.json();
+    if (dataAba.aba) abaAtual = dataAba.aba;
+  } catch(e) {}
+
+  addMsg('msgs', '🔍 Analisando séries anteriores da aba ' + abaAtual + '...', false);
+  addLoading('msgs');
+
+  try {
+    var res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ analisarAjustes: true, spreadsheetId: sheetId, aba: abaAtual })
+    });
+    var data = await res.json();
+    removeLoading('msgs');
+
+    if (!data.sucesso) {
+      addMsg('msgs', '⚠️ ' + (data.erro || 'Erro ao analisar. Verifique se o patch foi aplicado no Apps Script.'), false);
+      return;
+    }
+
+    if (data.escritos === 0) {
+      addMsg('msgs', '⚠️ Nenhum exercício com dados anteriores encontrado na aba ' + abaAtual + '. As colunas G-J precisam estar preenchidas.', false);
+      return;
+    }
+
+    var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+    var porDia = {};
+    (data.resultado || []).forEach(function(r) {
+      if (!porDia[r.dia]) porDia[r.dia] = [];
+      porDia[r.dia].push(r);
+    });
+
+    var html = '✅ <strong>Ajustes escritos na aba ' + abaAtual + ' (' + data.escritos + ' exercício(s)):</strong><br><br>';
+    diasOrdem.forEach(function(dia) {
+      if (!porDia[dia]) return;
+      html += '<strong>' + dia + '</strong><br>';
+      porDia[dia].forEach(function(r) {
+        var emoji = r.ajuste === 'Aumentar carga' ? '🟢' : '🔵';
+        html += emoji + ' ' + r.nome + ' — reps: ' + (r.reps||[]).join('/') + ' (limite ' + r.rangeMax + ') → <strong>' + r.ajuste + '</strong><br>';
+      });
+      html += '<br>';
+    });
+    if (data.semDados > 0) {
+      html += '<small style="opacity:.6">' + data.semDados + ' exercício(s) sem dados anteriores ignorado(s).</small>';
+    }
+
+    addMsg('msgs', html, false);
+    showToast('Ajustes aplicados na planilha!', 'ok');
+
+  } catch(e) {
+    removeLoading('msgs');
+    addMsg('msgs', 'Erro: ' + e.message, false);
+  }
+}
 
 init();
 </script>

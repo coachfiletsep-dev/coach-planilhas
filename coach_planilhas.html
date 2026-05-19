@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v26_7.html -->
+<!-- coach_planilhas_v28 — versão consolidada completa -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coach Planilhas v26 v25</title>
+<title>Coach Planilhas v28</title>
 <style>
   :root {
     --green: #1D9E75;
@@ -242,8 +242,8 @@
     </div>
   </div>
   <div class="nav">
-    <button class="nav-btn active" onclick="showPage(&#39;alunos&#39;,this)">Alunos</button>
-    <button class="nav-btn" onclick="showPage(&#39;config&#39;,this)">Configuração</button>
+    <button class="nav-btn active" onclick="showPage('alunos',this)">Alunos</button>
+    <button class="nav-btn" onclick="showPage('config',this)">Configuração</button>
     <button class="auth-pill on" id="auth-pill" onclick="showAuthModal()">
       <div class="auth-dot on" id="auth-dot"></div>
       <span id="auth-label">Google conectado</span>
@@ -256,7 +256,7 @@
 <div id="deload-banner" style="display:none;" class="deload-banner">
   <div class="deload-icon">⚠️</div>
   <div class="deload-text" id="deload-text"></div>
-  <button class="deload-btn" onclick="document.getElementById(&#39;deload-banner&#39;).style.display=&#39;none&#39;">OK</button>
+  <button class="deload-btn" onclick="document.getElementById('deload-banner').style.display='none'">OK</button>
 </div>
 <div id="page-alunos" class="main">
   <div class="sidebar">
@@ -266,7 +266,7 @@
         <input type="text" placeholder="Buscar aluno..." id="search-input" oninput="filterStudents()">
       </div>
     </div>
-    <div class="student-list" id="student-list"><div class="si"><div class="si-av">CM</div><div style="flex:1;min-width:0;"><div class="si-name">Caian Maroni</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fabio Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">DB</div><div style="flex:1;min-width:0;"><div class="si-name">Débora Bueno_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AP</div><div style="flex:1;min-width:0;"><div class="si-name">Ana Paula Oliveira_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">IM</div><div style="flex:1;min-width:0;"><div class="si-name">Iago Maroni_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">EF</div><div style="flex:1;min-width:0;"><div class="si-name">Eduardo Fernandes_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RR</div><div style="flex:1;min-width:0;"><div class="si-name">Rafhael Romero Bentos_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RC</div><div style="flex:1;min-width:0;"><div class="si-name">Raphael Castilho_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">WF</div><div style="flex:1;min-width:0;"><div class="si-name">Wendel Ferreira de Souza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">BA</div><div style="flex:1;min-width:0;"><div class="si-name">Bruna Araújo_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RP</div><div style="flex:1;min-width:0;"><div class="si-name">Renan Piro Braz do Carmo_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LC</div><div style="flex:1;min-width:0;"><div class="si-name">Layla Codogno_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">L</div><div style="flex:1;min-width:0;"><div class="si-name">Letícia  Bernardes Souza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">ET</div><div style="flex:1;min-width:0;"><div class="si-name">Eric Toyoda_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PM</div><div style="flex:1;min-width:0;"><div class="si-name">Patrick Mikhael dos Santos Barboza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">HS</div><div style="flex:1;min-width:0;"><div class="si-name">Hugo Silva Marques_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JM</div><div style="flex:1;min-width:0;"><div class="si-name">João Marcelo Lopes Gigi</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fábio Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PG</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Giroto</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LS</div><div style="flex:1;min-width:0;"><div class="si-name">Letícia Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div></div>
+    <div class="student-list" id="student-list"></div>
 
     <div style="flex-shrink:0;padding:.5rem;display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--border);">
       <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
@@ -275,11 +275,11 @@
       <button class="add-btn" style="border-style:solid;color:#25D366;border-color:#25D366;" onclick="dispararRelatorios()">📊 Relatórios domingo</button>
       <button class="add-btn" style="border-style:solid;color:#25D366;border-color:#25D366;" onclick="dispararBoaSemana()">🌅 Boa semana</button>
       <div style="font-size:10px;color:var(--text3);padding:2px 4px;font-weight:600;margin-top:4px;">ATUALIZAR TODOS</div>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;seg_qui&#39;)">📅 Seg → qui</button>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;qui_dom&#39;)">📆 Qui → dom</button>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;semana_completa&#39;)">🗓️ Semana completa</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('seg_qui')">📅 Seg → qui</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('qui_dom')">📆 Qui → dom</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('semana_completa')">🗓️ Semana completa</button>
     </div>
-    <div class="sidebar-footer" id="counter" style="flex-shrink:0;">20 alunos · 20 ativos</div>
+    <div class="sidebar-footer" id="counter" style="flex-shrink:0;">0 alunos</div>
   </div>
 
   <div class="panel">
@@ -304,31 +304,31 @@
           <button class="icon-btn" onclick="abrirComparar()" title="Comparar abas">🔀</button>
           <button class="icon-btn" onclick="abrirSalvarTemplate()" title="Salvar aba atual como template">📌</button>
           <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;">✏️ Editar aba</button>
-          <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
+          <button class="btn-green" onclick="runAction('zero')">🔄 Novo meso IA</button>
         </div>
       </div>
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(&#39;treino&#39;,this)">Ações</button>
-        <button class="tab" onclick="switchTab(&#39;ia&#39;,this)">Assistente IA</button>
+        <button class="tab active" onclick="switchTab('treino',this)">Ações</button>
+        <button class="tab" onclick="switchTab('ia',this)">Assistente IA</button>
       </div>
       <div class="tab-body" id="tab-treino">
         <div class="ag">
-          <button class="ac" onclick="runSheetAction(&#39;seg_qui&#39;)">
+          <button class="ac" onclick="runSheetAction('seg_qui')">
             <div class="ac-icon">📅</div>
             <div class="ac-label">Semana seg → qui</div>
             <div class="ac-desc">Avança cargas e reps de segunda a quinta</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;qui_dom&#39;)">
+          <button class="ac" onclick="runSheetAction('qui_dom')">
             <div class="ac-icon">📆</div>
             <div class="ac-label">Semana qui → dom</div>
             <div class="ac-desc">Avança cargas e reps de quinta a domingo</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;semana_completa&#39;)">
+          <button class="ac" onclick="runSheetAction('semana_completa')">
             <div class="ac-icon">🗓️</div>
             <div class="ac-label">Semana completa</div>
             <div class="ac-desc">Avança toda a semana de uma vez</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;planilha_zero&#39;)">
+          <button class="ac" onclick="runSheetAction('planilha_zero')">
             <div class="ac-icon">📄</div>
             <div class="ac-label">Planilha do zero</div>
             <div class="ac-desc">Cria nova aba zerada para novo mesociclo</div>
@@ -353,7 +353,7 @@
             <button class="chip" onclick="analisarAjustesPlanilha()">📊 Analisar ajustes</button>
           </div>
           <div class="input-row">
-            <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+            <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
             <button class="send-btn" id="send-btn" onclick="sendMsg()">Enviar ↗</button>
           </div>
         </div>
@@ -372,7 +372,7 @@
             <button class="chip" onclick="useChip2(this)">Deload — quando e como?</button>
           </div>
           <div class="input-row">
-            <textarea class="ai-input" id="ai-input2" placeholder="Converse livremente sobre treino..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg2();}"></textarea>
+            <textarea class="ai-input" id="ai-input2" placeholder="Converse livremente sobre treino..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg2();}"></textarea>
             <button class="send-btn" onclick="sendMsg2()">Enviar ↗</button>
           </div>
         </div>
@@ -423,28 +423,34 @@
       <div class="config-label">📱 WhatsApp Z-API</div>
       <div class="config-step" style="flex-direction:column;gap:10px;">
         <div style="flex:1;">
-          <div class="config-step-label">Credenciais Z-API</div>
-          <div class="config-step-desc">Configure sua instância Z-API para disparo automático de relatórios e mensagens de boa semana.</div>
-        </div>
-        <div class="fl">
-          <label>Instance ID</label>
-          <input class="config-input" type="text" id="zapi-instance" placeholder="Ex: 3C7B2A1D4E5F...">
-        </div>
-        <div class="fl">
-          <label>Token</label>
-          <input class="config-input" type="password" id="zapi-token" placeholder="Seu token Z-API">
-        </div>
-        <div class="fl">
-          <label>Client Token</label>
-          <input class="config-input" type="password" id="zapi-client-token" placeholder="Seu client token Z-API">
+          <div class="config-step-label">Credenciais gerenciadas pelo Apps Script</div>
+          <div class="config-step-desc">Por segurança, as credenciais Z-API (Instance ID, Token, Client Token) ficam armazenadas no PropertiesService do Apps Script — nunca no navegador. Configure-as rodando a função <strong>setupCredenciais()</strong> no editor do GS.</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <button class="btn-green" onclick="saveZapiConfig()">💾 Salvar</button>
-          <button class="btn-ghost" onclick="testarZapi()">🔌 Testar conexão</button>
+          <button class="btn-ghost" onclick="testarZapi()">🔌 Testar conexão Z-API</button>
           <span id="zapi-status" style="font-size:11px;color:var(--text3);"></span>
         </div>
         <div style="font-size:11px;color:var(--text3);padding:8px;background:var(--bg2);border-radius:var(--radius);line-height:1.5;">
-          💡 As credenciais ficam salvas localmente. Os disparos automáticos (domingo 20h e segunda 6h) são configurados via Apps Script — veja o <strong>code_gs</strong> para ativar os triggers.
+          💡 Os disparos automáticos (domingo 20h e segunda 6h) são configurados via <strong>configurarTriggers()</strong> no Apps Script.
+        </div>
+      </div>
+    </div>
+
+    <!-- APP SECRET -->
+    <div class="config-section" style="margin-top:1.5rem;">
+      <div class="config-label">🔐 Segurança — App Secret</div>
+      <div class="config-step" style="flex-direction:column;gap:10px;">
+        <div style="flex:1;">
+          <div class="config-step-label">Chave de autenticação com o Apps Script</div>
+          <div class="config-step-desc">Cole aqui o mesmo valor configurado como APP_SECRET no PropertiesService do GS. Isso garante que só este app pode chamar o endpoint.</div>
+        </div>
+        <div class="fl">
+          <label>APP_SECRET</label>
+          <input class="config-input" type="password" id="app-secret-input" placeholder="Cole o secret configurado no GS">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn-green" onclick="salvarAppSecret()">💾 Salvar secret</button>
+          <span id="secret-status" style="font-size:11px;color:var(--text3);"></span>
         </div>
       </div>
     </div>
@@ -530,7 +536,7 @@
   <div class="modal" style="width:400px;">
     <div class="modal-header">
       <span class="modal-title">🔄 Novo Meso IA</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('meso-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div class="fl">
@@ -561,7 +567,7 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-ghost" onclick="document.getElementById('meso-modal').style.display='none'">Cancelar</button>
       <button class="btn-ghost" onclick="abrirTemplates()" style="margin-right:auto;">📌 Templates</button>
       <button class="btn-green" onclick="confirmarNovoMeso()">✨ Gerar meso</button>
     </div>
@@ -573,7 +579,7 @@
   <div class="modal" style="width:420px;">
     <div class="modal-header">
       <span class="modal-title">✏️ Editar aba atual</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;editar-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('editar-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div style="font-size:12px;color:var(--text2);padding:8px;background:var(--bg2);border-radius:var(--radius);margin-bottom:8px;">
@@ -591,7 +597,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;editar-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-ghost" onclick="document.getElementById('editar-modal').style.display='none'">Cancelar</button>
       <button class="btn-green" onclick="confirmarEdicao()">✏️ Aplicar correções</button>
     </div>
   </div>
@@ -632,7 +638,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       <span class="modal-title">📊 Relatório do aluno</span>
       <div style="display:flex;gap:6px;">
         <button class="btn-ghost" onclick="imprimirRelatorio()" style="font-size:11px;">🖨️ Imprimir / PDF</button>
-        <button class="icon-btn" onclick="document.getElementById(&#39;relatorio-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+        <button class="icon-btn" onclick="document.getElementById('relatorio-modal').style.display='none'" style="font-size:16px;">✕</button>
       </div>
     </div>
     <div class="modal-body" style="padding:0;">
@@ -672,14 +678,14 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   <div class="modal" style="width:460px;">
     <div class="modal-header">
       <span class="modal-title">📋 Histórico de edições</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;historico-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('historico-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body" id="historico-lista">
       <div style="font-size:12px;color:var(--text3);text-align:center;padding:20px;">Nenhuma edição registrada.</div>
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="limparHistorico()">🗑️ Limpar histórico</button>
-      <button class="btn-ghost" onclick="document.getElementById(&#39;historico-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+      <button class="btn-ghost" onclick="document.getElementById('historico-modal').style.display='none'">Fechar</button>
     </div>
   </div>
 </div>
@@ -689,7 +695,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   <div class="modal" style="width:600px;max-width:95vw;">
     <div class="modal-header">
       <span class="modal-title">🔀 Comparar abas</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;comparar-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('comparar-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-end;">
@@ -707,7 +713,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       <div id="comp-resultado" style="max-height:400px;overflow-y:auto;"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;comparar-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+      <button class="btn-ghost" onclick="document.getElementById('comparar-modal').style.display='none'">Fechar</button>
     </div>
   </div>
 </div>
@@ -717,7 +723,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   <div class="modal" style="width:420px;">
     <div class="modal-header">
       <span class="modal-title">📌 Templates de meso</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;templates-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('templates-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div id="templates-lista"></div>
@@ -730,7 +736,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;templates-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+      <button class="btn-ghost" onclick="document.getElementById('templates-modal').style.display='none'">Fechar</button>
     </div>
   </div>
 </div>
@@ -741,7 +747,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   <div class="modal" style="width:400px;">
     <div class="modal-header">
       <span class="modal-title">📌 Salvar aba como template</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;salvar-template-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('salvar-template-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div class="fl">
@@ -755,19 +761,53 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;salvar-template-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-ghost" onclick="document.getElementById('salvar-template-modal').style.display='none'">Cancelar</button>
       <button class="btn-green" onclick="salvarTemplateModal()">💾 Salvar</button>
     </div>
   </div>
 </div>
 
 <script>
+const APP_VERSION = 'v28';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTcezZ5a2i8GyIAdUhnIksaMXM3eMHf6vOSaV9SsAdMgZ13kPWtn5dBc_gtkevf_VUXw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 
 let students = [], selectedId = null, msgHistory = [], msgHistory2 = [], isLoading = false, editingId = null;
-let accessToken = null, anthropicKey = '';
+let accessToken = null;
 let refreshToken = localStorage.getItem('coach_refresh_token') || '';
+
+// APP_SECRET: proteção das chamadas ao Apps Script
+// Configure no app o mesmo valor definido no PropertiesService do GS
+function getAppSecret() {
+  return localStorage.getItem('coach_app_secret') || '';
+}
+
+// Monta URLs GET para o Apps Script já incluindo o secret quando existir
+function gsUrl(action, params) {
+  params = params || {};
+  var url = APPS_SCRIPT_URL + '?action=' + encodeURIComponent(action);
+  Object.keys(params).forEach(function(k) {
+    if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+      url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    }
+  });
+  var secret = getAppSecret();
+  if (secret) url += '&secret=' + encodeURIComponent(secret);
+  return url;
+}
+
+// Wrapper que injeta o secret em todos os POSTs ao Apps Script
+async function gsPost(payload) {
+  payload = payload || {};
+  var secret = getAppSecret();
+  if (secret) payload.secret = secret;
+
+  return fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  });
+}
 
 async function renovarToken() {
   if (!refreshToken) return false;
@@ -790,10 +830,9 @@ async function renovarToken() {
 
 async function init() {
   accessToken = localStorage.getItem('coach_token') || null;
-  anthropicKey = localStorage.getItem('coach_anthropic_key') || '';
+  // localStorage como cache inicial — fonte de verdade é a planilha
   const raw = localStorage.getItem('coach_students_v2');
   if (raw) { try { students = JSON.parse(raw); } catch(e) { students = []; } }
-  // sem alunos hardcoded — carrega do localStorage
   if (accessToken) {
     setAuthConnected();
   } else if (refreshToken) {
@@ -801,12 +840,33 @@ async function init() {
   }
   updateConfigStatus();
   loadCoachPrefs();
-  loadZapiConfig();
   renderList();
+  // Carregar alunos da planilha como fonte de verdade
+  await carregarAlunosDaPlanilha();
   sincronizarSeConectado();
 }
 
 function saveAll() { localStorage.setItem('coach_students_v2', JSON.stringify(students)); }
+
+// Fonte de verdade: carrega alunos do Brainering via Apps Script
+async function carregarAlunosDaPlanilha() {
+  try {
+    const res = await fetch(gsUrl('getAlunos'));
+    const data = await res.json();
+    if (data.sucesso && Array.isArray(data.alunos) && data.alunos.length > 0) {
+      // Merge: preserva alunos locais não sincronizados ainda
+      data.alunos.forEach(function(remoto) {
+        var existe = students.find(function(s){ return s.id === remoto.id || s.sheet === remoto.sheet; });
+        if (!existe) students.push(remoto);
+        else Object.assign(existe, remoto); // atualiza dados remotos
+      });
+      saveAll();
+      renderList();
+    }
+  } catch(e) {
+    // silencioso — usa cache local
+  }
+}
 
 function setAuthConnected() {
   document.getElementById('auth-pill').className = 'auth-pill on';
@@ -875,7 +935,7 @@ async function runSheetAction(type) {
   try {
     const payload = {acao:type};
     if (sheetId) payload.spreadsheetId = sheetId;
-    const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
+    const res = await gsPost(payload);
     const data = await res.json();
     removeLoading('msgs');
     if (data.sucesso) {
@@ -904,7 +964,45 @@ async function runSheetAction(type) {
 // ============================================================
 // escreverNaPlanilha — usado APENAS para novo meso (cria aba nova)
 // ============================================================
+// ============================================================
+// VALIDAÇÃO DO JSON DA IA — antes de qualquer escrita
+// ============================================================
+const DIAS_VALIDOS = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+
+function validarProgramacaoIA(parsed) {
+  var erros = [];
+  if (!parsed.aba || !/^S\d+$/.test(parsed.aba)) erros.push('Campo "aba" inválido: ' + parsed.aba);
+  if (!Array.isArray(parsed.exercicios) || parsed.exercicios.length === 0) {
+    erros.push('Nenhum exercício no JSON');
+    return erros;
+  }
+  var porDia = {};
+  parsed.exercicios.forEach(function(ex, i) {
+    var p = '[' + i + '] ' + (ex.nome || '?') + ': ';
+    if (!ex.nome) erros.push(p + 'nome ausente');
+    if (!ex.dia || DIAS_VALIDOS.indexOf(String(ex.dia).toUpperCase()) === -1)
+      erros.push(p + 'dia inválido: ' + ex.dia);
+    if (!ex.series || isNaN(parseInt(ex.series)))
+      erros.push(p + 'séries inválido: ' + ex.series);
+    if (!ex.repeticoes) erros.push(p + 'repetições ausente');
+    var ser = parseInt(ex.series);
+    if (!isNaN(ser) && (ser < 1 || ser > 10))
+      erros.push(p + 'séries fora do range (1-10): ' + ser);
+    var dia = String(ex.dia || '').toUpperCase();
+    porDia[dia] = (porDia[dia] || 0) + 1;
+    if (porDia[dia] > 15) erros.push('Dia ' + dia + ' com mais de 15 exercícios');
+  });
+  return erros;
+}
+
 async function escreverNaPlanilha(exercicios, nomeAba) {
+  // Validar antes de qualquer escrita
+  var errosVal = validarProgramacaoIA({ aba: nomeAba, exercicios: exercicios });
+  if (errosVal.length > 0) {
+    addMsg('msgs', '⚠️ JSON bloqueado pela validação:<br>' + errosVal.join('<br>'), false);
+    showToast('Erro de validação — não escrito', 'err');
+    return;
+  }
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
   addMsg('msgs', 'Verificando aba ' + nomeAba + '...', false);
@@ -912,7 +1010,7 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
   try {
     const criarPayload = {acao: 'planilha_zero'};
     if (sheetId) criarPayload.spreadsheetId = sheetId;
-    const criarRes = await fetch(APPS_SCRIPT_URL, { method:'POST', body:JSON.stringify(criarPayload) });
+    const criarRes = await gsPost(criarPayload);
     const criarData = await criarRes.json();
     removeLoading('msgs');
     if (criarData.sucesso) {
@@ -923,14 +1021,20 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
       addMsg('msgs', 'Aviso ao criar aba: ' + (criarData.erro||''), false);
     }
     addLoading('msgs');
-    const payload = {aba:nomeAba, exercicios:exercicios};
+    const payload = {aba:nomeAba, exercicios:exercicios, alunoNome: s ? s.name : ''};
     if (sheetId) payload.spreadsheetId = sheetId;
-    const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
+    const res = await gsPost(payload);
     const data = await res.json();
     removeLoading('msgs');
     if (data.sucesso) {
-      addMsg('msgs', '✅ ' + data.escritos + ' exercícios escritos na aba ' + nomeAba + '! Abra a planilha para conferir.', false);
+      var avisosTxt = data.avisos && data.avisos.length > 0 ? '<br><small>⚠️ ' + data.avisos.join(' | ') + '</small>' : '';
+      addMsg('msgs', '✅ ' + data.escritos + ' exercícios escritos na aba ' + nomeAba + '!' + avisosTxt, false);
+      if (data.substituicoes && data.substituicoes.length) {
+        addMsg('msgs', '🔄 Nomes substituídos: ' + data.substituicoes.join(', '), false);
+      }
       showToast('Planilha atualizada!', 'ok');
+    } else if (data.errosValidacao) {
+      addMsg('msgs', '⚠️ Bloqueado pelo GS: ' + data.errosValidacao.join(', '), false);
     } else {
       addMsg('msgs', 'Erro ao escrever: ' + (data.erro||'desconhecido'), false);
     }
@@ -939,18 +1043,11 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
 
 function getSystemPrompt() {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return '';
-  return 'Voce e um especialista em treinamento de forca e hipertrofia que assiste o Coach Felipe, personal trainer brasileiro.\n\n' +
-    '=== BASE CIENTIFICA ===\n' +
-    'JONATO PRESTES: Periodizacao ondulatoria diaria/semanal. Volume progressivo por mesociclo com deload a cada 4-6 semanas.\n' +
-    'BRAD SCHOENFELD: Tres mecanismos de hipertrofia — tensao mecanica, estresse metabolico, dano muscular. Rep ranges 6-30 proximos a falha. Frequencia 2x/semana por musculo.\n' +
-    'WALTER KRAUSE JR: Progressao sistematica de carga por bloco. RiR 0-3 para volume efetivo.\n' +
-    'PACHOLOK: Cadencia como variavel. Excentrica lenta (3-4s). Formato: excentrica/pausa/concentrica/pausa (ex: 3010).\n' +
-    'BELMIRO SALLES: Apenas series proximas a falha contam. Gestao de fadiga. Priorizacao de grupos lagging.\n' +
-    'PAULO GENTIL: Evidencias > tradicao. Poucos exercicios multiarticulares bem executados com progressao.\n\n' +
-    '=== ALUNO ATUAL ===\n' +
-    'Nome: ' + s.name + '\n' + (s.obs ? 'Observacoes: ' + s.obs + '\n' : '') +
-    'Planilha: ' + (s.sheet || 'nao informada') + '\n\n' +
-    '=== BIBLIOTECA DE EXERCICIOS — use APENAS estes nomes EXATOS ===\n' +
+  var prefs = localStorage.getItem('coach_prefs') || '';
+  return 'Especialista em forca/hipertrofia. Assiste Coach Felipe (personal BR).\n' +
+    'Principios: periodizacao ondulante, volume progressivo, deload 4-6sem, mecanismos de hipertrofia (tensao/metabolico/dano), freq 2x/sem/musculo, RiR 0-3, cadencia excentrica lenta, series proximas a falha, poucos exercicios multiarticulares com progressao.\n\n' +
+    'ALUNO: ' + s.name + (s.obs ? ' | ' + s.obs : '') + '\n\n' +
+    'EXERCICIOS (use nomes EXATOS):\n' +
     'PEITO: SUPINO RETO BARRA, SUPINO INCLINADO BARRA, SUPINO RETO COM HALTER, SUPINO INCLINADO COM HALTER, SUPINO INCLINADO ARTICULADO, CRUCIFIXO RETO COM HALTER, PEC DECK\n' +
     'COSTAS: PUXADA FRENTE ABERTA, PUXADA UNILATERAL MAQUINA, REMADA ALTERNADA COM HALTERES BANCO, REMADA SERROTE APOIO BAIXO, FACEPULL, DUMBBELL SCAPTION 120\n' +
     'OMBRO: DESENVOLVIMENTO SENTADO COM HALTERES, DESENVOLVIMENTO ARTICULADO ABERTO, ELEVACAO LATERAL EM PE COM HALTER, ELEVACAO LATERAL NA POLIA UNI, MANGUITO ROTACAO EXTERNA CABO, FACEPULL COM ROTACAO EXTERNA, YTW COM HALTERES\n' +
@@ -961,23 +1058,11 @@ function getSystemPrompt() {
     'GMAX: ELEVACAO PELVICA COM BARRA, ELEVACAO PELVICA NA MAQUINA, ELEVACAO PELVICA UNI COM HALTER\n' +
     'GMEDIO: CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA\n' +
     'ABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n\n' +
-    '=== REGRA DE VOLUME POR TEMPO DE SESSAO ===\n' +
-    'Se o prompt indicar tempo por sessao, respeite o limite de series RIGIDAMENTE:\n' +
-    '45min = max 15 series totais/sessao | 1h = max 20 | 1h15 = max 24 | 1h30 = max 28\n\n' +
-    '=== COMPORTAMENTO ===\n' +
-    'Seja direto. Nao use frases como "Claro!", "Otima pergunta!", "Vou montar agora!". Va direto ao conteudo.\n' +
-    'Quando receber briefing completo para novo meso, gere o JSON diretamente sem etapa de confirmacao.\n\n' +
-    '=== FLUXO OBRIGATORIO PARA NOVO MESOCICLO ===\n' +
-    'Se o prompt ja contem dados suficientes (aluno, divisao, instrucoes), va DIRETO para o JSON.\n' +
-    'So faca perguntas se faltar informacao essencial (ex: divisao completamente ausente).\n' +
-    'Formato obrigatorio:\n' +
-    '{"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Hipertrofia","series":4,"repeticoes":"8-10","cadencia":"3010","rir":"2","criterio":"controle excentrico"}]}\n' +
-    'Campo dia: SEG, TER, QUA, QUI, SEX, SAB ou DOM. RiR: 0-3. Cadencia: 4 digitos.\n\n' +
-    'Para perguntas que nao sejam sobre programacao, responda normalmente em texto.' +
-    (function() {
-      var prefs = localStorage.getItem('coach_prefs') || '';
-      return prefs.trim() ? '\n\n=== PREFERENCIAS DO COACH FELIPE (respeite sempre) ===\n' + prefs.trim() + '\n' : '';
-    })();
+    'VOLUME/TEMPO: 45min=15ser | 1h=20 | 1h15=24 | 1h30=28 (por sessao, rigido)\n\n' +
+    'NOVO MESO: va direto ao JSON sem confirmacao. So pergunte se faltar divisao.\n' +
+    'JSON: {"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Hipertrofia","series":4,"repeticoes":"8-10","cadencia":"3010","rir":"2","criterio":"controle excentrico"}]}\n' +
+    'dia=SEG/TER/QUA/QUI/SEX/SAB/DOM. RiR=0-3. Cadencia=4 digitos. Seja direto, sem saudacoes.' +
+    (prefs.trim() ? '\nPREFS: ' + prefs.trim() : '');
 }
 
 function tryParseJSON(text) {
@@ -1034,15 +1119,21 @@ function addLoading(id) {
 
 function removeLoading(id) { const el=document.getElementById('ld-'+id); if(el) el.remove(); }
 
-async function callClaude(history, system) {
+async function callClaude(history, system, maxTok) {
   const res = await fetch(PROXY_URL, {
     method:'POST',
     headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01'},
-    body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:4000,system:system,messages:history})
+    body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:maxTok||2500,system:system,messages:history})
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
   return data.content[0].text || 'Sem resposta.';
+}
+
+function trimHistory(history, maxPairs) {
+  // Mantém no máximo maxPairs trocas (user+assistant) para conter o crescimento do contexto
+  var max = maxPairs * 2;
+  if (history.length > max) history.splice(0, history.length - max);
 }
 
 async function sendMsg() {
@@ -1053,6 +1144,7 @@ async function sendMsg() {
   document.getElementById('send-btn').disabled = true;
   addMsg('msgs', text, true); addLoading('msgs');
   msgHistory.push({role:'user',content:text});
+  trimHistory(msgHistory, 6);
   try {
     const reply = await callClaude(msgHistory, getSystemPrompt());
     removeLoading('msgs');
@@ -1081,6 +1173,7 @@ async function sendMsg2() {
   const text = inp.value.trim(); if (!text) return;
   inp.value = ''; addMsg('msgs2',text,true); addLoading('msgs2');
   msgHistory2.push({role:'user',content:text});
+  trimHistory(msgHistory2, 6);
   try {
     const reply = await callClaude(msgHistory2, getSystemPrompt());
     removeLoading('msgs2'); addMsg('msgs2',reply,false);
@@ -1097,7 +1190,7 @@ async function runAction(type) {
   var sheetId = getSheetId(s.sheet);
   if (sheetId) {
     try {
-      var res = await fetch(APPS_SCRIPT_URL + '?action=getAba&spreadsheetId=' + sheetId);
+      var res = await fetch(gsUrl('getAba', { spreadsheetId: sheetId }));
       var data = await res.json();
       if (data.aba) abaAtual = data.aba;
     } catch(e) {}
@@ -1117,7 +1210,7 @@ async function runAction(type) {
 
   if (sheetId) {
     try {
-      var resAbas = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
+      var resAbas = await fetch(gsUrl('getAbas', { spreadsheetId: sheetId }));
       var dataAbas = await resAbas.json();
       renderMesoAbas(dataAbas.abas || []);
     } catch(e) {
@@ -1178,22 +1271,26 @@ async function confirmarNovoMeso() {
     addMsg('msgs', 'Analisando ' + abasSelecionadas.length + ' semana(s): ' + abasSelecionadas.join(', ') + '...', false);
     addLoading('msgs');
     try {
-      const res = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: window._sheetIdAtual, abasSelecionadas: abasSelecionadas })
-      });
+      const res = await gsPost({ lerPeriodizacao: true, spreadsheetId: window._sheetIdAtual, abasSelecionadas: abasSelecionadas });
       const data = await res.json();
       removeLoading('msgs');
       if (data.sucesso && data.abas) {
-        contextoAbas = '\n\n=== ANÁLISE DAS SEMANAS SELECIONADAS ===\n';
+        contextoAbas = '\n\nREF SEMANAS:\n';
         data.abas.forEach(function(aba) {
-          contextoAbas += '\nAba ' + aba.aba + ' (' + aba.totalExercicios + ' exercícios, ' + aba.totalSeries + ' séries totais):\n';
-          contextoAbas += 'Volume por músculo: ' + JSON.stringify(aba.volumePorMusculo) + '\n';
+          contextoAbas += aba.aba + ' (' + aba.totalSeries + ' ser):\n';
+          var porDia = {};
           aba.exercicios.forEach(function(ex) {
-            contextoAbas += '  - ' + ex.nome + ': ' + ex.series + 'x' + ex.repeticoes + ' | cadência ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
+            if (!porDia[ex.dia]) porDia[ex.dia] = [];
+            porDia[ex.dia].push(ex.nome + ' ' + ex.series + 'x' + ex.repeticoes);
           });
+          Object.keys(porDia).forEach(function(dia) {
+            contextoAbas += ' ' + dia + ': ' + porDia[dia].join(', ') + '\n';
+          });
+          if (aba.volumePorGrupo && Object.keys(aba.volumePorGrupo).length) {
+            contextoAbas += ' Vol: ' + Object.entries(aba.volumePorGrupo).map(function(e){return e[0]+'='+e[1];}).join(', ') + '\n';
+          }
         });
-        contextoAbas += '\nUse esta análise para periodizar inteligentemente.';
+        contextoAbas += 'Periodize a partir destes dados.';
         addMsg('msgs', 'Análise concluída! Montando mesociclo...', false);
       }
     } catch(e) {
@@ -1216,7 +1313,7 @@ async function confirmarNovoMeso() {
   addMsg('msgs', prompt, true); addLoading('msgs');
   isLoading = true; document.getElementById('send-btn').disabled = true;
   try {
-    const reply = await callClaude(msgHistory, getSystemPrompt());
+    const reply = await callClaude(msgHistory, getSystemPrompt(), 3500);
     removeLoading('msgs');
     const parsed = tryParseJSON(reply);
     if (parsed && parsed.exercicios && parsed.aba) {
@@ -1294,6 +1391,16 @@ function loadCoachPrefs() {
   var val = localStorage.getItem('coach_prefs') || '';
   var el = document.getElementById('coach-prefs-input');
   if (el) el.value = val;
+}
+
+function salvarAppSecret() {
+  var val = document.getElementById('app-secret-input').value.trim();
+  if (!val) { showToast('Cole o secret primeiro', 'err'); return; }
+  localStorage.setItem('coach_app_secret', val);
+  var st = document.getElementById('secret-status');
+  if (st) { st.textContent = 'Salvo ✓'; st.style.color = 'var(--green)'; setTimeout(function(){ st.textContent=''; }, 2500); }
+  showToast('Secret salvo!', 'ok');
+  carregarAlunosDaPlanilha();
 }
 
 function openModal() {
@@ -1410,7 +1517,7 @@ async function atualizarTodos(tipo) {
     logEl.textContent = '⏳ ' + s.name + '...';
     document.getElementById('progress-log').appendChild(logEl);
     try {
-      var res = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ acao: tipo, spreadsheetId: sheetId }) });
+      var res = await gsPost({ acao: tipo, spreadsheetId: sheetId });
       var data = await res.json();
       if (data.sucesso) {
         logEl.textContent = '✅ ' + s.name + (data.novaAba ? ' → ' + data.novaAba : '');
@@ -1444,12 +1551,12 @@ async function editarAbaAtual() {
   if (sheetId) {
     try {
       // FIX BUG 1: usar action=getAbaAtual para garantir aba existente (não a próxima)
-      var res = await fetch(APPS_SCRIPT_URL + '?action=getAbaAtual&spreadsheetId=' + sheetId);
+      var res = await fetch(gsUrl('getAbaAtual', { spreadsheetId: sheetId }));
       var data = await res.json();
       if (data.aba) abaAtual = data.aba;
       else {
         // fallback: tentar getAba
-        var res2 = await fetch(APPS_SCRIPT_URL + '?action=getAba&spreadsheetId=' + sheetId);
+        var res2 = await fetch(gsUrl('getAba', { spreadsheetId: sheetId }));
         var data2 = await res2.json();
         if (data2.aba) abaAtual = data2.aba;
       }
@@ -1483,11 +1590,8 @@ async function confirmarEdicao() {
   // Buscar aba atual e biblioteca do Brainering em paralelo
   try {
     const [resAba, resBib] = await Promise.all([
-      fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: window._sheetIdAtual, abasSelecionadas: [window._abaAtual] })
-      }),
-      fetch(APPS_SCRIPT_URL + '?action=getBiblioteca')
+      gsPost({ lerPeriodizacao: true, spreadsheetId: window._sheetIdAtual, abasSelecionadas: [window._abaAtual] }),
+      fetch(gsUrl('getBiblioteca'))
     ]);
 
     const dataAba = await resAba.json();
@@ -1587,7 +1691,7 @@ async function editarNaPlanilha(exercicios, nomeAba) {
     // modoEdicao:true instrui o Apps Script a EDITAR (não criar) a aba
     const payload = { aba: nomeAba, exercicios: exercicios, modoEdicao: true };
     if (sheetId) payload.spreadsheetId = sheetId;
-    const res = await fetch(APPS_SCRIPT_URL, { method:'POST', body:JSON.stringify(payload) });
+    const res = await gsPost(payload);
     const data = await res.json();
     removeLoading('msgs');
     if (data.sucesso) {
@@ -1778,7 +1882,7 @@ async function abrirComparar() {
 
   // Buscar abas disponíveis
   try {
-    var res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
+    var res = await fetch(gsUrl('getAbas', { spreadsheetId: sheetId }));
     var data = await res.json();
     var abas = data.abas || [];
     var selA = document.getElementById('comp-aba-a');
@@ -1810,10 +1914,7 @@ async function executarComparacao() {
   res.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:12px;text-align:center;">Carregando...</div>';
 
   try {
-    var resp = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: sheetId, abasSelecionadas: [abaA, abaB] })
-    });
+    var resp = await gsPost({ lerPeriodizacao: true, spreadsheetId: sheetId, abasSelecionadas: [abaA, abaB] });
     var data = await resp.json();
     if (!data.sucesso || !data.abas || data.abas.length < 2) {
       res.innerHTML = '<div style="color:var(--red);padding:12px;font-size:12px;">Erro ao carregar abas.</div>';
@@ -1877,7 +1978,7 @@ async function executarComparacao() {
 async function verificarDeload(sheetId, nomeAluno) {
   if (!sheetId) return;
   try {
-    var res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
+    var res = await fetch(gsUrl('getAbas', { spreadsheetId: sheetId }));
     var data = await res.json();
     var abas = data.abas || [];
     var total = abas.length;
@@ -1915,7 +2016,7 @@ async function abrirSalvarTemplate() {
   document.getElementById('salvar-template-modal').style.display = 'flex';
 
   try {
-    var res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
+    var res = await fetch(gsUrl('getAbas', { spreadsheetId: sheetId }));
     var data = await res.json();
     var abas = data.abas || [];
     var sel = document.getElementById('tpl-aba-select');
@@ -1957,10 +2058,7 @@ async function salvarTemplateModal() {
   btn.disabled = true; btn.textContent = 'Carregando...';
 
   try {
-    var res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ lerPeriodizacao: true, spreadsheetId: sheetId, abasSelecionadas: [abaSelecionada] })
-    });
+    var res = await gsPost({ lerPeriodizacao: true, spreadsheetId: sheetId, abasSelecionadas: [abaSelecionada] });
     var data = await res.json();
 
     if (!data.sucesso || !data.abas || data.abas.length === 0) {
@@ -2100,7 +2198,7 @@ async function abrirRelatorio() {
   // Buscar abas disponíveis
   var abas = [];
   try {
-    var res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
+    var res = await fetch(gsUrl('getAbas', { spreadsheetId: sheetId }));
     var data = await res.json();
     abas = data.abas || [];
   } catch(e) { showToast('Erro ao buscar abas','err'); return; }
@@ -2135,10 +2233,7 @@ async function gerarRelatorioHTML() {
   conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);">⏳ Gerando relatório...</div>';
 
   try {
-    var res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ gerarRelatorio: true, spreadsheetId: sheetId, abasSelecionadas: abasSel })
-    });
+    var res = await gsPost({ gerarRelatorio: true, spreadsheetId: sheetId, abasSelecionadas: abasSel });
     var data = await res.json();
     if (!data.sucesso) {
       conteudo.innerHTML = '<div style="color:var(--red);padding:20px;">Erro: ' + (data.erro||'desconhecido') + '</div>';
@@ -2590,10 +2685,7 @@ function imprimirRelatorio() {
 // ============================================================
 async function sincronizarAlunosApp() {
   try {
-    var res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ sincronizarAlunos: true, alunos: students })
-    });
+    var res = await gsPost({ sincronizarAlunos: true, alunos: students });
     var data = await res.json();
     if (data.sucesso) {
       console.log('Alunos_App sincronizada: ' + data.total + ' alunos');
@@ -2611,119 +2703,44 @@ async function sincronizarSeConectado() {
 }
 
 // ============================================================
-// CONFIGURAÇÃO Z-API
+// CONFIGURAÇÃO Z-API — credenciais ficam APENAS no PropertiesService do GS
+// O HTML não armazena nem envia credenciais Z-API
 // ============================================================
 function saveZapiConfig() {
-  var inst  = document.getElementById('zapi-instance').value.trim();
-  var token = document.getElementById('zapi-token').value.trim();
-  var ctoken = document.getElementById('zapi-client-token').value.trim();
-  if (!inst || !token) { showToast('Preencha Instance ID e Token', 'err'); return; }
-  localStorage.setItem('zapi_instance', inst);
-  localStorage.setItem('zapi_token', token);
-  localStorage.setItem('zapi_client_token', ctoken);
-  showToast('Z-API salva!', 'ok');
-  var st = document.getElementById('zapi-status');
-  st.textContent = 'Salvo ✓'; st.style.color = 'var(--green)';
-  setTimeout(function(){ st.textContent = ''; }, 2500);
+  showToast('Configure as credenciais Z-API diretamente no Apps Script via setupCredenciais()', 'err');
 }
 
 function loadZapiConfig() {
-  var inst = localStorage.getItem('zapi_instance') || '';
-  var token = localStorage.getItem('zapi_token') || '';
-  var ctoken = localStorage.getItem('zapi_client_token') || '';
-  var elI = document.getElementById('zapi-instance');
-  var elT = document.getElementById('zapi-token');
-  var elC = document.getElementById('zapi-client-token');
-  if (elI) elI.value = inst;
-  if (elT && token) elT.value = '••••••••••••••••';
-  if (elC && ctoken) elC.value = '••••••••••••••••';
+  // Nada a carregar — credenciais estão no GS
+  var st = document.getElementById('zapi-status');
+  if (st) { st.textContent = 'Credenciais gerenciadas pelo Apps Script'; st.style.color = 'var(--green)'; }
 }
 
 async function testarZapi() {
-  var inst  = localStorage.getItem('zapi_instance');
-  var token = localStorage.getItem('zapi_token');
-  var ctoken = localStorage.getItem('zapi_client_token');
-  if (!inst || !token) { showToast('Configure as credenciais primeiro', 'err'); return; }
   var st = document.getElementById('zapi-status');
-  st.textContent = 'Testando...'; st.style.color = 'var(--text3)';
+  if (st) { st.textContent = 'Testando via GS...'; st.style.color = 'var(--text3)'; }
   try {
-    var res = await fetch('https://api.z-api.io/instances/' + inst + '/token/' + token + '/status', {
-      headers: { 'Client-Token': ctoken }
-    });
-    var data = await res.json();
-    if (data.connected || data.status === 'connected') {
-      st.textContent = '✅ Conectado!'; st.style.color = 'var(--green)';
+    const res = await gsPost({ testarZapi: true });
+    const data = await res.json();
+    if (data.conectado) {
+      if (st) { st.textContent = '✅ Conectado!'; st.style.color = 'var(--green)'; }
       showToast('Z-API conectada!', 'ok');
     } else {
-      st.textContent = '❌ Não conectado'; st.style.color = 'var(--red)';
+      if (st) { st.textContent = '❌ Não conectado'; st.style.color = 'var(--red)'; }
       showToast('Z-API não conectada. Verifique o QR Code.', 'err');
     }
   } catch(e) {
-    st.textContent = '❌ Erro: ' + e.message; st.style.color = 'var(--red)';
+    if (st) { st.textContent = '❌ Erro: ' + e.message; st.style.color = 'var(--red)'; }
   }
 }
 
 // ============================================================
-// ENVIO DE MENSAGEM VIA Z-API
-// ============================================================
-async function enviarWhatsApp(telefone, mensagem) {
-  var inst   = localStorage.getItem('zapi_instance');
-  var token  = localStorage.getItem('zapi_token');
-  var ctoken = localStorage.getItem('zapi_client_token');
-  if (!inst || !token) return { erro: 'Z-API não configurada' };
-
-  // Normalizar telefone: remover não-dígitos e garantir DDI 55
-  var fone = String(telefone).replace(/\D/g, '');
-  if (fone.length === 10 || fone.length === 11) fone = '55' + fone;
-
-  try {
-    var res = await fetch('https://api.z-api.io/instances/' + inst + '/token/' + token + '/send-text', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Client-Token': ctoken
-      },
-      body: JSON.stringify({ phone: fone, message: mensagem })
-    });
-    return await res.json();
-  } catch(e) {
-    return { erro: e.message };
-  }
-}
-
-// ============================================================
-// BUSCAR TELEFONE DO ALUNO NO BRAINERING
-// ============================================================
-async function buscarTelefoneAluno(nomeAluno) {
-  if (!accessToken) return null;
-  const BRAINERING_ID = '1QH7IXHNqF_3QUYOkjYsTvEtoHVL4Ocg-_Az6Y5XxrMk';
-  try {
-    var res = await fetch(
-      'https://sheets.googleapis.com/v4/spreadsheets/' + BRAINERING_ID +
-      '/values/Alunos_cadastro!B:E',
-      { headers: { 'Authorization': 'Bearer ' + accessToken } }
-    );
-    var data = await res.json();
-    var rows = data.values || [];
-    for (var i = 1; i < rows.length; i++) {
-      var nome = String(rows[i][0] || '').trim().toLowerCase();
-      if (nome === nomeAluno.trim().toLowerCase()) {
-        return String(rows[i][3] || '').replace(/\D/g,''); // coluna E = índice 3
-      }
-    }
-  } catch(e) {}
-  return null;
-}
-
-// ============================================================
-// DISPARO MANUAL — RELATÓRIOS (botão no app)
+// ENVIO WHATSAPP — delegado ao Apps Script (credenciais ficam no GS)
 // ============================================================
 async function dispararRelatorios() {
   if (!confirm('Disparar relatórios para TODOS os alunos ativos agora?')) return;
   var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet; });
   if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha', 'err'); return; }
-
-  // Abrir modal de progresso
   document.getElementById('progress-title').textContent = 'Disparando relatórios WhatsApp...';
   document.getElementById('progress-count').textContent = '0';
   document.getElementById('progress-total').textContent = ativos.length;
@@ -2731,72 +2748,39 @@ async function dispararRelatorios() {
   document.getElementById('progress-log').innerHTML = '';
   document.getElementById('progress-close-btn').style.display = 'none';
   document.getElementById('progress-modal').style.display = 'flex';
-
   var erros = 0;
   for (var i = 0; i < ativos.length; i++) {
     var s = ativos[i];
     var logEl = document.createElement('div');
     logEl.textContent = '⏳ ' + s.name + '...';
     document.getElementById('progress-log').appendChild(logEl);
-
     try {
-      // Buscar telefone
-      var tel = await buscarTelefoneAluno(s.name);
-      if (!tel) {
-        logEl.textContent = '⚠️ ' + s.name + ' — telefone não encontrado';
-        logEl.style.color = '#92600a';
-        erros++;
-        continue;
-      }
-
-      // Buscar dados da última aba
       var sheetId = getSheetId(s.sheet);
-      var resAba = await fetch(APPS_SCRIPT_URL + '?action=getAbaAtual&spreadsheetId=' + sheetId);
-      var dataAba = await resAba.json();
-      var abaAtual = dataAba.aba || 'S1';
-
-      var resRel = await fetch(APPS_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ gerarRelatorio: true, spreadsheetId: sheetId, abasSelecionadas: [abaAtual] })
-      });
-      var relData = await resRel.json();
-
-      // Montar mensagem
-      var msg = montarMensagemRelatorio(s.name, relData);
-
-      // Enviar
-      var envio = await enviarWhatsApp(tel, msg);
-      if (envio.erro || envio.error) {
-        logEl.textContent = '❌ ' + s.name + ': ' + (envio.erro || envio.error);
-        logEl.style.color = 'var(--red)'; erros++;
+      const res = await gsPost({ dispararRelatorio: true, spreadsheetId: sheetId, nomeAluno: s.name });
+      const data = await res.json();
+      if (data.sucesso) {
+        logEl.textContent = '✅ ' + s.name; logEl.style.color = 'var(--green)';
       } else {
-        logEl.textContent = '✅ ' + s.name + ' → ' + tel;
-        logEl.style.color = 'var(--green)';
+        logEl.textContent = '❌ ' + s.name + ': ' + (data.erro||'erro');
+        logEl.style.color = 'var(--red)'; erros++;
       }
     } catch(e) {
       logEl.textContent = '❌ ' + s.name + ': ' + e.message;
       logEl.style.color = 'var(--red)'; erros++;
     }
-
     document.getElementById('progress-count').textContent = i + 1;
     document.getElementById('progress-bar').style.width = Math.round(((i+1)/ativos.length)*100) + '%';
     document.getElementById('progress-log').scrollTop = 9999;
-    await new Promise(function(r){ setTimeout(r, 1500); });
+    if (i < ativos.length - 1) await new Promise(function(r){ setTimeout(r, 1200); });
   }
-
-  document.getElementById('progress-title').textContent = erros === 0
-    ? '✅ Relatórios enviados!' : '⚠️ Concluído com ' + erros + ' erro(s)';
+  document.getElementById('progress-title').textContent = erros === 0 ? '✅ Relatórios enviados!' : '⚠️ Concluído com ' + erros + ' erro(s)';
   document.getElementById('progress-close-btn').style.display = 'block';
 }
 
-// ============================================================
-// DISPARO MANUAL — BOA SEMANA (botão no app)
-// ============================================================
 async function dispararBoaSemana() {
   if (!confirm('Disparar "Boa semana" para TODOS os alunos ativos agora?')) return;
   var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet; });
   if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha', 'err'); return; }
-
   document.getElementById('progress-title').textContent = 'Disparando boa semana...';
   document.getElementById('progress-count').textContent = '0';
   document.getElementById('progress-total').textContent = ativos.length;
@@ -2804,59 +2788,35 @@ async function dispararBoaSemana() {
   document.getElementById('progress-log').innerHTML = '';
   document.getElementById('progress-close-btn').style.display = 'none';
   document.getElementById('progress-modal').style.display = 'flex';
-
   var erros = 0;
   for (var i = 0; i < ativos.length; i++) {
     var s = ativos[i];
     var logEl = document.createElement('div');
     logEl.textContent = '⏳ ' + s.name + '...';
     document.getElementById('progress-log').appendChild(logEl);
-
     try {
-      var tel = await buscarTelefoneAluno(s.name);
-      if (!tel) {
-        logEl.textContent = '⚠️ ' + s.name + ' — telefone não encontrado';
-        logEl.style.color = '#92600a'; erros++; continue;
-      }
-
-      // Buscar semana atual
       var sheetId = getSheetId(s.sheet);
-      var resAba = await fetch(APPS_SCRIPT_URL + '?action=getAbaAtual&spreadsheetId=' + sheetId);
-      var dataAba = await resAba.json();
-      var semanaAtual = dataAba.aba || 'S1';
-      var numSemana = semanaAtual.replace('S','');
-
-      var primeiroNome = s.name.split(' ')[0];
-      var msg = '🌅 *Bom dia, ' + primeiroNome + '!*\n\n' +
-        'Que você tenha uma semana incrível! 💪\n\n' +
-        'Esta semana você inicia a *Semana ' + numSemana + '* dos seus treinos.\n\n' +
-        'Foco, consistência e evolução. Bora! 🔥\n\n' +
-        'Qualquer dúvida, me chame! 😉\\n\\n' +
-        'Felipe';
-
-      var envio = await enviarWhatsApp(tel, msg);
-      if (envio.erro || envio.error) {
-        logEl.textContent = '❌ ' + s.name + ': ' + (envio.erro || envio.error);
-        logEl.style.color = 'var(--red)'; erros++;
+      const res = await gsPost({ dispararBoaSemana: true, spreadsheetId: sheetId, nomeAluno: s.name });
+      const data = await res.json();
+      if (data.sucesso) {
+        logEl.textContent = '✅ ' + s.name; logEl.style.color = 'var(--green)';
       } else {
-        logEl.textContent = '✅ ' + s.name + ' → ' + tel;
-        logEl.style.color = 'var(--green)';
+        logEl.textContent = '❌ ' + s.name + ': ' + (data.erro||'erro');
+        logEl.style.color = 'var(--red)'; erros++;
       }
     } catch(e) {
       logEl.textContent = '❌ ' + s.name + ': ' + e.message;
       logEl.style.color = 'var(--red)'; erros++;
     }
-
     document.getElementById('progress-count').textContent = i + 1;
     document.getElementById('progress-bar').style.width = Math.round(((i+1)/ativos.length)*100) + '%';
     document.getElementById('progress-log').scrollTop = 9999;
-    await new Promise(function(r){ setTimeout(r, 1200); });
+    if (i < ativos.length - 1) await new Promise(function(r){ setTimeout(r, 1200); });
   }
-
-  document.getElementById('progress-title').textContent = erros === 0
-    ? '✅ Boa semana enviado!' : '⚠️ Concluído com ' + erros + ' erro(s)';
+  document.getElementById('progress-title').textContent = erros === 0 ? '✅ Boa semana enviado!' : '⚠️ Concluído com ' + erros + ' erro(s)';
   document.getElementById('progress-close-btn').style.display = 'block';
 }
+
 
 // ============================================================
 // MONTAR MENSAGEM DE RELATÓRIO (texto WhatsApp)
@@ -2943,17 +2903,14 @@ async function analisarAjustesPlanilha() {
   if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
   var abaAtual = 'S1';
   try {
-    var resAba = await fetch(APPS_SCRIPT_URL + '?action=getAbaAtual&spreadsheetId=' + sheetId);
+    var resAba = await fetch(gsUrl('getAbaAtual', { spreadsheetId: sheetId }));
     var dataAba = await resAba.json();
     if (dataAba.aba) abaAtual = dataAba.aba;
   } catch(e) {}
   addMsg('msgs', '🔍 Analisando séries anteriores da aba ' + abaAtual + '...', false);
   addLoading('msgs');
   try {
-    var res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({ analisarAjustes: true, spreadsheetId: sheetId, aba: abaAtual })
-    });
+    var res = await gsPost({ analisarAjustes: true, spreadsheetId: sheetId, aba: abaAtual });
     var data = await res.json();
     removeLoading('msgs');
     if (!data.sucesso) {
@@ -2991,6 +2948,5 @@ async function analisarAjustesPlanilha() {
 
 init();
 </script>
-
 
 </body></html>

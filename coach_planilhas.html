@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0060)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v30_5.html -->
+<!-- saved from url=(0062)file:///C:/Users/Lenovo/Documents/Coach%20Planilhas%20v33.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,27 +43,30 @@
   .auth-pill.on { background: var(--green-light); color: var(--green-dark); border-color: transparent; }
   .auth-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); }
   .auth-dot.on { background: var(--green); }
-  .main { display: flex; flex: 1; min-height: 0; }
-  .sidebar { width: 220px; flex-shrink: 0; border-right: 0.5px solid var(--border); display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
-  .sidebar-top { padding: .75rem; border-bottom: 0.5px solid var(--border); }
+  .main { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+  .sidebar { width: 250px; flex-shrink: 0; border-right: 0.5px solid var(--border); display: flex; flex-direction: column; background: var(--bg); overflow-y: auto; overflow-x: hidden; min-height: 0; scrollbar-gutter: stable; }
+  .sidebar-top { padding: .75rem; border-bottom: 0.5px solid var(--border); flex-shrink: 0; }
   .search { display: flex; align-items: center; gap: 6px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 6px 8px; }
   .search input { border: none; background: transparent; font-size: 12px; color: var(--text); width: 100%; outline: none; }
   .search input::placeholder { color: var(--text3); }
-  .student-list { flex: 1; overflow-y: auto; padding: .5rem; min-height: 0; }
-  .si { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: var(--radius); cursor: pointer; transition: background .12s; }
+  .student-list { flex: 0 0 auto; max-height: 42vh; overflow-y: auto; padding: .375rem; min-height: 180px; scrollbar-gutter: stable; }
+  .si { display: flex; align-items: center; gap: 7px; padding: 5px 7px; border-radius: var(--radius); cursor: pointer; transition: background .12s; }
   .si:hover { background: var(--bg2); }
   .si.active { background: var(--bg2); }
   .si.active .si-name { color: var(--green); font-weight: 600; }
-  .si-av { width: 28px; height: 28px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--green-dark); flex-shrink: 0; }
+  .si-av { width: 25px; height: 25px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--green-dark); flex-shrink: 0; }
   .si-av.off { background: var(--bg3); color: var(--text3); }
   .si-name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .si-meta { font-size: 10px; color: var(--text3); }
   .si-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; margin-left: auto; }
   .si-dot.off { background: var(--border2); }
-  .add-btn { margin: .5rem; padding: 7px; border-radius: var(--radius); border: 0.5px dashed var(--border2); background: transparent; color: var(--text3); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all .15s; }
+  .add-btn { margin: .25rem; padding: 5px 7px; border-radius: var(--radius); border: 0.5px dashed var(--border2); background: transparent; color: var(--text3); font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all .15s; flex-shrink: 0; min-height: 28px; }
   .add-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-light); }
   .sidebar-footer { padding: .5rem .75rem; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--text3); }
-  .panel { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .sidebar > div[style*="border-top"] { padding: .25rem !important; gap: 2px !important; }
+  .sidebar > div[style*="border-top"] > div { margin-top: 2px !important; padding: 1px 4px !important; font-size: 9px !important; }
+  .panel { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+  #student-view { min-height: 0; overflow: hidden; }
   .panel-header { padding: .875rem 1.25rem; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
   .ph-left { display: flex; align-items: center; gap: 10px; }
   .ph-av { width: 36px; height: 36px; border-radius: 50%; background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--green-dark); }
@@ -79,11 +82,12 @@
   .tabs { display: flex; border-bottom: 0.5px solid var(--border); padding: 0 1.25rem; flex-shrink: 0; }
   .tab { padding: 8px 12px; font-size: 12px; color: var(--text2); border: none; background: transparent; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; margin-bottom: -.5px; }
   .tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 600; }
-  .tab-body { flex: 1; overflow-y: auto; padding: 1rem 1.25rem; }
+  .tab-body { flex: 1; overflow-y: auto; padding: .75rem 1rem 2rem; min-height: 0; scrollbar-gutter: stable; }
+  #tab-treino, #tab-ia { min-height: 0; }
   .ag { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
-  .ac { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .875rem; cursor: pointer; text-align: left; transition: all .15s; }
+  .ac { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: .625rem .75rem; cursor: pointer; text-align: left; transition: all .15s; min-height: 78px; }
   .ac:hover { border-color: var(--green); background: var(--green-light); }
-  .ac-icon { font-size: 22px; margin-bottom: 6px; }
+  .ac-icon { font-size: 19px; margin-bottom: 4px; }
   .ac-label { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
   .ac-desc { font-size: 11px; color: var(--text2); line-height: 1.4; }
   .ai-box { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; }
@@ -228,7 +232,11 @@
     .rel-modal, .rel-body { max-height:none; overflow:visible; }
   }
 
-  ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+  @media (max-width: 900px) {
+    .sidebar { width: 230px; }
+  }
+  * { scrollbar-width: auto; scrollbar-color: var(--border2) var(--bg2); }
+  ::-webkit-scrollbar { width: 12px; height: 12px; } ::-webkit-scrollbar-track { background: var(--bg2); } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; border: 2px solid var(--bg2); }
 </style>
 </head>
 <body>
@@ -612,6 +620,19 @@
               </div>
             </div>
             <div class="fl">
+              <label>Dias e duração por sessão (opcional)</label>
+              <div id="cardio-sessoes" style="display:flex;flex-direction:column;gap:4px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:6px;">
+                <div class="cardio-session" data-dia="SEG" style="display:grid;grid-template-columns:52px 86px 1fr;gap:5px;align-items:center;"><label style="display:flex;align-items:center;gap:4px;font-size:11px;"><input type="checkbox"> SEG</label><select data-field="duracao" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="10 min">10 min</option><option value="15 min">15 min</option><option value="20 min">20 min</option><option value="30 min" selected="">30 min</option><option value="40 min">40 min</option><option value="45 min">45 min</option><option value="60 min">60 min</option></select><select data-field="tipo" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="IA decide">IA decide</option><option value="Contínuo Z2">Contínuo Z2</option><option value="LISS">LISS</option><option value="Tempo Z3">Tempo Z3</option><option value="HIIT">HIIT</option><option value="Intervalado">Intervalado</option></select></div>
+                <div class="cardio-session" data-dia="TER" style="display:grid;grid-template-columns:52px 86px 1fr;gap:5px;align-items:center;"><label style="display:flex;align-items:center;gap:4px;font-size:11px;"><input type="checkbox"> TER</label><select data-field="duracao" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="10 min">10 min</option><option value="15 min">15 min</option><option value="20 min">20 min</option><option value="30 min" selected="">30 min</option><option value="40 min">40 min</option><option value="45 min">45 min</option><option value="60 min">60 min</option></select><select data-field="tipo" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="IA decide">IA decide</option><option value="Contínuo Z2">Contínuo Z2</option><option value="LISS">LISS</option><option value="Tempo Z3">Tempo Z3</option><option value="HIIT">HIIT</option><option value="Intervalado">Intervalado</option></select></div>
+                <div class="cardio-session" data-dia="QUA" style="display:grid;grid-template-columns:52px 86px 1fr;gap:5px;align-items:center;"><label style="display:flex;align-items:center;gap:4px;font-size:11px;"><input type="checkbox"> QUA</label><select data-field="duracao" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="10 min">10 min</option><option value="15 min">15 min</option><option value="20 min">20 min</option><option value="30 min" selected="">30 min</option><option value="40 min">40 min</option><option value="45 min">45 min</option><option value="60 min">60 min</option></select><select data-field="tipo" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="IA decide">IA decide</option><option value="Contínuo Z2">Contínuo Z2</option><option value="LISS">LISS</option><option value="Tempo Z3">Tempo Z3</option><option value="HIIT">HIIT</option><option value="Intervalado">Intervalado</option></select></div>
+                <div class="cardio-session" data-dia="QUI" style="display:grid;grid-template-columns:52px 86px 1fr;gap:5px;align-items:center;"><label style="display:flex;align-items:center;gap:4px;font-size:11px;"><input type="checkbox"> QUI</label><select data-field="duracao" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="10 min">10 min</option><option value="15 min">15 min</option><option value="20 min">20 min</option><option value="30 min" selected="">30 min</option><option value="40 min">40 min</option><option value="45 min">45 min</option><option value="60 min">60 min</option></select><select data-field="tipo" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="IA decide">IA decide</option><option value="Contínuo Z2">Contínuo Z2</option><option value="LISS">LISS</option><option value="Tempo Z3">Tempo Z3</option><option value="HIIT">HIIT</option><option value="Intervalado">Intervalado</option></select></div>
+                <div class="cardio-session" data-dia="SEX" style="display:grid;grid-template-columns:52px 86px 1fr;gap:5px;align-items:center;"><label style="display:flex;align-items:center;gap:4px;font-size:11px;"><input type="checkbox"> SEX</label><select data-field="duracao" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="10 min">10 min</option><option value="15 min">15 min</option><option value="20 min">20 min</option><option value="30 min" selected="">30 min</option><option value="40 min">40 min</option><option value="45 min">45 min</option><option value="60 min">60 min</option></select><select data-field="tipo" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="IA decide">IA decide</option><option value="Contínuo Z2">Contínuo Z2</option><option value="LISS">LISS</option><option value="Tempo Z3">Tempo Z3</option><option value="HIIT">HIIT</option><option value="Intervalado">Intervalado</option></select></div>
+                <div class="cardio-session" data-dia="SAB" style="display:grid;grid-template-columns:52px 86px 1fr;gap:5px;align-items:center;"><label style="display:flex;align-items:center;gap:4px;font-size:11px;"><input type="checkbox"> SAB</label><select data-field="duracao" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="10 min">10 min</option><option value="15 min">15 min</option><option value="20 min">20 min</option><option value="30 min" selected="">30 min</option><option value="40 min">40 min</option><option value="45 min">45 min</option><option value="60 min">60 min</option></select><select data-field="tipo" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="IA decide">IA decide</option><option value="Contínuo Z2">Contínuo Z2</option><option value="LISS">LISS</option><option value="Tempo Z3">Tempo Z3</option><option value="HIIT">HIIT</option><option value="Intervalado">Intervalado</option></select></div>
+                <div class="cardio-session" data-dia="DOM" style="display:grid;grid-template-columns:52px 86px 1fr;gap:5px;align-items:center;"><label style="display:flex;align-items:center;gap:4px;font-size:11px;"><input type="checkbox"> DOM</label><select data-field="duracao" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="10 min">10 min</option><option value="15 min">15 min</option><option value="20 min">20 min</option><option value="30 min" selected="">30 min</option><option value="40 min">40 min</option><option value="45 min">45 min</option><option value="60 min">60 min</option></select><select data-field="tipo" style="padding:4px 5px;font-size:11px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg2);color:var(--text);"><option value="IA decide">IA decide</option><option value="Contínuo Z2">Contínuo Z2</option><option value="LISS">LISS</option><option value="Tempo Z3">Tempo Z3</option><option value="HIIT">HIIT</option><option value="Intervalado">Intervalado</option></select></div>
+              </div>
+              <div style="font-size:10px;color:var(--text3);line-height:1.4;">Marque dias exatos quando quiser controlar a semana. Se nenhum dia for marcado, a IA usa frequência e duração padrão.</div>
+            </div>
+            <div class="fl">
               <label>Ergômetros disponíveis</label>
               <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:2px;" id="cardio-ergometros">
                 <label style="display:flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="Bike" checked=""> Bike</label>
@@ -851,11 +872,20 @@ const APP_SECRET = localStorage.getItem('coach_app_secret') || '';
 // Wrapper que injeta o secret em todos os POSTs ao Apps Script
 async function gsPost(payload) {
   if (APP_SECRET) payload.secret = APP_SECRET;
-  return fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
-  });
+  var body = JSON.stringify(payload);
+  try {
+    return await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: body
+    });
+  } catch(e) {
+    return fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: body
+    });
+  }
 }
 
 async function renovarToken() {
@@ -1144,6 +1174,7 @@ function getSystemPrompt() {
     '• Modelo polarizado Seiler: 80% volume em Z1-Z2 (RPE 4-6), 20% em Z4-Z5 (RPE 8-10)\n' +
     '• Interferência força-endurance (Wilson et al.): evitar HIIT no mesmo dia de treino pesado de inferiores; preferir cardio APÓS musculação ou em dias separados; Z1-Z2 se mesmo dia de pernas\n' +
     '• Laursen & Buchheit: máx 1-2 sessões HIIT/semana; recuperação mínima 48h entre sessões de alta intensidade\n' +
+    '• Use raciocinio de endurance/intervalados com base em Seiler, Laursen & Buchheit, Billat, Gibala, Ronnestad e Daniels; escolha metodo conforme objetivo, nivel, recuperacao e interferencia com forca\n' +
     '• Progressão: aumentar volume (minutos) antes de intensidade; deload cardio junto com deload força\n' +
     '• Ergômetros por menor interferência: bike > natação > elíptico > esteira inclinada > corrida > escada\n' +
     '• Zonas: Z1 <65% FCMax / Z2 65-75% / Z3 76-82% / Z4 83-90% / Z5 >90%\n' +
@@ -1402,12 +1433,25 @@ function getCardioContext() {
   if (!ativo) return null;
   var ergometros = [];
   document.querySelectorAll('#cardio-ergometros input:checked').forEach(function(cb){ ergometros.push(cb.value); });
+  var sessoes = [];
+  document.querySelectorAll('#cardio-sessoes .cardio-session').forEach(function(row) {
+    var marcado = row.querySelector('input[type=checkbox]');
+    if (!marcado || !marcado.checked) return;
+    var duracao = row.querySelector('[data-field="duracao"]');
+    var tipo = row.querySelector('[data-field="tipo"]');
+    sessoes.push({
+      dia: row.getAttribute('data-dia'),
+      duracao: duracao ? duracao.value : '',
+      tipo: tipo ? tipo.value : 'IA decide'
+    });
+  });
   return {
     objetivo: document.getElementById('cardio-objetivo').value,
     freq: document.getElementById('cardio-freq').value,
     duracao: document.getElementById('cardio-duracao').value,
     ergometros: ergometros.join(', ') || 'livre',
-    restricoes: document.getElementById('cardio-restricoes').value.trim()
+    restricoes: document.getElementById('cardio-restricoes').value.trim(),
+    sessoes: sessoes
   };
 }
 
@@ -1475,16 +1519,26 @@ async function confirmarNovoMeso() {
   // Cardio context
   if (cardioCtx) {
     prompt += '\n=== CONDICIONAMENTO FS ===\n';
-    prompt += 'Prescreva cardio para este aluno junto com o meso.\n';
+    prompt += 'Prescreva cardio para este aluno junto com o meso, usando raciocinio de endurance, HIIT e intervalados baseado em Seiler, Laursen & Buchheit, Billat, Gibala, Ronnestad e Daniels.\n';
     prompt += 'Objetivo: ' + cardioCtx.objetivo + '\n';
-    prompt += 'Frequência: ' + cardioCtx.freq + 'x/semana\n';
-    prompt += 'Duração por sessão: ' + cardioCtx.duracao + '\n';
+    if (cardioCtx.sessoes && cardioCtx.sessoes.length > 0) {
+      prompt += 'Sessoes obrigatorias de cardio (respeite exatamente dias e duracoes):\n';
+      cardioCtx.sessoes.forEach(function(s) {
+        prompt += '- ' + s.dia + ': ' + s.duracao + ' | tipo desejado: ' + s.tipo + '\n';
+      });
+      prompt += 'Nao crie sessoes de cardio fora desses dias. Ajuste intensidade, metodo e progressao conforme interferencia com o treino de forca.\n';
+    } else {
+      prompt += 'Frequência: ' + cardioCtx.freq + 'x/semana\n';
+      prompt += 'Duração por sessão: ' + cardioCtx.duracao + '\n';
+      prompt += 'Escolha os dias mais adequados considerando interferencia com lower/upper, recuperacao e objetivo.\n';
+    }
     prompt += 'Ergômetros disponíveis: ' + cardioCtx.ergometros + '\n';
     if (cardioCtx.restricoes) prompt += 'Restrições: ' + cardioCtx.restricoes + '\n';
+    prompt += 'Para cada sessao, defina tipo, ergometro, duracao, intensidade por zona/RPE/%FCMax, progressao e observacao pratica.\n';
     prompt += 'O JSON deve incluir o array "cardio" além de "exercicios".\n';
   }
 
-  prompt += 'Retorne JSON valido para preview. Nao escreva na planilha; o app vai pedir confirmacao antes.\n';
+  prompt += 'Retorne APENAS JSON valido e completo, sem explicacao antes ou depois, para preview. Nao escreva na planilha; o app vai pedir confirmacao antes.\n';
   prompt += contextoAbas;
 
   // Gera preview; a escrita so acontece apos confirmacao.
@@ -1494,7 +1548,7 @@ async function confirmarNovoMeso() {
   addMsg('msgs', prompt, true); addLoading('msgs');
   isLoading = true; document.getElementById('send-btn').disabled = true;
   try {
-    const reply = await callClaude(msgHistory, getSystemPrompt(), 3500);
+    const reply = await callClaude(msgHistory, getSystemPrompt(), 9000);
     removeLoading('msgs');
     const parsed = tryParseJSON(reply);
     if (parsed && parsed.exercicios && parsed.aba) {
@@ -3172,6 +3226,7 @@ async function analisarAjustesPlanilha() {
 
 init();
 </script>
+
 
 
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0058)file:///C:/Users/Lenovo/Downloads/coach_planilhas_v30.html -->
+<!-- coach_planilhas_v30 — versão consolidada completa -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -242,8 +242,8 @@
     </div>
   </div>
   <div class="nav">
-    <button class="nav-btn active" onclick="showPage(&#39;alunos&#39;,this)">Alunos</button>
-    <button class="nav-btn" onclick="showPage(&#39;config&#39;,this)">Configuração</button>
+    <button class="nav-btn active" onclick="showPage('alunos',this)">Alunos</button>
+    <button class="nav-btn" onclick="showPage('config',this)">Configuração</button>
     <button class="auth-pill on" id="auth-pill" onclick="showAuthModal()">
       <div class="auth-dot on" id="auth-dot"></div>
       <span id="auth-label">Google conectado</span>
@@ -256,7 +256,7 @@
 <div id="deload-banner" style="display:none;" class="deload-banner">
   <div class="deload-icon">⚠️</div>
   <div class="deload-text" id="deload-text"></div>
-  <button class="deload-btn" onclick="document.getElementById(&#39;deload-banner&#39;).style.display=&#39;none&#39;">OK</button>
+  <button class="deload-btn" onclick="document.getElementById('deload-banner').style.display='none'">OK</button>
 </div>
 <div id="page-alunos" class="main">
   <div class="sidebar">
@@ -271,13 +271,14 @@
     <div style="flex-shrink:0;padding:.5rem;display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--border);">
       <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
       <button class="add-btn" style="border-style:solid;color:#4285f4;border-color:#4285f4;" onclick="importarBrainering()">📥 Importar Brainering</button>
+      <button class="add-btn" style="border-style:solid;color:var(--text2);border-color:var(--border2);" onclick="recarregarAlunos()">🔄 Recarregar alunos</button>
       <div style="font-size:10px;color:var(--text3);padding:2px 4px;font-weight:600;margin-top:4px;">WHATSAPP</div>
       <button class="add-btn" style="border-style:solid;color:#25D366;border-color:#25D366;" onclick="dispararRelatorios()">📊 Relatórios domingo</button>
       <button class="add-btn" style="border-style:solid;color:#25D366;border-color:#25D366;" onclick="dispararBoaSemana()">🌅 Boa semana</button>
       <div style="font-size:10px;color:var(--text3);padding:2px 4px;font-weight:600;margin-top:4px;">ATUALIZAR TODOS</div>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;seg_qui&#39;)">📅 Seg → qui</button>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;qui_dom&#39;)">📆 Qui → dom</button>
-      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;semana_completa&#39;)">🗓️ Semana completa</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('seg_qui')">📅 Seg → qui</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('qui_dom')">📆 Qui → dom</button>
+      <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos('semana_completa')">🗓️ Semana completa</button>
     </div>
     <div class="sidebar-footer" id="counter" style="flex-shrink:0;">0 alunos</div>
   </div>
@@ -304,31 +305,31 @@
           <button class="icon-btn" onclick="abrirComparar()" title="Comparar abas">🔀</button>
           <button class="icon-btn" onclick="abrirSalvarTemplate()" title="Salvar aba atual como template">📌</button>
           <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;">✏️ Editar aba</button>
-          <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
+          <button class="btn-green" onclick="runAction('zero')">🔄 Novo meso IA</button>
         </div>
       </div>
       <div class="tabs">
-        <button class="tab active" onclick="switchTab(&#39;treino&#39;,this)">Ações</button>
-        <button class="tab" onclick="switchTab(&#39;ia&#39;,this)">Assistente IA</button>
+        <button class="tab active" onclick="switchTab('treino',this)">Ações</button>
+        <button class="tab" onclick="switchTab('ia',this)">Assistente IA</button>
       </div>
       <div class="tab-body" id="tab-treino">
         <div class="ag">
-          <button class="ac" onclick="runSheetAction(&#39;seg_qui&#39;)">
+          <button class="ac" onclick="runSheetAction('seg_qui')">
             <div class="ac-icon">📅</div>
             <div class="ac-label">Semana seg → qui</div>
             <div class="ac-desc">Avança cargas e reps de segunda a quinta</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;qui_dom&#39;)">
+          <button class="ac" onclick="runSheetAction('qui_dom')">
             <div class="ac-icon">📆</div>
             <div class="ac-label">Semana qui → dom</div>
             <div class="ac-desc">Avança cargas e reps de quinta a domingo</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;semana_completa&#39;)">
+          <button class="ac" onclick="runSheetAction('semana_completa')">
             <div class="ac-icon">🗓️</div>
             <div class="ac-label">Semana completa</div>
             <div class="ac-desc">Avança toda a semana de uma vez</div>
           </button>
-          <button class="ac" onclick="runSheetAction(&#39;planilha_zero&#39;)">
+          <button class="ac" onclick="runSheetAction('planilha_zero')">
             <div class="ac-icon">📄</div>
             <div class="ac-label">Planilha do zero</div>
             <div class="ac-desc">Cria nova aba zerada para novo mesociclo</div>
@@ -353,7 +354,7 @@
             <button class="chip" onclick="analisarAjustesPlanilha()">📊 Analisar ajustes</button>
           </div>
           <div class="input-row">
-            <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+            <textarea class="ai-input" id="ai-input" placeholder="Peça análise, nova programação ou ajuste..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
             <button class="send-btn" id="send-btn" onclick="sendMsg()">Enviar ↗</button>
           </div>
         </div>
@@ -372,7 +373,7 @@
             <button class="chip" onclick="useChip2(this)">Deload — quando e como?</button>
           </div>
           <div class="input-row">
-            <textarea class="ai-input" id="ai-input2" placeholder="Converse livremente sobre treino..." rows="1" onkeydown="if(event.key===&#39;Enter&#39;&amp;&amp;!event.shiftKey){event.preventDefault();sendMsg2();}"></textarea>
+            <textarea class="ai-input" id="ai-input2" placeholder="Converse livremente sobre treino..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg2();}"></textarea>
             <button class="send-btn" onclick="sendMsg2()">Enviar ↗</button>
           </div>
         </div>
@@ -536,7 +537,7 @@
   <div class="modal" style="width:400px;">
     <div class="modal-header">
       <span class="modal-title">🔄 Novo Meso IA</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('meso-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div class="fl">
@@ -567,7 +568,7 @@
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-ghost" onclick="document.getElementById('meso-modal').style.display='none'">Cancelar</button>
       <button class="btn-ghost" onclick="abrirTemplates()" style="margin-right:auto;">📌 Templates</button>
       <button class="btn-green" onclick="confirmarNovoMeso()">✨ Gerar preview</button>
     </div>
@@ -579,7 +580,7 @@
   <div class="modal" style="width:420px;">
     <div class="modal-header">
       <span class="modal-title">✏️ Editar aba atual</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;editar-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('editar-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div style="font-size:12px;color:var(--text2);padding:8px;background:var(--bg2);border-radius:var(--radius);margin-bottom:8px;">
@@ -597,7 +598,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;editar-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-ghost" onclick="document.getElementById('editar-modal').style.display='none'">Cancelar</button>
       <button class="btn-green" onclick="confirmarEdicao()">✏️ Aplicar correções</button>
     </div>
   </div>
@@ -638,7 +639,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       <span class="modal-title">📊 Relatório do aluno</span>
       <div style="display:flex;gap:6px;">
         <button class="btn-ghost" onclick="imprimirRelatorio()" style="font-size:11px;">🖨️ Imprimir / PDF</button>
-        <button class="icon-btn" onclick="document.getElementById(&#39;relatorio-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+        <button class="icon-btn" onclick="document.getElementById('relatorio-modal').style.display='none'" style="font-size:16px;">✕</button>
       </div>
     </div>
     <div class="modal-body" style="padding:0;">
@@ -678,14 +679,14 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   <div class="modal" style="width:460px;">
     <div class="modal-header">
       <span class="modal-title">📋 Histórico de edições</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;historico-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('historico-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body" id="historico-lista">
       <div style="font-size:12px;color:var(--text3);text-align:center;padding:20px;">Nenhuma edição registrada.</div>
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="limparHistorico()">🗑️ Limpar histórico</button>
-      <button class="btn-ghost" onclick="document.getElementById(&#39;historico-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+      <button class="btn-ghost" onclick="document.getElementById('historico-modal').style.display='none'">Fechar</button>
     </div>
   </div>
 </div>
@@ -695,7 +696,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   <div class="modal" style="width:600px;max-width:95vw;">
     <div class="modal-header">
       <span class="modal-title">🔀 Comparar abas</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;comparar-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('comparar-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div style="display:flex;gap:10px;margin-bottom:12px;align-items:flex-end;">
@@ -713,7 +714,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       <div id="comp-resultado" style="max-height:400px;overflow-y:auto;"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;comparar-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+      <button class="btn-ghost" onclick="document.getElementById('comparar-modal').style.display='none'">Fechar</button>
     </div>
   </div>
 </div>
@@ -723,7 +724,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   <div class="modal" style="width:420px;">
     <div class="modal-header">
       <span class="modal-title">📌 Templates de meso</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;templates-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('templates-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div id="templates-lista"></div>
@@ -736,7 +737,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;templates-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+      <button class="btn-ghost" onclick="document.getElementById('templates-modal').style.display='none'">Fechar</button>
     </div>
   </div>
 </div>
@@ -747,7 +748,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   <div class="modal" style="width:400px;">
     <div class="modal-header">
       <span class="modal-title">📌 Salvar aba como template</span>
-      <button class="icon-btn" onclick="document.getElementById(&#39;salvar-template-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+      <button class="icon-btn" onclick="document.getElementById('salvar-template-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body">
       <div class="fl">
@@ -761,14 +762,14 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-ghost" onclick="document.getElementById(&#39;salvar-template-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-ghost" onclick="document.getElementById('salvar-template-modal').style.display='none'">Cancelar</button>
       <button class="btn-green" onclick="salvarTemplateModal()">💾 Salvar</button>
     </div>
   </div>
 </div>
 
 <script>
-const APP_VERSION = 'v29';
+const APP_VERSION = 'v30';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTcezZ5a2i8GyIAdUhnIksaMXM3eMHf6vOSaV9SsAdMgZ13kPWtn5dBc_gtkevf_VUXw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 
@@ -811,41 +812,53 @@ async function renovarToken() {
 
 async function init() {
   accessToken = localStorage.getItem('coach_token') || null;
-  // localStorage como cache inicial — fonte de verdade é a planilha
   const raw = localStorage.getItem('coach_students_v2');
   if (raw) { try { students = JSON.parse(raw); } catch(e) { students = []; } }
   if (accessToken) {
     setAuthConnected();
   } else if (refreshToken) {
-    renovarToken().then(function(ok) { if (ok) showToast('Conectado automaticamente!', 'ok'); });
+    // await: garante token válido antes de qualquer fetch
+    const ok = await renovarToken();
+    if (ok) showToast('Conectado automaticamente!', 'ok');
   }
   updateConfigStatus();
   loadCoachPrefs();
   renderList();
-  // Carregar alunos da planilha como fonte de verdade
+  // Fonte de verdade: carrega da planilha. Sincronização só ocorre ao salvar/editar aluno.
   await carregarAlunosDaPlanilha();
-  sincronizarSeConectado();
+  // REMOVIDO: sincronizarSeConectado() aqui causava apagamento da Alunos_App quando
+  // students estava vazio no momento da chamada (race condition no carregamento inicial)
 }
 
 function saveAll() { localStorage.setItem('coach_students_v2', JSON.stringify(students)); }
 
 // Fonte de verdade: carrega alunos do Brainering via Apps Script
-async function carregarAlunosDaPlanilha() {
+async function carregarAlunosDaPlanilha(tentativa) {
+  tentativa = tentativa || 1;
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?action=getAlunos');
     const data = await res.json();
     if (data.sucesso && Array.isArray(data.alunos) && data.alunos.length > 0) {
-      // Merge: preserva alunos locais não sincronizados ainda
       data.alunos.forEach(function(remoto) {
-        var existe = students.find(function(s){ return s.id === remoto.id || s.sheet === remoto.sheet; });
+        var existe = students.find(function(s){
+          return s.id === remoto.id || (s.sheet && remoto.sheet && s.sheet === remoto.sheet);
+        });
         if (!existe) students.push(remoto);
-        else Object.assign(existe, remoto); // atualiza dados remotos
+        else Object.assign(existe, remoto);
       });
       saveAll();
       renderList();
+    } else if (data.erro) {
+      showToast('Erro ao carregar alunos: ' + data.erro, 'err');
+    } else if (students.length === 0) {
+      showToast('Nenhum aluno encontrado. Verifique a aba Alunos_App na planilha.', 'err');
     }
   } catch(e) {
-    // silencioso — usa cache local
+    if (tentativa < 3) {
+      await new Promise(function(r){ setTimeout(r, tentativa * 2000); });
+      return carregarAlunosDaPlanilha(tentativa + 1);
+    }
+    showToast('Falha ao conectar com Apps Script. Use "🔄 Recarregar alunos" quando a conexão voltar.', 'err');
   }
 }
 
@@ -1123,22 +1136,6 @@ async function sendMsg() {
   if (isLoading) return;
   const inp = document.getElementById('ai-input');
   const text = inp.value.trim(); if (!text) return;
-
-  // ── DETECÇÃO DE JSON COLADO PELO USUÁRIO ─────────────────────────
-  // Se o próprio texto digitado já é um JSON válido com exercicios+aba,
-  // vai direto para preview sem acionar a IA.
-  const parsedDireto = tryParseJSON(text);
-  if (parsedDireto && parsedDireto.exercicios && parsedDireto.aba) {
-    inp.value = '';
-    addMsg('msgs', '📋 JSON detectado — ' + parsedDireto.exercicios.length + ' exercícios para a aba ' + parsedDireto.aba + '. Abrindo preview...', false);
-    msgHistory.push({role:'user', content: text});
-    msgHistory.push({role:'assistant', content: '📋 JSON detectado — ' + parsedDireto.exercicios.length + ' exercícios para a aba ' + parsedDireto.aba + '. Abrindo preview...'});
-    window._previewModo = 'novo';
-    mostrarPreview(parsedDireto.exercicios, parsedDireto.aba);
-    return;
-  }
-  // ─────────────────────────────────────────────────────────────────
-
   inp.value = ''; isLoading = true;
   document.getElementById('send-btn').disabled = true;
   addMsg('msgs', text, true); addLoading('msgs');
@@ -2765,6 +2762,11 @@ async function sincronizarSeConectado() {
   if (students.length > 0) await sincronizarAlunosApp();
 }
 
+async function recarregarAlunos() {
+  showToast('Recarregando alunos...', 'ok');
+  await carregarAlunosDaPlanilha();
+}
+
 // ============================================================
 // CONFIGURAÇÃO Z-API — credenciais ficam APENAS no PropertiesService do GS
 // O HTML não armazena nem envia credenciais Z-API
@@ -3012,8 +3014,7 @@ async function analisarAjustesPlanilha() {
 init();
 </script>
 
-
-
-
-
 </body></html>
+
+
+

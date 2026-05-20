@@ -502,6 +502,7 @@
     </div>
     <div class="modal-body">
       <div class="fl"><label>Nome completo</label><input type="text" id="f-name" placeholder="Ex: Caian Maroni"></div>
+      <div class="fl"><label>Data de nascimento</label><input type="date" id="f-birth"></div>
       <div class="fl"><label>Link da planilha Google Sheets</label><input type="text" id="f-sheet" placeholder="https://docs.google.com/spreadsheets/d/..."></div>
       <div class="fl"><label>Status</label>
         <select id="f-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
@@ -597,7 +598,7 @@
                 <option value="retorno">Retorno / conservador</option>
               </select>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="display:none;grid-template-columns:1fr 1fr;gap:8px;">
               <div class="fl">
                 <label>Sessões por semana</label>
                 <select id="cardio-freq" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
@@ -1428,6 +1429,37 @@ function toggleCardioFields() {
   fields.style.display = ativo ? 'flex' : 'none';
 }
 
+function calcularIdadePorNascimento(dataNascimento) {
+  if (!dataNascimento) return null;
+  var nasc = new Date(dataNascimento + 'T00:00:00');
+  if (isNaN(nasc.getTime())) return null;
+  var hoje = new Date();
+  var idade = hoje.getFullYear() - nasc.getFullYear();
+  var aniversarioAindaNaoChegou = (hoje.getMonth() < nasc.getMonth()) ||
+    (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate());
+  if (aniversarioAindaNaoChegou) idade--;
+  return idade > 0 ? idade : null;
+}
+
+function montarPerfilCardioAluno() {
+  var s = students.find(function(x){return x.id===selectedId;});
+  if (!s) return null;
+  var idade = calcularIdadePorNascimento(s.birth || s.nascimento || '');
+  if (!idade) return null;
+  var fcMax = Math.round(208 - (0.7 * idade));
+  return {
+    idade: idade,
+    fcMax: fcMax,
+    zonas: {
+      z1: '<' + Math.round(fcMax * 0.65) + ' bpm',
+      z2: Math.round(fcMax * 0.65) + '-' + Math.round(fcMax * 0.75) + ' bpm',
+      z3: Math.round(fcMax * 0.76) + '-' + Math.round(fcMax * 0.82) + ' bpm',
+      z4: Math.round(fcMax * 0.83) + '-' + Math.round(fcMax * 0.90) + ' bpm',
+      z5: '>' + Math.round(fcMax * 0.90) + ' bpm'
+    }
+  };
+}
+
 function getCardioContext() {
   var ativo = document.getElementById('cardio-ativo') && document.getElementById('cardio-ativo').checked;
   if (!ativo) return null;
@@ -1447,11 +1479,10 @@ function getCardioContext() {
   });
   return {
     objetivo: document.getElementById('cardio-objetivo').value,
-    freq: document.getElementById('cardio-freq').value,
-    duracao: document.getElementById('cardio-duracao').value,
     ergometros: ergometros.join(', ') || 'livre',
     restricoes: document.getElementById('cardio-restricoes').value.trim(),
-    sessoes: sessoes
+    sessoes: sessoes,
+    perfil: montarPerfilCardioAluno()
   };
 }
 
@@ -1464,6 +1495,10 @@ async function confirmarNovoMeso() {
   const instrucoes = document.getElementById('meso-instrucoes').value.trim();
   const tempoSessao = document.getElementById('meso-tempo').value;
   const cardioCtx = getCardioContext();
+  if (cardioCtx && (!cardioCtx.sessoes || cardioCtx.sessoes.length === 0)) {
+    showToast('Marque pelo menos um dia de aeróbio', 'err');
+    return;
+  }
   document.getElementById('meso-modal').style.display = 'none';
 
   document.getElementById('tab-treino').style.display='block';
@@ -1521,6 +1556,10 @@ async function confirmarNovoMeso() {
     prompt += '\n=== CONDICIONAMENTO FS ===\n';
     prompt += 'Prescreva cardio para este aluno junto com o meso, usando raciocinio de endurance, HIIT e intervalados baseado em Seiler, Laursen & Buchheit, Billat, Gibala, Ronnestad e Daniels.\n';
     prompt += 'Objetivo: ' + cardioCtx.objetivo + '\n';
+    if (cardioCtx.perfil) {
+      prompt += 'Idade do aluno: ' + cardioCtx.perfil.idade + ' anos. FCmax pela formula 208-(0,7*idade): ' + cardioCtx.perfil.fcMax + ' bpm.\n';
+      prompt += 'Zonas calculadas: Z1 ' + cardioCtx.perfil.zonas.z1 + ', Z2 ' + cardioCtx.perfil.zonas.z2 + ', Z3 ' + cardioCtx.perfil.zonas.z3 + ', Z4 ' + cardioCtx.perfil.zonas.z4 + ', Z5 ' + cardioCtx.perfil.zonas.z5 + '.\n';
+    }
     if (cardioCtx.sessoes && cardioCtx.sessoes.length > 0) {
       prompt += 'Sessoes obrigatorias de cardio (respeite exatamente dias e duracoes):\n';
       cardioCtx.sessoes.forEach(function(s) {
@@ -1659,7 +1698,7 @@ function salvarAppSecret() {
 function openModal() {
   editingId=null;
   document.getElementById('modal-title').textContent='Novo aluno';
-  ['f-name','f-sheet','f-obs'].forEach(function(id){document.getElementById(id).value='';});
+  ['f-name','f-birth','f-sheet','f-obs'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('f-status').value='ativo';
   document.getElementById('btn-deletar').style.display='none';
   document.getElementById('modal').style.display='flex';
@@ -1670,6 +1709,7 @@ function openEditModal() {
   editingId=s.id;
   document.getElementById('modal-title').textContent='Editar aluno';
   document.getElementById('f-name').value=s.name;
+  document.getElementById('f-birth').value=s.birth||s.nascimento||'';
   document.getElementById('f-sheet').value=s.sheet||'';
   document.getElementById('f-status').value=s.status||'ativo';
   document.getElementById('f-obs').value=s.obs||'';
@@ -1695,7 +1735,7 @@ function deletarAluno() {
 
 function saveStudent() {
   const name=document.getElementById('f-name').value.trim(); if (!name) return;
-  const data={name:name,sheet:document.getElementById('f-sheet').value.trim(),status:document.getElementById('f-status').value,obs:document.getElementById('f-obs').value.trim()};
+  const data={name:name,birth:document.getElementById('f-birth').value.trim(),sheet:document.getElementById('f-sheet').value.trim(),status:document.getElementById('f-status').value,obs:document.getElementById('f-obs').value.trim()};
   if (editingId) { const idx=students.findIndex(function(s){return s.id===editingId;}); if(idx>=0) students[idx]=Object.assign({},students[idx],data); }
   else { data.id='st_'+Date.now(); students.push(data); }
   saveAll(); closeModal();

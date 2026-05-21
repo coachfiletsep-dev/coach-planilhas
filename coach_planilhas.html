@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0062)file:///C:/Users/Lenovo/Documents/Coach%20Planilhas%20v39.html -->
+<!-- saved from url=(0062)file:///C:/Users/Lenovo/Documents/Coach%20Planilhas%20v40.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -947,6 +947,21 @@ async function init() {
 
 function saveAll() { localStorage.setItem('coach_students_v2', JSON.stringify(students)); }
 
+function normalizarDataNascimentoApp(valor) {
+  if (!valor) return '';
+  var s = String(valor).trim();
+  if (!s) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var br = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (br) {
+    return br[3] + '-' + String(br[2]).padStart(2, '0') + '-' + String(br[1]).padStart(2, '0');
+  }
+  if (/^https?:\/\//i.test(s)) return '';
+  var d = new Date(s);
+  if (isNaN(d.getTime())) return '';
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 // Fonte de verdade: carrega alunos do Brainering via Apps Script
 async function carregarAlunosDaPlanilha() {
   try {
@@ -956,8 +971,17 @@ async function carregarAlunosDaPlanilha() {
       // Merge: preserva alunos locais não sincronizados ainda
       data.alunos.forEach(function(remoto) {
         var existe = students.find(function(s){ return s.id === remoto.id || s.sheet === remoto.sheet; });
-        if (!existe) students.push(remoto);
-        else Object.assign(existe, remoto); // atualiza dados remotos
+        var birthRemoto = normalizarDataNascimentoApp(remoto.birth || remoto.nascimento || '');
+        if (!existe) {
+          remoto.birth = birthRemoto;
+          remoto.nascimento = birthRemoto;
+          students.push(remoto);
+        } else {
+          var birthLocal = normalizarDataNascimentoApp(existe.birth || existe.nascimento || '');
+          Object.assign(existe, remoto); // atualiza dados remotos
+          existe.birth = birthRemoto || birthLocal;
+          existe.nascimento = existe.birth;
+        }
       });
       saveAll();
       renderList();
@@ -1517,6 +1541,7 @@ function toggleCardioFields() {
 }
 
 function calcularIdadePorNascimento(dataNascimento) {
+  dataNascimento = normalizarDataNascimentoApp(dataNascimento);
   if (!dataNascimento) return null;
   var nasc = new Date(dataNascimento + 'T00:00:00');
   if (isNaN(nasc.getTime())) return null;
@@ -1920,7 +1945,7 @@ function openEditModal() {
   editingId=s.id;
   document.getElementById('modal-title').textContent='Editar aluno';
   document.getElementById('f-name').value=s.name;
-  document.getElementById('f-birth').value=s.birth||s.nascimento||'';
+  document.getElementById('f-birth').value=normalizarDataNascimentoApp(s.birth||s.nascimento||'');
   document.getElementById('f-sheet').value=s.sheet||'';
   document.getElementById('f-status').value=s.status||'ativo';
   document.getElementById('f-obs').value=s.obs||'';
@@ -1946,12 +1971,14 @@ function deletarAluno() {
 
 function saveStudent() {
   const name=document.getElementById('f-name').value.trim(); if (!name) return;
-  const data={name:name,birth:document.getElementById('f-birth').value.trim(),sheet:document.getElementById('f-sheet').value.trim(),status:document.getElementById('f-status').value,obs:document.getElementById('f-obs').value.trim()};
+  const birth = normalizarDataNascimentoApp(document.getElementById('f-birth').value.trim());
+  const data={name:name,birth:birth,nascimento:birth,sheet:document.getElementById('f-sheet').value.trim(),status:document.getElementById('f-status').value,obs:document.getElementById('f-obs').value.trim()};
+  var idSelecionar = editingId || null;
   if (editingId) { const idx=students.findIndex(function(s){return s.id===editingId;}); if(idx>=0) students[idx]=Object.assign({},students[idx],data); }
-  else { data.id='st_'+Date.now(); students.push(data); }
+  else { data.id='st_'+Date.now(); idSelecionar = data.id; students.push(data); }
   saveAll(); closeModal();
   renderList(document.getElementById('search-input').value);
-  selectStudent(editingId||data.id);
+  selectStudent(idSelecionar);
   showToast('Aluno salvo!','ok');
   sincronizarAlunosApp(); // sincroniza com Brainering em background
 }

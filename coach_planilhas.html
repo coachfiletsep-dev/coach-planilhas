@@ -1100,57 +1100,66 @@ function mostrarPreviewCardio(sessoes, nomeAba) {
 }
 
 async function escreverNaPlanilha(exercicios, nomeAba) {
-  // Validar antes de qualquer escrita
-  var errosVal = validarProgramacaoIA({ aba: nomeAba, exercicios: exercicios });
-  if (errosVal.length > 0) {
-    addMsg('msgs', '⚠️ JSON bloqueado pela validação:<br>' + errosVal.join('<br>'), false);
-    showToast('Erro de validação — não escrito', 'err');
-    return;
-  }
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
-  addMsg('msgs', 'Verificando aba ' + nomeAba + '...', false);
+  if (!sheetId) {
+    addMsg('msgs', 'Erro: planilha do aluno nao configurada.', false);
+    showToast('Planilha nao configurada', 'err');
+    return;
+  }
+
+  // Reconfere as abas no momento de escrever para evitar S antiga em cache.
+  try {
+    var estadoAtual = await atualizarAbasDoAlunoAtual();
+    if (nomeAba !== estadoAtual.proximaAba && !estadoAtual.abas.includes(nomeAba)) {
+      addMsg('msgs', 'A aba do preview estava desatualizada (' + nomeAba + '). Vou usar a pr�xima aba real: ' + estadoAtual.proximaAba + '.', false);
+      nomeAba = estadoAtual.proximaAba;
+    }
+  } catch(e) {
+    addMsg('msgs', 'Aviso: nao consegui atualizar abas antes de escrever: ' + e.message, false);
+  }
+
+  var errosVal = validarProgramacaoIA({ aba: nomeAba, exercicios: exercicios });
+  if (errosVal.length > 0) {
+    addMsg('msgs', 'JSON bloqueado pela validacao:<br>' + errosVal.join('<br>'), false);
+    showToast('Erro de validacao - nao escrito', 'err');
+    return;
+  }
+
+  addMsg('msgs', 'Criando/verificando aba ' + nomeAba + ' e escrevendo exercicios...', false);
   addLoading('msgs');
   try {
-    const criarPayload = {acao: 'planilha_zero'};
-    if (sheetId) criarPayload.spreadsheetId = sheetId;
-    const criarRes = await gsPost(criarPayload);
-    const criarData = await criarRes.json();
-    removeLoading('msgs');
-    if (criarData.sucesso) {
-      addMsg('msgs', 'Aba ' + criarData.novaAba + ' criada! Escrevendo exercícios...', false);
-    } else if (criarData.erro && criarData.erro.includes('ja existe')) {
-      addMsg('msgs', 'Aba já existe. Escrevendo exercícios...', false);
-    } else {
-      addMsg('msgs', 'Aviso ao criar aba: ' + (criarData.erro||''), false);
-    }
-    addLoading('msgs');
-    const payload = {acao: 'escreverNaPlanilha', aba:nomeAba, exercicios:exercicios, alunoNome: s ? s.name : ''}; // [FIX] acao ausente causava "Ação desconhecida" no GS
-    if (sheetId) payload.spreadsheetId = sheetId;
-    // Incluir cardio se houver
-    if (window._previewCardio && window._previewCardio.length > 0) {
-      payload.cardio = window._previewCardio;
-    }
+    const payload = {acao: 'escreverNaPlanilha', aba:nomeAba, exercicios:exercicios, alunoNome: s ? s.name : ''};
+    payload.spreadsheetId = sheetId;
+    if (window._previewCardio && window._previewCardio.length > 0) payload.cardio = window._previewCardio;
+
     const res = await gsPost(payload);
     const data = await res.json();
     removeLoading('msgs');
+
     if (data.sucesso) {
-      var avisosTxt = data.avisos && data.avisos.length > 0 ? '<br><small>⚠️ ' + data.avisos.join(' | ') + '</small>' : '';
-      var ocultasTxt = data.linhasOcultadas ? '<br><small>' + data.linhasOcultadas + ' bloco(s) vazio(s) ocultado(s).</small>' : '';
-      var msgCardioOk = data.escritosCardio ? ' + ' + data.escritosCardio + ' sessão(ões) de cardio' : '';
-      addMsg('msgs', '✅ ' + data.escritos + ' exercícios' + msgCardioOk + ' escritos na aba ' + nomeAba + '!' + ocultasTxt + avisosTxt, false);
-      window._previewCardio = []; // limpar após escrever
-      if (data.substituicoes && data.substituicoes.length) {
-        addMsg('msgs', '🔄 Nomes substituídos: ' + data.substituicoes.join(', '), false);
-      }
+      var escritos = data.escritos !== undefined ? data.escritos : (data.exerciciosEscritos !== undefined ? data.exerciciosEscritos : exercicios.length);
+      var abaFinal = data.aba || data.novaAba || nomeAba;
+      var avisosTxt = data.avisos && data.avisos.length > 0 ? '<br><small>' + data.avisos.join(' | ') + '</small>' : '';
+      var msgCardioOk = data.escritosCardio ? ' + ' + data.escritosCardio + ' sessao(oes) de cardio' : '';
+      addMsg('msgs', escritos + ' exercicios' + msgCardioOk + ' escritos na aba ' + abaFinal + '!' + avisosTxt, false);
+      window._previewCardio = [];
+      await atualizarAbasDoAlunoAtual();
       showToast('Planilha atualizada!', 'ok');
     } else if (data.errosValidacao) {
-      addMsg('msgs', '⚠️ Bloqueado pelo GS: ' + data.errosValidacao.join(', '), false);
+      addMsg('msgs', 'Bloqueado pelo GS: ' + data.errosValidacao.join(', '), false);
+      showToast('Bloqueado pelo GS', 'err');
     } else {
-      addMsg('msgs', 'Erro ao escrever: ' + (data.erro||'desconhecido'), false);
+      addMsg('msgs', 'Erro ao escrever: ' + (data.erro || JSON.stringify(data)), false);
+      showToast('Erro ao escrever', 'err');
     }
-  } catch(e) { removeLoading('msgs'); addMsg('msgs', 'Erro: ' + e.message, false); }
+  } catch(e) {
+    removeLoading('msgs');
+    addMsg('msgs', 'Erro: ' + e.message, false);
+    showToast('Erro ao escrever', 'err');
+  }
 }
+
 
 function getSystemPrompt() {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return '';
@@ -1310,45 +1319,40 @@ async function sendMsg2() {
   } catch(e) { removeLoading('msgs2'); addMsg('msgs2','Erro: '+e.message,false); }
 }
 
+async function atualizarAbasDoAlunoAtual() {
+  const s = students.find(function(x){return x.id===selectedId;});
+  const sheetId = s ? getSheetId(s.sheet) : null;
+  if (!sheetId) throw new Error('Planilha do aluno nao configurada');
+  const res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId + '&t=' + Date.now());
+  const data = await res.json();
+  const abas = Array.isArray(data.abas) ? data.abas : [];
+  const abaAtual = data.abaAtual || (abas.length ? abas[abas.length - 1] : 'S0');
+  const proximaAba = data.proximaAba || ('S' + ((parseInt(String(abaAtual).replace('S','')) || 0) + 1));
+  window._sheetIdAtual = sheetId;
+  window._abaAtual = abaAtual;
+  window._proximaAba = proximaAba;
+  return { sheetId: sheetId, abas: abas, abaAtual: abaAtual, proximaAba: proximaAba };
+}
 function useChip(el) { document.getElementById('ai-input').value=el.textContent; sendMsg(); }
 function useChip2(el) { document.getElementById('ai-input2').value=el.textContent; sendMsg2(); }
 
 async function runAction(type) {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
-  var abaAtual = 'S1';
-  var sheetId = getSheetId(s.sheet);
-  if (sheetId) {
-    try {
-      var res = await fetch(APPS_SCRIPT_URL + '?action=getAba&spreadsheetId=' + sheetId);
-      var data = await res.json();
-      if (data.aba) abaAtual = data.aba;
-    } catch(e) {}
-  }
-  var numAtual = parseInt(abaAtual.replace('S','')) || 0;
-  var proximaAba = 'S' + (numAtual + 1);
-  window._sheetIdAtual = sheetId;
-  window._proximaAba = proximaAba;
-  window._abaAtual = abaAtual;
   window._nomeAluno = s.name;
   window._obsAluno = s.obs || '';
 
-  // Carregar abas disponíveis para o modal
   document.getElementById('meso-abas-loading').style.display = 'block';
   document.getElementById('meso-abas-lista').style.display = 'none';
   document.getElementById('meso-modal').style.display = 'flex';
 
-  if (sheetId) {
-    try {
-      var resAbas = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
-      var dataAbas = await resAbas.json();
-      renderMesoAbas(dataAbas.abas || []);
-    } catch(e) {
-      document.getElementById('meso-abas-loading').textContent = 'Erro ao buscar abas.';
-    }
-  } else {
-    document.getElementById('meso-abas-loading').textContent = 'Planilha não configurada.';
+  try {
+    var estado = await atualizarAbasDoAlunoAtual();
+    renderMesoAbas(estado.abas || []);
+  } catch(e) {
+    document.getElementById('meso-abas-loading').textContent = 'Erro ao buscar abas: ' + e.message;
   }
 }
+
 
 function renderMesoAbas(abas) {
   const loading = document.getElementById('meso-abas-loading');
@@ -1497,6 +1501,14 @@ async function confirmarNovoMeso() {
   const cardioCtx = getCardioContext();
   if (cardioCtx && (!cardioCtx.sessoes || cardioCtx.sessoes.length === 0)) {
     showToast('Marque pelo menos um dia de aeróbio', 'err');
+    return;
+  }
+  try {
+    var estadoMeso = await atualizarAbasDoAlunoAtual();
+    window._proximaAba = estadoMeso.proximaAba;
+    window._abaAtual = estadoMeso.abaAtual;
+  } catch(e) {
+    showToast('Nao consegui atualizar a aba atual: ' + e.message, 'err');
     return;
   }
   document.getElementById('meso-modal').style.display = 'none';
@@ -3266,6 +3278,7 @@ async function analisarAjustesPlanilha() {
 
 init();
 </script>
+
 
 
 

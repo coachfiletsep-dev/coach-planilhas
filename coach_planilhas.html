@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0114)file:///C:/Users/Lenovo/Documents/Claude/Projects/Coach%20Planilhas%20+%20App%20Aluno/Coach%20Planilhas%20v35.html -->
+<!-- saved from url=(0062)file:///C:/Users/Lenovo/Documents/Coach%20Planilhas%20v39.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -582,7 +582,7 @@
           <span style="font-size:12px;font-weight:700;color:#fff;">Condicionamento FS</span>
           <span id="cardio-toggle-icon" style="font-size:10px;color:#A8D8EA;margin-left:auto;">▼ expandir</span>
         </div>
-        <div id="cardio-section" style="display:none;padding:10px;background:#f0f4f8;display:flex;flex-direction:column;gap:8px;">
+        <div id="cardio-section" style="display:none;padding:10px;background:#f0f4f8;flex-direction:column;gap:8px;">
           <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;cursor:pointer;">
             <input type="checkbox" id="cardio-ativo" onchange="toggleCardioFields()">
             Incluir prescrição de cardio neste meso
@@ -859,7 +859,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
 
 <script>
 const APP_VERSION = 'v42';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM3xuEYX3XLmhPRdSNTZ4r6x94yqME9yC9JekFZlxs0CgMVV890woiMcGUKiVfPIsXrw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTcezZ5a2i8GyIAdUhnIksaMXM3eMHf6vOSaV9SsAdMgZ13kPWtn5dBc_gtkevf_VUXw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 
 let students = [], selectedId = null, msgHistory = [], msgHistory2 = [], isLoading = false, editingId = null;
@@ -895,7 +895,7 @@ function numeroVersaoApp(v) {
 }
 
 async function verificarAppsScriptAtualizado(minVersao) {
-  var res = await gsPost({acao:'status'});
+  var res = await fetch(APPS_SCRIPT_URL + '?action=status&t=' + Date.now());
   var data = await res.json();
   var versao = data.versao || data.version || '';
   if (numeroVersaoApp(versao) < minVersao) {
@@ -1070,9 +1070,18 @@ const DIAS_VALIDOS = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
 
 function validarProgramacaoIA(parsed) {
   var erros = [];
-  if (!parsed.aba || !/^S\d+$/.test(parsed.aba)) erros.push('Campo "aba" inválido: ' + parsed.aba);
-  if (!Array.isArray(parsed.exercicios) || parsed.exercicios.length === 0) {
-    erros.push('Nenhum exercício no JSON');
+  if (!parsed.aba || !/^S\d+$/.test(parsed.aba)) erros.push('Campo "aba" invalido: ' + parsed.aba);
+  var temExercicios = Array.isArray(parsed.exercicios) && parsed.exercicios.length > 0;
+  var temCardio = Array.isArray(parsed.cardio) && parsed.cardio.length > 0;
+  if (!temExercicios && !temCardio) {
+    erros.push('Nenhum exercicio ou aerobio no JSON');
+    return erros;
+  }
+  if (!temExercicios) {
+    parsed.cardio.forEach(function(s, i) {
+      var diaCardio = String((s && s.dia) || '').toUpperCase();
+      if (DIAS_VALIDOS.indexOf(diaCardio) === -1) erros.push('[cardio ' + i + '] dia invalido: ' + (s && s.dia));
+    });
     return erros;
   }
   var porDia = {};
@@ -1080,20 +1089,25 @@ function validarProgramacaoIA(parsed) {
     var p = '[' + i + '] ' + (ex.nome || '?') + ': ';
     if (!ex.nome) erros.push(p + 'nome ausente');
     if (!ex.dia || DIAS_VALIDOS.indexOf(String(ex.dia).toUpperCase()) === -1)
-      erros.push(p + 'dia inválido: ' + ex.dia);
+      erros.push(p + 'dia invalido: ' + ex.dia);
     if (!ex.series || isNaN(parseInt(ex.series)))
-      erros.push(p + 'séries inválido: ' + ex.series);
-    if (!ex.repeticoes) erros.push(p + 'repetições ausente');
+      erros.push(p + 'series invalido: ' + ex.series);
+    if (!ex.repeticoes) erros.push(p + 'repeticoes ausente');
     var ser = parseInt(ex.series);
     if (!isNaN(ser) && (ser < 1 || ser > 10))
-      erros.push(p + 'séries fora do range (1-10): ' + ser);
+      erros.push(p + 'series fora do range (1-10): ' + ser);
     var dia = String(ex.dia || '').toUpperCase();
     porDia[dia] = (porDia[dia] || 0) + 1;
-    if (porDia[dia] > 15) erros.push('Dia ' + dia + ' com mais de 15 exercícios');
+    if (porDia[dia] > 15) erros.push('Dia ' + dia + ' com mais de 15 exercicios');
   });
+  if (temCardio) {
+    parsed.cardio.forEach(function(s, i) {
+      var diaCardio = String((s && s.dia) || '').toUpperCase();
+      if (DIAS_VALIDOS.indexOf(diaCardio) === -1) erros.push('[cardio ' + i + '] dia invalido: ' + (s && s.dia));
+    });
+  }
   return erros;
 }
-
 // mostrarPreviewCardio — preview visual das sessões de cardio
 function mostrarPreviewCardio(sessoes, nomeAba) {
   var lista = document.getElementById('preview-lista');
@@ -1146,19 +1160,28 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
     addMsg('msgs', 'Aviso: nao consegui atualizar abas antes de escrever: ' + e.message, false);
   }
 
-  var errosVal = validarProgramacaoIA({ aba: nomeAba, exercicios: exercicios });
+  exercicios = Array.isArray(exercicios) ? exercicios : [];
+  var perfilCardioPayload = montarPerfilCardioAluno();
+  var cardioPayload = (window._previewCardio && window._previewCardio.length > 0)
+    ? aplicarFaixasFcCardio(window._previewCardio, perfilCardioPayload)
+    : [];
+  var errosVal = validarProgramacaoIA({ aba: nomeAba, exercicios: exercicios, cardio: cardioPayload });
   if (errosVal.length > 0) {
     addMsg('msgs', 'JSON bloqueado pela validacao:<br>' + errosVal.join('<br>'), false);
     showToast('Erro de validacao - nao escrito', 'err');
     return;
   }
 
-  addMsg('msgs', 'Criando/verificando aba ' + nomeAba + ' e escrevendo exercicios...', false);
+  var alvoEscrita = exercicios.length > 0 ? 'exercicios' : 'aerobio';
+  addMsg('msgs', 'Criando/verificando aba ' + nomeAba + ' e escrevendo ' + alvoEscrita + '...', false);
   addLoading('msgs');
   try {
     const payload = {acao: 'escreverNaPlanilha', aba:nomeAba, exercicios:exercicios, alunoNome: s ? s.name : ''};
     payload.spreadsheetId = sheetId;
-    if (window._previewCardio && window._previewCardio.length > 0) payload.cardio = window._previewCardio;
+    if (cardioPayload.length > 0) {
+      payload.perfilCardio = perfilCardioPayload;
+      payload.cardio = cardioPayload;
+    }
 
     const res = await gsPost(payload);
     const data = await res.json();
@@ -1216,7 +1239,7 @@ function getSystemPrompt() {
     '• Ergômetros por menor interferência: bike > natação > elíptico > esteira inclinada > corrida > escada\n' +
     '• Zonas: Z1 <65% FCMax / Z2 65-75% / Z3 76-82% / Z4 83-90% / Z5 >90%\n' +
     '• Nomenclatura de tipos: "Contínuo Z2", "Tempo Run Z3", "HIIT 4x4min", "SIT 8x20seg", "LISS caminhada", "Fartlek livre"\n' +
-    '• JSON cardio: {"dia":"TER","tipo":"Contínuo Z2","ergometro":"Bike","duracao":"30 min","intensidade":"Z2 / RPE 5-6 / 65-72% FCMax","progressao":"+5min se ≥80% aderência","observacao":"após lower — baixa interferência"}\n' +
+    '• JSON cardio: {"dia":"TER","tipo":"Contínuo Z2","ergometro":"Bike","duracao":"30 min","intensidade":"Z2 / RPE 5-6 / 65-72% FCMax","faixaFc":"120-138 bpm","progressao":"+5min se ≥80% aderência","observacao":"após lower — baixa interferência"}\n' +
     '• dias de cardio puro (sem musculação): usar dia válido da semana, deixar "exercicios" sem entradas desse dia. Quando o pedido vier do modal Novo Meso, use o briefing enviado e gere JSON para preview; o app so escreve depois da confirmacao do coach.\n' +
     'Mantenha os mesmos dias de treino informados na aba base. Nao invente dias novos.\n' +
     'JSON: {"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Hipertrofia","series":4,"repeticoes":"8-10","cadencia":"3010","rir":"2","criterio":"controle excentrico"}]}\n' +
@@ -1227,10 +1250,10 @@ function getSystemPrompt() {
 function tryParseJSON(text) {
   try {
     var clean = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-    try { var p = JSON.parse(clean); if (p && p.exercicios && p.aba) return p; } catch(e) {}
+    try { var p = JSON.parse(clean); if (p && p.aba && (p.exercicios || p.cardio)) return p; } catch(e) {}
     var m = clean.match(/\{[\s\S]*\}/);
     if (m) {
-      try { var p2 = JSON.parse(m[0]); if (p2 && p2.exercicios && p2.aba) return p2; } catch(e) {}
+      try { var p2 = JSON.parse(m[0]); if (p2 && p2.aba && (p2.exercicios || p2.cardio)) return p2; } catch(e) {}
     }
     var allBlocks = [];
     var searchStr = clean;
@@ -1247,14 +1270,17 @@ function tryParseJSON(text) {
       if (end === -1) break;
       try {
         var block = JSON.parse(searchStr.slice(start, end + 1));
-        if (block && block.exercicios && Array.isArray(block.exercicios)) allBlocks.push(block);
+        if (block && ((block.exercicios && Array.isArray(block.exercicios)) || (block.cardio && Array.isArray(block.cardio)))) allBlocks.push(block);
       } catch(e) {}
       offset = end + 1;
     }
     if (allBlocks.length > 0) {
-      var merged = { aba: allBlocks[0].aba || (window._proximaAba || 'S1'), exercicios: [] };
-      allBlocks.forEach(function(b) { if (b.exercicios) merged.exercicios = merged.exercicios.concat(b.exercicios); });
-      if (merged.exercicios.length > 0) return merged;
+      var merged = { aba: allBlocks[0].aba || (window._proximaAba || 'S1'), exercicios: [], cardio: [] };
+      allBlocks.forEach(function(b) {
+        if (b.exercicios) merged.exercicios = merged.exercicios.concat(b.exercicios);
+        if (b.cardio) merged.cardio = merged.cardio.concat(b.cardio);
+      });
+      if (merged.exercicios.length > 0 || merged.cardio.length > 0) return merged;
     }
   } catch(e) {}
   return null;
@@ -1308,12 +1334,16 @@ async function sendMsg() {
     const reply = await callClaude(msgHistory, getSystemPrompt());
     removeLoading('msgs');
     const parsed = tryParseJSON(reply);
+    if (parsed && parsed.cardio && parsed.cardio.length) {
+      parsed.cardio = aplicarFaixasFcCardio(parsed.cardio, montarPerfilCardioAluno());
+    }
     if (parsed && parsed.exercicios && parsed.aba) {
       // Se estamos em modo edição, mostrar preview antes de escrever
       if (window._modoEdicao) {
         if (parsed.aba !== window._abaAtual) parsed.aba = window._abaAtual;
         msgHistory.push({role:'assistant',content:reply});
         window._previewModo = 'edicao';
+        window._previewCardio = [];
         mostrarPreview(parsed.exercicios, parsed.aba);
       } else {
         if (!validarDiasNovoMeso(parsed.exercicios)) {
@@ -1322,9 +1352,18 @@ async function sendMsg() {
           addMsg('msgs', 'Preview gerado com ' + parsed.exercicios.length + ' exercicios para a aba ' + parsed.aba + '. Confira antes de escrever.', false);
           msgHistory.push({role:'assistant',content:reply});
           window._previewModo = 'novo';
+          window._previewCardio = parsed.cardio || [];
           mostrarPreview(parsed.exercicios, parsed.aba);
         }
       }
+    } else if (parsed && parsed.cardio && parsed.aba) {
+      addMsg('msgs', 'Preview de cardio gerado: ' + parsed.cardio.length + ' sessao(oes) para a aba ' + parsed.aba + '.', false);
+      msgHistory.push({role:'assistant',content:reply});
+      window._previewModo = 'novo';
+      window._previewCardio = parsed.cardio;
+      window._previewExercicios = [];
+      window._previewAba = parsed.aba;
+      mostrarPreviewCardio(parsed.cardio, parsed.aba);
     } else {
       addMsg('msgs', reply, false);
       msgHistory.push({role:'assistant',content:reply});
@@ -1350,7 +1389,7 @@ async function atualizarAbasDoAlunoAtual() {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
   if (!sheetId) throw new Error('Planilha do aluno nao configurada');
-  const res = await gsPost({acao:'getAbas', spreadsheetId: sheetId});
+  const res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId + '&t=' + Date.now());
   const data = await res.json();
   const abas = Array.isArray(data.abas) ? data.abas : [];
   const abaAtual = data.abaAtual || (abas.length ? abas[abas.length - 1] : 'S0');
@@ -1491,6 +1530,37 @@ function montarPerfilCardioAluno() {
   };
 }
 
+function calcularFaixaFcPorIntensidade(intensidade, perfil) {
+  if (!perfil || !perfil.zonas || !intensidade) return '';
+  var txt = String(intensidade).toUpperCase();
+  if (/\bZ1\b/.test(txt)) return perfil.zonas.z1 || '';
+  if (/\bZ2\b/.test(txt)) return perfil.zonas.z2 || '';
+  if (/\bZ3\b/.test(txt)) return perfil.zonas.z3 || '';
+  if (/\bZ4\b/.test(txt)) return perfil.zonas.z4 || '';
+  if (/\bZ5\b/.test(txt)) return perfil.zonas.z5 || '';
+  var perc = String(intensidade).match(/(\d{2,3})\s*(?:-|\u2013)\s*(\d{2,3})\s*%\s*FC/i);
+  if (perc && perfil.fcMax) {
+    var ini = Math.round(perfil.fcMax * (parseInt(perc[1], 10) / 100));
+    var fim = Math.round(perfil.fcMax * (parseInt(perc[2], 10) / 100));
+    return ini + '-' + fim + ' bpm';
+  }
+  return '';
+}
+
+function aplicarFaixasFcCardio(sessoes, perfil) {
+  if (!Array.isArray(sessoes)) return [];
+  return sessoes.map(function(sessao) {
+    var copia = Object.assign({}, sessao);
+    var faixa = copia.faixaFc || copia.fcAlvo || calcularFaixaFcPorIntensidade(copia.intensidade || '', perfil);
+    if (faixa) {
+      copia.faixaFc = faixa;
+      if (copia.intensidade && !/bpm/i.test(copia.intensidade)) copia.intensidade += '\nFC alvo: ' + faixa;
+      else if (!copia.intensidade) copia.intensidade = 'FC alvo: ' + faixa;
+    }
+    return copia;
+  });
+}
+
 function getCardioContext() {
   var ativo = document.getElementById('cardio-ativo') && document.getElementById('cardio-ativo').checked;
   if (!ativo) return null;
@@ -1612,7 +1682,7 @@ async function confirmarNovoMeso() {
     }
     prompt += 'Ergômetros disponíveis: ' + cardioCtx.ergometros + '\n';
     if (cardioCtx.restricoes) prompt += 'Restrições: ' + cardioCtx.restricoes + '\n';
-    prompt += 'Para cada sessao, defina tipo, ergometro, duracao, intensidade por zona/RPE/%FCMax, progressao e observacao pratica.\n';
+    prompt += 'Para cada sessao, defina tipo, ergometro, duracao, intensidade por zona/RPE/%FCMax, faixaFc em bpm, progressao e observacao pratica.\n';
     prompt += 'O JSON deve incluir o array "cardio" além de "exercicios".\n';
   }
 
@@ -1630,6 +1700,7 @@ async function confirmarNovoMeso() {
     removeLoading('msgs');
     const parsed = tryParseJSON(reply);
     if (parsed && parsed.exercicios && parsed.aba) {
+      if (parsed.cardio && parsed.cardio.length) parsed.cardio = aplicarFaixasFcCardio(parsed.cardio, cardioCtx ? cardioCtx.perfil : null);
       if (!validarDiasNovoMeso(parsed.exercicios)) {
         msgHistory.push({role:'assistant',content:reply});
       } else {
@@ -1642,6 +1713,7 @@ async function confirmarNovoMeso() {
         mostrarPreview(parsed.exercicios, parsed.aba);
       }
     } else if (parsed && parsed.cardio && parsed.aba) {
+      parsed.cardio = aplicarFaixasFcCardio(parsed.cardio, cardioCtx ? cardioCtx.perfil : null);
       // Só cardio, sem exercícios
       addMsg('msgs', 'Preview de cardio gerado: ' + parsed.cardio.length + ' sessão(ões) para a aba ' + parsed.aba + '.', false);
       msgHistory.push({role:'assistant',content:reply});
@@ -1992,6 +2064,7 @@ async function confirmarEdicao() {
       msgHistory.push({role:'assistant', content: reply});
       // Mostrar PREVIEW antes de escrever
       window._previewModo = 'edicao';
+      window._previewCardio = [];
       mostrarPreview(parsed.exercicios, parsed.aba);
     } else {
       addMsg('msgs', reply, false);

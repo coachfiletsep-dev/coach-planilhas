@@ -858,7 +858,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
 </div>
 
 <script>
-const APP_VERSION = 'v39';
+const APP_VERSION = 'v41';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM3xuEYX3XLmhPRdSNTZ4r6x94yqME9yC9JekFZlxs0CgMVV890woiMcGUKiVfPIsXrw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 
@@ -895,7 +895,7 @@ function numeroVersaoApp(v) {
 }
 
 async function verificarAppsScriptAtualizado(minVersao) {
-  var res = await fetch(APPS_SCRIPT_URL + '?action=status&t=' + Date.now());
+  var res = await gsPost({acao:'status'});
   var data = await res.json();
   var versao = data.versao || data.version || '';
   if (numeroVersaoApp(versao) < minVersao) {
@@ -1128,7 +1128,7 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
   }
 
   try {
-    await verificarAppsScriptAtualizado(39);
+    await verificarAppsScriptAtualizado(41);
   } catch(e) {
     addMsg('msgs', 'BLOQUEADO: ' + e.message, false);
     showToast('Apps Script desatualizado', 'err');
@@ -1350,7 +1350,7 @@ async function atualizarAbasDoAlunoAtual() {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
   if (!sheetId) throw new Error('Planilha do aluno nao configurada');
-  const res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId + '&t=' + Date.now());
+  const res = await gsPost({acao:'getAbas', spreadsheetId: sheetId});
   const data = await res.json();
   const abas = Array.isArray(data.abas) ? data.abas : [];
   const abaAtual = data.abaAtual || (abas.length ? abas[abas.length - 1] : 'S0');
@@ -3305,6 +3305,7 @@ async function analisarAjustesPlanilha() {
 
 init();
 </script>
+
 
 
 

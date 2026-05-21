@@ -858,7 +858,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
 </div>
 
 <script>
-const APP_VERSION = 'v42';
+const APP_VERSION = 'v40';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM3xuEYX3XLmhPRdSNTZ4r6x94yqME9yC9JekFZlxs0CgMVV890woiMcGUKiVfPIsXrw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 
@@ -1088,6 +1088,8 @@ function validarProgramacaoIA(parsed) {
   parsed.exercicios.forEach(function(ex, i) {
     var p = '[' + i + '] ' + (ex.nome || '?') + ': ';
     if (!ex.nome) erros.push(p + 'nome ausente');
+    if (ex.nome && exercicioBloqueadoApp(ex.nome))
+      erros.push(p + 'exercicio bloqueado pelo coach: ' + ex.nome);
     if (!ex.dia || DIAS_VALIDOS.indexOf(String(ex.dia).toUpperCase()) === -1)
       erros.push(p + 'dia invalido: ' + ex.dia);
     if (!ex.series || isNaN(parseInt(ex.series)))
@@ -1142,7 +1144,7 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
   }
 
   try {
-    await verificarAppsScriptAtualizado(42);
+    await verificarAppsScriptAtualizado(40);
   } catch(e) {
     addMsg('msgs', 'BLOQUEADO: ' + e.message, false);
     showToast('Apps Script desatualizado', 'err');
@@ -1162,8 +1164,14 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
 
   exercicios = Array.isArray(exercicios) ? exercicios : [];
   var perfilCardioPayload = montarPerfilCardioAluno();
-  var cardioPayload = (window._previewCardio && window._previewCardio.length > 0)
-    ? aplicarFaixasFcCardio(window._previewCardio, perfilCardioPayload)
+  var temPreviewCardio = window._previewCardio && window._previewCardio.length > 0;
+  if (temPreviewCardio && !perfilCardioPayload) {
+    addMsg('msgs', 'Cardio bloqueado: cadastre a data de nascimento do aluno para calcular a FC alvo e gere o preview novamente.', false);
+    showToast('Data de nascimento obrigatoria para cardio', 'err');
+    return;
+  }
+  var cardioPayload = temPreviewCardio
+    ? normalizarCardioComContexto(window._previewCardio, window._previewCardioCtx || { perfil: perfilCardioPayload, ergometros: 'Bike', sessoes: [] })
     : [];
   var errosVal = validarProgramacaoIA({ aba: nomeAba, exercicios: exercicios, cardio: cardioPayload });
   if (errosVal.length > 0) {
@@ -1180,6 +1188,7 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
     payload.spreadsheetId = sheetId;
     if (cardioPayload.length > 0) {
       payload.perfilCardio = perfilCardioPayload;
+      payload.cardioErgometros = (window._previewCardioCtx && window._previewCardioCtx.ergometros) || 'Bike';
       payload.cardio = cardioPayload;
     }
 
@@ -1190,10 +1199,14 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
     if (data.sucesso) {
       var escritos = data.escritos !== undefined ? data.escritos : (data.exerciciosEscritos !== undefined ? data.exerciciosEscritos : exercicios.length);
       var abaFinal = data.aba || data.novaAba || nomeAba;
-      var avisosTxt = data.avisos && data.avisos.length > 0 ? '<br><small>' + data.avisos.join(' | ') + '</small>' : '';
+      var avisos = [];
+      if (data.avisos && data.avisos.length > 0) avisos = avisos.concat(data.avisos);
+      if (data.errosCardio && data.errosCardio.length > 0) avisos = avisos.concat(data.errosCardio.map(function(e){ return 'Cardio: ' + e; }));
+      var avisosTxt = avisos.length > 0 ? '<br><small>' + avisos.join(' | ') + '</small>' : '';
       var msgCardioOk = data.escritosCardio ? ' + ' + data.escritosCardio + ' sessao(oes) de cardio' : '';
       addMsg('msgs', escritos + ' exercicios' + msgCardioOk + ' escritos na aba ' + abaFinal + '!' + avisosTxt, false);
       window._previewCardio = [];
+      window._previewCardioCtx = null;
       await atualizarAbasDoAlunoAtual();
       showToast('Planilha atualizada!', 'ok');
     } else if (data.errosValidacao) {
@@ -1218,6 +1231,7 @@ function getSystemPrompt() {
     'Principios: periodizacao ondulante, volume progressivo, deload 4-6sem, mecanismos de hipertrofia (tensao/metabolico/dano), freq 2x/sem/musculo, RiR 0-3, cadencia excentrica lenta, series proximas a falha, poucos exercicios multiarticulares com progressao.\n\n' +
     'ALUNO: ' + s.name + (s.obs ? ' | ' + s.obs : '') + '\n\n' +
     'EXERCICIOS (use nomes EXATOS):\n' +
+    'EXERCICIO BLOQUEADO PELO COACH: nunca use ELEVACAO LATERAL COM ELASTICO, em nenhum dia, objetivo, grupo muscular ou substituicao.\n' +
     'PEITO: SUPINO RETO BARRA, SUPINO INCLINADO BARRA, SUPINO RETO COM HALTER, SUPINO INCLINADO COM HALTER, SUPINO INCLINADO ARTICULADO, CRUCIFIXO RETO COM HALTER, PEC DECK\n' +
     'COSTAS: PUXADA FRENTE ABERTA, PUXADA UNILATERAL MAQUINA, REMADA ALTERNADA COM HALTERES BANCO, REMADA SERROTE APOIO BAIXO, FACEPULL, DUMBBELL SCAPTION 120\n' +
     'OMBRO: DESENVOLVIMENTO SENTADO COM HALTERES, DESENVOLVIMENTO ARTICULADO ABERTO, ELEVACAO LATERAL EM PE COM HALTER, ELEVACAO LATERAL NA POLIA UNI, MANGUITO ROTACAO EXTERNA CABO, FACEPULL COM ROTACAO EXTERNA, YTW COM HALTERES\n' +
@@ -1335,7 +1349,7 @@ async function sendMsg() {
     removeLoading('msgs');
     const parsed = tryParseJSON(reply);
     if (parsed && parsed.cardio && parsed.cardio.length) {
-      parsed.cardio = aplicarFaixasFcCardio(parsed.cardio, montarPerfilCardioAluno());
+      parsed.cardio = normalizarCardioComContexto(parsed.cardio, { perfil: montarPerfilCardioAluno(), ergometros: 'Bike', sessoes: [] });
     }
     if (parsed && parsed.exercicios && parsed.aba) {
       // Se estamos em modo edição, mostrar preview antes de escrever
@@ -1344,6 +1358,7 @@ async function sendMsg() {
         msgHistory.push({role:'assistant',content:reply});
         window._previewModo = 'edicao';
         window._previewCardio = [];
+        window._previewCardioCtx = null;
         mostrarPreview(parsed.exercicios, parsed.aba);
       } else {
         if (!validarDiasNovoMeso(parsed.exercicios)) {
@@ -1353,6 +1368,7 @@ async function sendMsg() {
           msgHistory.push({role:'assistant',content:reply});
           window._previewModo = 'novo';
           window._previewCardio = parsed.cardio || [];
+          window._previewCardioCtx = null;
           mostrarPreview(parsed.exercicios, parsed.aba);
         }
       }
@@ -1361,6 +1377,7 @@ async function sendMsg() {
       msgHistory.push({role:'assistant',content:reply});
       window._previewModo = 'novo';
       window._previewCardio = parsed.cardio;
+      window._previewCardioCtx = null;
       window._previewExercicios = [];
       window._previewAba = parsed.aba;
       mostrarPreviewCardio(parsed.cardio, parsed.aba);
@@ -1533,24 +1550,94 @@ function montarPerfilCardioAluno() {
 function calcularFaixaFcPorIntensidade(intensidade, perfil) {
   if (!perfil || !perfil.zonas || !intensidade) return '';
   var txt = String(intensidade).toUpperCase();
-  if (/\bZ1\b/.test(txt)) return perfil.zonas.z1 || '';
-  if (/\bZ2\b/.test(txt)) return perfil.zonas.z2 || '';
-  if (/\bZ3\b/.test(txt)) return perfil.zonas.z3 || '';
-  if (/\bZ4\b/.test(txt)) return perfil.zonas.z4 || '';
-  if (/\bZ5\b/.test(txt)) return perfil.zonas.z5 || '';
   var perc = String(intensidade).match(/(\d{2,3})\s*(?:-|\u2013)\s*(\d{2,3})\s*%\s*FC/i);
   if (perc && perfil.fcMax) {
     var ini = Math.round(perfil.fcMax * (parseInt(perc[1], 10) / 100));
     var fim = Math.round(perfil.fcMax * (parseInt(perc[2], 10) / 100));
     return ini + '-' + fim + ' bpm';
   }
+  if (/\bZ1\b/.test(txt)) return perfil.zonas.z1 || '';
+  if (/\bZ2\b/.test(txt)) return perfil.zonas.z2 || '';
+  if (/\bZ3\b/.test(txt)) return perfil.zonas.z3 || '';
+  if (/\bZ4\b/.test(txt)) return perfil.zonas.z4 || '';
+  if (/\bZ5\b/.test(txt)) return perfil.zonas.z5 || '';
   return '';
 }
 
-function aplicarFaixasFcCardio(sessoes, perfil) {
-  if (!Array.isArray(sessoes)) return [];
-  return sessoes.map(function(sessao) {
+function normalizarTextoApp(txt) {
+  txt = String(txt || '').toLowerCase().trim();
+  return txt.normalize ? txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : txt;
+}
+
+function exercicioBloqueadoApp(nome) {
+  var chave = String(nome || '').toUpperCase().trim();
+  try { chave = chave.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch(e) {}
+  chave = chave.replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return chave === 'ELEVACAO LATERAL COM ELASTICO';
+}
+
+function intensidadePadraoCardio(tipo, atual) {
+  var t = normalizarTextoApp(tipo);
+  if (t.indexOf('liss') > -1) return 'Z2 baixo / RPE 4-5 / 65-70% FCMax';
+  if (t.indexOf('continuo') > -1 && t.indexOf('z2') > -1) return 'Z2 / RPE 5-6 / 65-75% FCMax';
+  if (t.indexOf('tempo') > -1 || t.indexOf('z3') > -1) return 'Z3 / RPE 6-7 / 76-82% FCMax';
+  if (t.indexOf('hiit') > -1) return 'Z4 / RPE 8-9 / 83-90% FCMax';
+  if (t.indexOf('intervalado') > -1) return 'Z3-Z4 / RPE 7-8 / 76-90% FCMax';
+  return atual || '';
+}
+
+function progressaoPadraoCardio(tipo, atual) {
+  var t = normalizarTextoApp(tipo);
+  if (t.indexOf('liss') > -1 || (t.indexOf('continuo') > -1 && t.indexOf('z2') > -1)) {
+    return '+5 min quando aderência ≥80% por 2 semanas; manter a zona';
+  }
+  if (t.indexOf('tempo') > -1 || t.indexOf('z3') > -1) {
+    return 'manter duração; depois +2-3 min se recuperação boa por 2 semanas';
+  }
+  if (t.indexOf('hiit') > -1 || t.indexOf('intervalado') > -1) {
+    return 'manter duração; progredir 1 tiro ou +1 min após 2 semanas consistentes';
+  }
+  return atual || 'aumentar volume antes de intensidade, conforme aderência';
+}
+
+function normalizarCardioComContexto(sessoes, cardioCtx) {
+  var perfil = cardioCtx ? cardioCtx.perfil : montarPerfilCardioAluno();
+  var obrigatorias = {};
+  var ordemObrigatorias = [];
+  if (cardioCtx && cardioCtx.sessoes) {
+    cardioCtx.sessoes.forEach(function(s) {
+      var diaObrig = String(s.dia || '').toUpperCase();
+      if (!diaObrig) return;
+      obrigatorias[diaObrig] = s;
+      ordemObrigatorias.push(s);
+    });
+  }
+  var ergPermitidos = cardioCtx && cardioCtx.ergometros ? cardioCtx.ergometros.split(',').map(function(e){ return e.trim(); }).filter(Boolean) : [];
+  if (!ergPermitidos.length) ergPermitidos = ['Bike'];
+  if (!Array.isArray(sessoes)) sessoes = [];
+  var fonte = sessoes;
+  if (ordemObrigatorias.length) {
+    var existentesPorDia = {};
+    sessoes.forEach(function(s) {
+      var diaExistente = String((s && s.dia) || '').toUpperCase();
+      if (diaExistente) existentesPorDia[diaExistente] = s;
+    });
+    fonte = ordemObrigatorias.map(function(obrig) {
+      var diaObrig = String(obrig.dia || '').toUpperCase();
+      return Object.assign({}, existentesPorDia[diaObrig] || {}, { dia: diaObrig });
+    });
+  }
+  return fonte.map(function(sessao) {
     var copia = Object.assign({}, sessao);
+    var dia = String(copia.dia || '').toUpperCase();
+    var obrig = obrigatorias[dia];
+    if (obrig) {
+      if (obrig.tipo && obrig.tipo !== 'IA decide') copia.tipo = obrig.tipo;
+      if (obrig.duracao) copia.duracao = obrig.duracao;
+    }
+    if (!copia.ergometro || ergPermitidos.indexOf(copia.ergometro) === -1) copia.ergometro = ergPermitidos[0];
+    copia.intensidade = intensidadePadraoCardio(copia.tipo || '', copia.intensidade || '');
+    copia.progressao = progressaoPadraoCardio(copia.tipo || '', copia.progressao || '');
     var faixa = copia.faixaFc || copia.fcAlvo || calcularFaixaFcPorIntensidade(copia.intensidade || '', perfil);
     if (faixa) {
       copia.faixaFc = faixa;
@@ -1559,6 +1646,10 @@ function aplicarFaixasFcCardio(sessoes, perfil) {
     }
     return copia;
   });
+}
+
+function aplicarFaixasFcCardio(sessoes, perfil) {
+  return normalizarCardioComContexto(sessoes, { perfil: perfil, ergometros: 'Bike', sessoes: [] });
 }
 
 function getCardioContext() {
@@ -1580,7 +1671,7 @@ function getCardioContext() {
   });
   return {
     objetivo: document.getElementById('cardio-objetivo').value,
-    ergometros: ergometros.join(', ') || 'livre',
+    ergometros: ergometros.join(', ') || 'Bike',
     restricoes: document.getElementById('cardio-restricoes').value.trim(),
     sessoes: sessoes,
     perfil: montarPerfilCardioAluno()
@@ -1596,10 +1687,17 @@ async function confirmarNovoMeso() {
   const instrucoes = document.getElementById('meso-instrucoes').value.trim();
   const tempoSessao = document.getElementById('meso-tempo').value;
   const cardioCtx = getCardioContext();
+  window._previewCardioCtx = null;
   if (cardioCtx && (!cardioCtx.sessoes || cardioCtx.sessoes.length === 0)) {
     showToast('Marque pelo menos um dia de aeróbio', 'err');
     return;
   }
+  if (cardioCtx && !cardioCtx.perfil) {
+    showToast('Cadastre a data de nascimento do aluno para calcular a FC alvo do aeróbio', 'err');
+    addMsg('msgs', 'Para escrever aeróbio com FC alvo, cadastre a data de nascimento do aluno e gere o preview novamente.', false);
+    return;
+  }
+  if (cardioCtx) window._previewCardioCtx = cardioCtx;
   try {
     var estadoMeso = await atualizarAbasDoAlunoAtual();
     window._proximaAba = estadoMeso.proximaAba;
@@ -1656,6 +1754,7 @@ async function confirmarNovoMeso() {
   var tempoMap = {'45min':'15 séries máximo por sessão','1h':'20 séries máximo por sessão','1h15':'24 séries máximo por sessão','1h30':'28 séries máximo por sessão'};
   var prompt = 'Monte o novo mesociclo para ' + window._nomeAluno + '.\nAba para escrever: ' + window._proximaAba + ' (OBRIGATÓRIO)\n';
   if (tempoSessao && tempoMap[tempoSessao]) prompt += 'LIMITE DE VOLUME: ' + tempoSessao + ' por sessão = ' + tempoMap[tempoSessao] + '. Respeite rigorosamente.\n';
+  prompt += 'REGRA FIXA: NUNCA use o exercicio ELEVACAO LATERAL COM ELASTICO. Ele esta bloqueado pelo coach e nao pode aparecer nem como substituicao.\n';
   if (instrucoes) prompt += 'Briefing do aluno e instrucoes do coach: ' + instrucoes + '\n';
   if (window._obsAluno) prompt += 'Observações do aluno: ' + window._obsAluno + '\n';
   if (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length) prompt += 'Use SOMENTE estes dias de musculação: ' + window._diasPermitidosNovoMeso.join(', ') + '.\n';
@@ -1700,7 +1799,8 @@ async function confirmarNovoMeso() {
     removeLoading('msgs');
     const parsed = tryParseJSON(reply);
     if (parsed && parsed.exercicios && parsed.aba) {
-      if (parsed.cardio && parsed.cardio.length) parsed.cardio = aplicarFaixasFcCardio(parsed.cardio, cardioCtx ? cardioCtx.perfil : null);
+      if (cardioCtx) parsed.cardio = normalizarCardioComContexto(parsed.cardio || [], cardioCtx);
+      else if (parsed.cardio && parsed.cardio.length) parsed.cardio = normalizarCardioComContexto(parsed.cardio, null);
       if (!validarDiasNovoMeso(parsed.exercicios)) {
         msgHistory.push({role:'assistant',content:reply});
       } else {
@@ -1713,7 +1813,7 @@ async function confirmarNovoMeso() {
         mostrarPreview(parsed.exercicios, parsed.aba);
       }
     } else if (parsed && parsed.cardio && parsed.aba) {
-      parsed.cardio = aplicarFaixasFcCardio(parsed.cardio, cardioCtx ? cardioCtx.perfil : null);
+      parsed.cardio = normalizarCardioComContexto(parsed.cardio, cardioCtx);
       // Só cardio, sem exercícios
       addMsg('msgs', 'Preview de cardio gerado: ' + parsed.cardio.length + ' sessão(ões) para a aba ' + parsed.aba + '.', false);
       msgHistory.push({role:'assistant',content:reply});
@@ -2021,10 +2121,10 @@ async function confirmarEdicao() {
       window._bibliotecaBrainering = dataBib.biblioteca;
       bibliotecaTexto = '\n=== BIBLIOTECA DE EXERCICIOS DO BRAINERING (nomes EXATOS para substituicao) ===\n';
       Object.keys(dataBib.biblioteca).sort().forEach(function(grupo) {
-        var nomes = dataBib.biblioteca[grupo];
+        var nomes = dataBib.biblioteca[grupo].filter(function(nome) { return !exercicioBloqueadoApp(nome); });
         bibliotecaTexto += grupo + ': ' + nomes.join(', ') + '\n';
       });
-      bibliotecaTexto += '\nUSE APENAS nomes desta lista. Nao invente nomes fora dela.\n';
+      bibliotecaTexto += '\nUSE APENAS nomes desta lista. Nao invente nomes fora dela. Nunca use ELEVACAO LATERAL COM ELASTICO.\n';
     }
 
   } catch(e) {
@@ -2046,8 +2146,9 @@ async function confirmarEdicao() {
     '   Dias LOWER (TER, SEX, SAB, DOM): APENAS COXA, POSTERIOR, GMAX, GMEDIO, ABDOME\n' +
     '   NUNCA coloque exercicio de OMBRO em dia LOWER. NUNCA coloque COXA em dia UPPER.\n' +
     '3. Use SOMENTE nomes da biblioteca do Brainering acima. Nao invente nomes.\n' +
-    '4. Se o pedido for ambiguo, pergunte antes de aplicar.\n' +
-    '5. Quando confirmado, retorne JSON APENAS com exercicios alterados.\n' +
+    '4. NUNCA use ELEVACAO LATERAL COM ELASTICO; este exercicio esta bloqueado pelo coach.\n' +
+    '5. Se o pedido for ambiguo, pergunte antes de aplicar.\n' +
+    '6. Quando confirmado, retorne JSON APENAS com exercicios alterados.\n' +
     '   FORMATO OBRIGATORIO: {"aba":"' + window._abaAtual + '","exercicios":[...apenas alterados...]}\n' +
     '   O campo "aba" DEVE ser "' + window._abaAtual + '". Nao inclua exercicios nao alterados.\n';
 
@@ -2084,6 +2185,12 @@ async function confirmarEdicao() {
 async function editarNaPlanilha(exercicios, nomeAba) {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
+  var bloqueados = (Array.isArray(exercicios) ? exercicios : []).filter(function(ex) { return ex && exercicioBloqueadoApp(ex.nome); });
+  if (bloqueados.length) {
+    addMsg('msgs', 'Edicao bloqueada: ELEVACAO LATERAL COM ELASTICO nao pode ser escrito na planilha.', false);
+    showToast('Exercicio bloqueado', 'err');
+    return;
+  }
 
   // FIX BUG 1: garantia final — nunca editar aba diferente da atual
   if (nomeAba !== window._abaAtual) {

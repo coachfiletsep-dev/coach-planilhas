@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- saved from url=(0073)file:///C:/Users/Lenovo/Documents/Aplicativo/Coach%20Planilhas%20v43.html -->
+<!-- saved from url=(0073)file:///C:/Users/Lenovo/Documents/Aplicativo/Coach%20Planilhas%20v44.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coach Planilhas v43</title>
+<title>Coach Planilhas v44</title>
 <style>
   :root {
     --green: #1D9E75;
@@ -117,6 +117,26 @@
   .macro-kpi { background: var(--bg2); border: .5px solid var(--border); border-radius: var(--radius); padding: 9px; }
   .macro-kpi strong { display:block; font-size: 16px; color: var(--green); margin-bottom: 2px; }
   .macro-kpi span { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; }
+  .news-page { flex: 1; overflow: auto; padding: 1rem; background: var(--bg2); }
+  .news-wrap { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 340px 1fr; gap: 12px; align-items: start; }
+  .news-panel { background: var(--bg); border: .5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; }
+  .news-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; color: var(--text); }
+  .news-desc { font-size: 12px; line-height: 1.45; color: var(--text3); margin-bottom: 12px; }
+  .news-field { margin-bottom: 10px; }
+  .news-field label { display: block; font-size: 10px; color: var(--text3); text-transform: uppercase; font-weight: 800; letter-spacing: .05em; margin-bottom: 4px; }
+  .news-field input, .news-field select, .news-field textarea { width: 100%; border: .5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); padding: 8px 9px; font-size: 12px; font-family: inherit; outline: none; }
+  .news-field textarea { min-height: 70px; resize: vertical; line-height: 1.4; }
+  .news-checks { display: grid; grid-template-columns: 1fr; gap: 5px; }
+  .news-checks label { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); text-transform: none; letter-spacing: 0; font-weight: 500; margin: 0; }
+  .news-checks input { width: auto; }
+  .news-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .news-preview { min-height: 680px; background: #fff; color: #1d1d1b; border: .5px solid var(--border); border-radius: var(--radius-lg); padding: 24px; overflow: auto; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  .news-preview h1 { font-size: 25px; line-height: 1.15; margin: 0 0 8px; color: #0F3460; }
+  .news-preview h2 { font-size: 16px; margin: 22px 0 8px; color: #0F3460; }
+  .news-preview h3 { font-size: 13px; margin: 14px 0 5px; color: #1D9E75; }
+  .news-preview p, .news-preview li { font-size: 12px; line-height: 1.55; }
+  .news-preview .ref { font-size: 10px; color: #555; line-height: 1.35; border-top: 1px solid #ddd; padding-top: 6px; margin-top: 6px; }
+  .news-status { font-size: 11px; color: var(--text3); margin-top: 8px; line-height: 1.4; }
   .ai-box { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; }
   .ai-top { padding: .75rem 1rem; border-bottom: 0.5px solid var(--border); background: var(--bg2); display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
   .ai-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; background: var(--green); color: #fff; }
@@ -264,6 +284,7 @@
     .macro-grid { grid-template-columns: 1fr; }
     .macro-output { max-height: none; }
     .macro-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .news-wrap { grid-template-columns: 1fr; }
   }
   * { scrollbar-width: auto; scrollbar-color: var(--border2) var(--bg2); }
   ::-webkit-scrollbar { width: 12px; height: 12px; } ::-webkit-scrollbar-track { background: var(--bg2); } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; border: 2px solid var(--bg2); }
@@ -281,6 +302,7 @@
   </div>
   <div class="nav">
     <button class="nav-btn active" onclick="showPage(&#39;alunos&#39;,this)">Alunos</button>
+    <button class="nav-btn" onclick="showPage(&#39;newsletter&#39;,this)">Newsletter</button>
     <button class="nav-btn" onclick="showPage(&#39;config&#39;,this)">Configuração</button>
     <button class="auth-pill on" id="auth-pill" onclick="showAuthModal()">
       <div class="auth-dot on" id="auth-dot"></div>
@@ -647,6 +669,87 @@
           💡 Dica: seja específico. Quanto mais detalhado, mais a IA vai respeitar sua filosofia na hora de montar e editar os mesos.
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="page-newsletter" class="news-page" style="display:none;">
+  <div class="news-wrap">
+    <div class="news-panel">
+      <div class="news-title">Newsletter Cientifica FS</div>
+      <div class="news-desc">Radar quinzenal com curadoria academica aplicada a treino, hipertrofia, emagrecimento, nutricao e suplementacao.</div>
+
+      <div class="news-field">
+        <label>Titulo da edicao</label>
+        <input id="news-titulo" value="Radar Cientifico FS">
+      </div>
+      <div class="news-field">
+        <label>Publico</label>
+        <select id="news-publico">
+          <option value="alunos">Alunos</option>
+          <option value="coaches">Coaches</option>
+          <option value="misto">Alunos e coaches</option>
+        </select>
+      </div>
+      <div class="news-field">
+        <label>Profundidade</label>
+        <select id="news-profundidade">
+          <option value="intermediaria">Intermediaria</option>
+          <option value="simples">Simples</option>
+          <option value="tecnica">Tecnica</option>
+        </select>
+      </div>
+      <div class="news-field">
+        <label>Periodo de busca</label>
+        <select id="news-dias">
+          <option value="14">Ultimos 14 dias</option>
+          <option value="30">Ultimos 30 dias</option>
+          <option value="60">Ultimos 60 dias</option>
+          <option value="90">Ultimos 90 dias</option>
+        </select>
+      </div>
+      <div class="news-field">
+        <label>Artigos por area</label>
+        <select id="news-limite">
+          <option value="4">4 por area</option>
+          <option value="6" selected="">6 por area</option>
+          <option value="8">8 por area</option>
+        </select>
+      </div>
+      <div class="news-field">
+        <label>Areas</label>
+        <div class="news-checks" id="news-areas">
+          <label><input type="checkbox" value="hipertrofia" checked=""> Hipertrofia e treino de forca</label>
+          <label><input type="checkbox" value="emagrecimento" checked=""> Emagrecimento e composicao corporal</label>
+          <label><input type="checkbox" value="nutricao" checked=""> Nutricao esportiva</label>
+          <label><input type="checkbox" value="suplementacao" checked=""> Suplementacao</label>
+          <label><input type="checkbox" value="cardio" checked=""> Cardio e condicionamento</label>
+          <label><input type="checkbox" value="recuperacao"> Recuperacao, sono e aderencia</label>
+        </div>
+      </div>
+      <div class="news-field">
+        <label>Orientacao editorial</label>
+        <textarea id="news-extra" placeholder="Ex.: mais aplicacao pratica para alunos, evitar sensacionalismo, incluir alertas sobre suplemento..."></textarea>
+      </div>
+      <div class="news-actions">
+        <button class="btn-green" onclick="gerarNewsletter()">Gerar previa</button>
+        <button class="btn-ghost" onclick="criarPdfNewsletter()">Criar PDF</button>
+        <button class="btn-ghost" onclick="enviarNewsletterWhatsapp()">Enviar WhatsApp</button>
+        <button class="btn-ghost" onclick="configurarNewsletterQuinzenal()">Agendar quinzenal</button>
+      </div>
+      <div class="news-status" id="news-status">Gere a previa, revise o texto e depois crie o PDF.</div>
+    </div>
+
+    <div class="news-preview" id="news-preview">
+      <h1>Radar Cientifico FS</h1>
+      <p>Configure os temas e clique em <strong>Gerar previa</strong>. A IA vai transformar artigos reais em uma newsletter de 2 a 3 paginas, com aplicacao pratica e referencias.</p>
+      <h2>Formato previsto</h2>
+      <ul>
+        <li>5 achados principais da quinzena</li>
+        <li>Aplicacao pratica para treino, dieta e suplementacao</li>
+        <li>Cuidados contra interpretacoes exageradas</li>
+        <li>Referencias com DOI ou link</li>
+      </ul>
     </div>
   </div>
 </div>
@@ -1021,7 +1124,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
 </div>
 
 <script>
-const APP_VERSION = 'v43';
+const APP_VERSION = 'v44';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM3xuEYX3XLmhPRdSNTZ4r6x94yqME9yC9JekFZlxs0CgMVV890woiMcGUKiVfPIsXrw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 
@@ -2544,7 +2647,162 @@ function showPage(page, el) {
   el.classList.add('active');
   document.getElementById('page-alunos').style.display=page==='alunos'?'flex':'none';
   document.getElementById('page-config').style.display=page==='config'?'flex':'none';
+  document.getElementById('page-newsletter').style.display=page==='newsletter'?'block':'none';
   if (page==='config') { updateConfigStatus(); loadCoachPrefs(); loadZapiConfig(); }
+  if (page==='newsletter') { carregarNewsletterSalva(); }
+}
+
+function newsStatus(txt, erro) {
+  var el = document.getElementById('news-status');
+  if (!el) return;
+  el.textContent = txt;
+  el.style.color = erro ? 'var(--red)' : 'var(--text3)';
+}
+
+function getNewsletterConfig() {
+  var areas = [];
+  document.querySelectorAll('#news-areas input:checked').forEach(function(cb){ areas.push(cb.value); });
+  return {
+    titulo: (document.getElementById('news-titulo').value || 'Radar Cientifico FS').trim(),
+    publico: document.getElementById('news-publico').value,
+    profundidade: document.getElementById('news-profundidade').value,
+    dias: parseInt(document.getElementById('news-dias').value, 10) || 14,
+    limite: parseInt(document.getElementById('news-limite').value, 10) || 6,
+    areas: areas,
+    extra: document.getElementById('news-extra').value.trim()
+  };
+}
+
+function newsletterSystemPrompt() {
+  return 'Voce e editor cientifico do Coach Felipe. Escreva em portugues claro, sem sensacionalismo, traduzindo evidencia academica para aplicacao pratica em treinamento, hipertrofia, emagrecimento, alimentacao e suplementacao. Use somente os artigos fornecidos como fonte. Diferencie evidencia forte, sinal promissor e achado preliminar.';
+}
+
+function montarPromptNewsletter(cfg, artigos) {
+  return 'Monte uma newsletter cientifica de 2 a 3 paginas com base nos artigos reais abaixo.\n' +
+    'Titulo: ' + cfg.titulo + '\nPublico: ' + cfg.publico + '\nProfundidade: ' + cfg.profundidade + '\nOrientacao editorial: ' + (cfg.extra || 'sem orientacao extra') + '\n\n' +
+    'ARTIGOS COLETADOS:\n' + JSON.stringify(artigos).slice(0, 52000) + '\n\n' +
+    'Retorne APENAS JSON valido neste formato:\n' +
+    '{"titulo":"...","subtitulo":"...","periodo":"...","destaques":["..."],"secoes":[{"titulo":"...","texto":"...","aplicacao":["..."],"cuidado":"..."}],"curiosidade":"...","referencias":[{"titulo":"...","periodico":"...","ano":"...","doi":"...","url":"..."}]}\n' +
+    'Regras: 5 destaques no maximo; 4 a 6 secoes; cada secao deve ter aplicacao pratica; nao extrapole causalidade; cite DOI/link nas referencias.';
+}
+
+function escapeNewsHtml(txt) {
+  return String(txt || '').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+}
+
+function newsletterToHtml(news) {
+  var html = '<h1>' + escapeNewsHtml(news.titulo || 'Radar Cientifico FS') + '</h1>';
+  if (news.subtitulo) html += '<p><strong>' + escapeNewsHtml(news.subtitulo) + '</strong></p>';
+  if (news.periodo) html += '<p style="color:#666;font-size:11px;">Periodo analisado: ' + escapeNewsHtml(news.periodo) + '</p>';
+  if (news.destaques && news.destaques.length) {
+    html += '<h2>5 achados da quinzena</h2><ul>';
+    news.destaques.forEach(function(d){ html += '<li>' + escapeNewsHtml(d) + '</li>'; });
+    html += '</ul>';
+  }
+  (news.secoes || []).forEach(function(sec) {
+    html += '<h2>' + escapeNewsHtml(sec.titulo || 'Tema') + '</h2>';
+    html += '<p>' + escapeNewsHtml(sec.texto || '') + '</p>';
+    if (sec.aplicacao && sec.aplicacao.length) {
+      html += '<h3>Aplicacao pratica</h3><ul>';
+      sec.aplicacao.forEach(function(a){ html += '<li>' + escapeNewsHtml(a) + '</li>'; });
+      html += '</ul>';
+    }
+    if (sec.cuidado) html += '<p><strong>Cuidado:</strong> ' + escapeNewsHtml(sec.cuidado) + '</p>';
+  });
+  if (news.curiosidade) html += '<h2>Curiosidade da edicao</h2><p>' + escapeNewsHtml(news.curiosidade) + '</p>';
+  if (news.referencias && news.referencias.length) {
+    html += '<h2>Referencias</h2>';
+    news.referencias.forEach(function(r) {
+      html += '<div class="ref">' + escapeNewsHtml(r.titulo || '') + '<br>' +
+        escapeNewsHtml([r.periodico, r.ano].filter(Boolean).join(' - ')) +
+        (r.doi ? '<br>DOI: ' + escapeNewsHtml(r.doi) : '') +
+        (r.url ? '<br>' + escapeNewsHtml(r.url) : '') + '</div>';
+    });
+  }
+  return html;
+}
+
+function carregarNewsletterSalva() {
+  var raw = localStorage.getItem('coach_newsletter_atual');
+  if (!raw) return;
+  try {
+    window._newsletterAtual = JSON.parse(raw);
+    if (window._newsletterAtual && window._newsletterAtual.html) document.getElementById('news-preview').innerHTML = window._newsletterAtual.html;
+  } catch(e) {}
+}
+
+async function gerarNewsletter() {
+  var cfg = getNewsletterConfig();
+  if (!cfg.areas.length) { showToast('Selecione pelo menos uma area', 'err'); return; }
+  newsStatus('Buscando artigos academicos...');
+  document.getElementById('news-preview').innerHTML = '<p>Buscando artigos e montando curadoria...</p>';
+  try {
+    var res = await gsPost({ newsletterBuscarArtigos: true, config: cfg });
+    var data = await res.json();
+    if (!data.sucesso) throw new Error(data.erro || 'Falha ao buscar artigos');
+    newsStatus('Artigos encontrados: ' + (data.artigos || []).length + '. Escrevendo previa com IA...');
+    var reply = await callClaude([{ role: 'user', content: montarPromptNewsletter(cfg, data) }], newsletterSystemPrompt(), 5500);
+    var parsed = tryParseJSON(reply);
+    if (!parsed) throw new Error('A IA nao retornou JSON valido');
+    var html = newsletterToHtml(parsed);
+    window._newsletterAtual = { config: cfg, artigos: data.artigos || [], newsletter: parsed, html: html, criadoEm: new Date().toISOString() };
+    localStorage.setItem('coach_newsletter_atual', JSON.stringify(window._newsletterAtual));
+    document.getElementById('news-preview').innerHTML = html;
+    newsStatus('Previa gerada. Revise antes de criar o PDF.');
+    showToast('Newsletter gerada!', 'ok');
+  } catch(e) {
+    document.getElementById('news-preview').innerHTML = '<p style="color:#b91c1c;">Erro: ' + escapeNewsHtml(e.message) + '</p>';
+    newsStatus('Erro: ' + e.message, true);
+  }
+}
+
+async function criarPdfNewsletter() {
+  if (!window._newsletterAtual || !window._newsletterAtual.html) { showToast('Gere a previa primeiro', 'err'); return; }
+  newsStatus('Criando PDF no Drive...');
+  try {
+    var res = await gsPost({ newsletterCriarPdf: true, titulo: window._newsletterAtual.newsletter.titulo || 'Radar Cientifico FS', html: window._newsletterAtual.html });
+    var data = await res.json();
+    if (!data.sucesso) throw new Error(data.erro || 'Falha ao criar PDF');
+    window._newsletterAtual.pdfUrl = data.url;
+    window._newsletterAtual.pdfId = data.fileId;
+    localStorage.setItem('coach_newsletter_atual', JSON.stringify(window._newsletterAtual));
+    newsStatus('PDF criado: ' + data.url);
+    showToast('PDF criado!', 'ok');
+    window.open(data.url, '_blank');
+  } catch(e) {
+    newsStatus('Erro ao criar PDF: ' + e.message, true);
+  }
+}
+
+async function enviarNewsletterWhatsapp() {
+  if (!window._newsletterAtual || !window._newsletterAtual.pdfUrl) { showToast('Crie o PDF antes de enviar', 'err'); return; }
+  if (!confirm('Enviar esta newsletter para todos os alunos ativos com telefone cadastrado?')) return;
+  newsStatus('Enviando newsletter por WhatsApp...');
+  try {
+    var msg = '*' + (window._newsletterAtual.newsletter.titulo || 'Radar Cientifico FS') + '*\n\n' +
+      'Nova edicao da newsletter cientifica FS:\n' + window._newsletterAtual.pdfUrl + '\n\nBoa leitura!\nFelipe';
+    var res = await gsPost({ newsletterEnviarWhatsapp: true, alunos: students, mensagem: msg });
+    var data = await res.json();
+    if (!data.sucesso) throw new Error(data.erro || 'Falha no envio');
+    newsStatus('Envio finalizado. Enviados: ' + data.enviados + ' | erros: ' + data.erros);
+    showToast('Newsletter enviada!', 'ok');
+  } catch(e) {
+    newsStatus('Erro no envio: ' + e.message, true);
+  }
+}
+
+async function configurarNewsletterQuinzenal() {
+  var cfg = getNewsletterConfig();
+  if (!confirm('Configurar trigger quinzenal para gerar rascunho da newsletter? O envio continua manual pela tela.')) return;
+  try {
+    var res = await gsPost({ newsletterConfigurarQuinzenal: true, config: cfg });
+    var data = await res.json();
+    if (!data.sucesso) throw new Error(data.erro || 'Falha ao configurar');
+    newsStatus('Agendamento quinzenal configurado. O Apps Script vai gerar rascunhos no Drive.');
+    showToast('Agendamento configurado!', 'ok');
+  } catch(e) {
+    newsStatus('Erro ao agendar: ' + e.message, true);
+  }
 }
 
 function showAuthModal() { document.getElementById('auth-modal').style.display='flex'; }

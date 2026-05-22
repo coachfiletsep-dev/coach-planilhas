@@ -1880,8 +1880,7 @@ async function atualizarAbasDoAlunoAtual() {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
   if (!sheetId) throw new Error('Planilha do aluno nao configurada');
-  const res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId + '&t=' + Date.now());
-  const data = await res.json();
+  const data = await buscarAbasSpreadsheet(sheetId);
   const abas = Array.isArray(data.abas) ? data.abas : [];
   const abaAtual = data.abaAtual || (abas.length ? abas[abas.length - 1] : 'S0');
   const proximaAba = data.proximaAba || ('S' + ((parseInt(String(abaAtual).replace('S','')) || 0) + 1));
@@ -1889,6 +1888,22 @@ async function atualizarAbasDoAlunoAtual() {
   window._abaAtual = abaAtual;
   window._proximaAba = proximaAba;
   return { sheetId: sheetId, abas: abas, abaAtual: abaAtual, proximaAba: proximaAba };
+}
+
+async function buscarAbasSpreadsheet(sheetId) {
+  try {
+    var res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + encodeURIComponent(sheetId) + '&t=' + Date.now());
+    var txt = await res.text();
+    var data = JSON.parse(txt);
+    if (data.erro || data.error) throw new Error(data.erro || data.error);
+    return data;
+  } catch(getErr) {
+    var resPost = await gsPost({ action: 'getAbas', spreadsheetId: sheetId });
+    var txtPost = await resPost.text();
+    var dataPost = JSON.parse(txtPost);
+    if (dataPost.erro || dataPost.error) throw new Error(dataPost.erro || dataPost.error);
+    return dataPost;
+  }
 }
 function useChip(el) { document.getElementById('ai-input').value=el.textContent; sendMsg(); }
 function useChip2(el) { document.getElementById('ai-input2').value=el.textContent; sendMsg2(); }
@@ -2742,8 +2757,7 @@ async function carregarAbasMacrociclo(forcar) {
   }
   lista.innerHTML = '<span style="font-size:11px;color:var(--text3)">Carregando abas...</span>';
   try {
-    var res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
-    var data = await res.json();
+    var data = await buscarAbasSpreadsheet(sheetId);
     var abas = data.abas || [];
     lista.dataset.carregado = selectedId;
     lista.innerHTML = '';
@@ -2762,7 +2776,7 @@ async function carregarAbasMacrociclo(forcar) {
       lista.appendChild(label);
     });
   } catch(e) {
-    lista.innerHTML = '<span style="font-size:11px;color:var(--red)">Erro ao carregar abas.</span>';
+    lista.innerHTML = '<span style="font-size:11px;color:var(--red)">Erro ao carregar abas: ' + escapeMacroHtml(e.message || 'desconhecido') + '</span>';
   }
 }
 
@@ -4930,6 +4944,7 @@ async function analisarAjustesPlanilha() {
 
 init();
 </script>
+
 
 
 

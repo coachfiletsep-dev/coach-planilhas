@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- saved from url=(0073)file:///C:/Users/Lenovo/Documents/Aplicativo/Coach%20Planilhas%20v44.html -->
+<!-- saved from url=(0073)file:///C:/Users/Lenovo/Documents/Aplicativo/Coach%20Planilhas%20v45.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coach Planilhas v44</title>
+<title>Coach Planilhas v45</title>
 <style>
   :root {
     --green: #1D9E75;
@@ -521,6 +521,68 @@
             </div>
 
             <div class="macro-field">
+              <label>Modelo de periodizacao</label>
+              <select id="macro-modelo">
+                <option value="ia decide">IA decide pelo nivel e historico</option>
+                <option value="linear">Linear</option>
+                <option value="linear reversa">Linear reversa</option>
+                <option value="ondulatoria semanal">Ondulatoria semanal</option>
+                <option value="ondulatoria semanal parcial">Ondulatoria semanal parcial</option>
+                <option value="ondulatoria parcial reversa">Ondulatoria parcial reversa</option>
+                <option value="blocos">Blocos</option>
+                <option value="atr">ATR</option>
+                <option value="deload reload">Semana de deload / reload</option>
+              </select>
+              <div class="macro-mini">O app ajusta a complexidade ao nivel do aluno antes de sugerir o modelo.</div>
+            </div>
+
+            <div class="macro-field">
+              <label>Series avancadas</label>
+              <select id="macro-series-avancadas">
+                <option value="ia decide">IA decide com base no nivel</option>
+                <option value="evitar">Evitar neste macro</option>
+                <option value="conservador">Conservador: apenas isoladores e poucas semanas</option>
+                <option value="moderado">Moderado: drop-set, rest-pause e bi-set pontual</option>
+                <option value="avancado">Avancado: cluster, parciais, GVT e especializacoes</option>
+              </select>
+            </div>
+
+            <div class="macro-field">
+              <label>Cardio no macro</label>
+              <select id="macro-cardio-objetivo">
+                <option value="ia decide">IA decide</option>
+                <option value="saude">Saude geral</option>
+                <option value="emagrecimento">Emagrecimento</option>
+                <option value="minima interferencia">Minima interferencia na hipertrofia</option>
+                <option value="performance">Condicionamento / performance</option>
+                <option value="recuperacao">Recuperacao ativa</option>
+              </select>
+            </div>
+
+            <div class="macro-row">
+              <div class="macro-field">
+                <label>Cardio sessoes/sem</label>
+                <input id="macro-cardio-frequencia" type="number" min="0" max="7" value="3">
+              </div>
+              <div class="macro-field">
+                <label>Cardio duracao base</label>
+                <input id="macro-cardio-duracao" type="text" value="30 min" placeholder="Ex.: 20-30 min">
+              </div>
+            </div>
+
+            <div class="macro-field">
+              <label>Modelo do cardio</label>
+              <select id="macro-cardio-modelo">
+                <option value="ia decide">IA decide</option>
+                <option value="polarizado">Polarizado 80/20</option>
+                <option value="z2 progressivo">Z2 progressivo</option>
+                <option value="hiit controlado">HIIT controlado</option>
+                <option value="hibrido">Hibrido Z2 + intervalado</option>
+                <option value="recuperativo">Recuperativo baixa intensidade</option>
+              </select>
+            </div>
+
+            <div class="macro-field">
               <label>Prioridades musculares</label>
               <input id="macro-prioridades" type="text" placeholder="Ex.: ombros, costas, gluteos">
             </div>
@@ -560,6 +622,8 @@
             <div class="macro-saved">
               <button class="btn-ghost" onclick="salvarMacroAtual()">Salvar macro</button>
               <button class="btn-ghost" onclick="abrirMacroSalvo()">Abrir salvo</button>
+              <button class="btn-ghost" onclick="exportarMacroPdf()">Exportar PDF</button>
+              <button class="btn-ghost" onclick="protegerPlanilhaAluno()">Proteger planilha</button>
             </div>
 
             <div class="macro-field" style="margin-top:12px;">
@@ -618,6 +682,17 @@
     </div>
     <div style="font-size:11px;color:var(--text3);margin-top:1rem;">
       Token — <span id="token-status">conectado ✓</span> &nbsp;|&nbsp; API Claude — <span style="color:var(--green);">✓ Cloudflare</span>
+    </div>
+
+    <div class="config-section" style="margin-top:1.5rem;">
+      <div class="config-label">Economia de tokens</div>
+      <div class="config-step" style="flex-direction:column;gap:10px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;cursor:pointer;">
+          <input type="checkbox" id="modo-economico-input" onchange="salvarModoEconomicoTokens()">
+          Ativar modo economico
+        </label>
+        <div class="config-step-desc">Reduz o tamanho das respostas, limita historico de conversa e evita detalhes extras quando o fluxo permitir.</div>
+      </div>
     </div>
 
     <!-- Z-API WHATSAPP -->
@@ -715,20 +790,11 @@
       </div>
       <div class="news-field">
         <label>Periodo de busca</label>
-        <select id="news-dias">
-          <option value="14">Ultimos 14 dias</option>
-          <option value="30">Ultimos 30 dias</option>
-          <option value="60">Ultimos 60 dias</option>
-          <option value="90">Ultimos 90 dias</option>
-        </select>
+        <input id="news-dias" type="number" min="1" max="365" step="1" value="14" placeholder="Ex.: 7, 14, 21, 30">
       </div>
       <div class="news-field">
         <label>Artigos por area</label>
-        <select id="news-limite">
-          <option value="4">4 por area</option>
-          <option value="6" selected="">6 por area</option>
-          <option value="8">8 por area</option>
-        </select>
+        <input id="news-limite" type="number" min="1" max="20" step="1" value="6" placeholder="Ex.: 2, 4, 6, 10">
       </div>
       <div class="news-field">
         <label>Areas</label>
@@ -747,7 +813,8 @@
       </div>
       <div class="news-actions">
         <button class="btn-green" onclick="gerarNewsletter()">Gerar previa</button>
-        <button class="btn-ghost" onclick="criarPdfNewsletter()">Criar PDF</button>
+        <button class="btn-ghost" onclick="exportarNewsletterPdfLocal()">Salvar PDF</button>
+        <button class="btn-ghost" onclick="criarPdfNewsletter()">Criar link PDF</button>
         <button class="btn-ghost" onclick="enviarNewsletterWhatsapp()">Enviar WhatsApp</button>
         <button class="btn-ghost" onclick="configurarNewsletterQuinzenal()">Agendar quinzenal</button>
       </div>
@@ -848,6 +915,18 @@
         <div id="meso-macro-resumo" style="font-size:11px;color:var(--text3);padding:7px 8px;background:var(--bg2);border-radius:var(--radius);line-height:1.4;"></div>
       </div>
       <div class="fl">
+        <label style="font-weight:600;">Series avancadas no meso</label>
+        <select id="meso-series-avancadas" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="macro">Usar orientacao do macrociclo</option>
+          <option value="ia decide">IA decide pelo nivel</option>
+          <option value="evitar">Evitar neste meso</option>
+          <option value="conservador">Conservador</option>
+          <option value="moderado">Moderado</option>
+          <option value="avancado">Avancado</option>
+        </select>
+        <div style="font-size:11px;color:var(--text3);line-height:1.4;">A IA usa "Ultima Serie" para drop-set, rest-pause, cluster, parciais ou GVT, e "Observacoes" para bi-set, tri-set e super-set.</div>
+      </div>
+      <div class="fl">
         <label>Briefing do aluno e instruções do novo meso</label>
         <textarea id="meso-instrucoes" rows="6" placeholder="Ex: objetivo do meso, dores/restrições, dias que precisa manter, exercícios que quer trocar, grupos prioritários, tempo real de treino..." style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
       </div>
@@ -868,6 +947,10 @@
             Incluir prescrição de cardio neste meso
           </label>
           <div id="cardio-fields" style="display:none;flex-direction:column;gap:8px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;cursor:pointer;">
+              <input type="checkbox" id="cardio-usar-macro">
+              Usar cardio sugerido no macrociclo salvo
+            </label>
             <div class="fl">
               <label>Objetivo do condicionamento</label>
               <select id="cardio-objetivo" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
@@ -1138,7 +1221,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
 </div>
 
 <script>
-const APP_VERSION = 'v44';
+const APP_VERSION = 'v45';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM3xuEYX3XLmhPRdSNTZ4r6x94yqME9yC9JekFZlxs0CgMVV890woiMcGUKiVfPIsXrw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 
@@ -1476,7 +1559,7 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
   }
 
   try {
-    await verificarAppsScriptAtualizado(40);
+    await verificarAppsScriptAtualizado(45);
   } catch(e) {
     addMsg('msgs', 'BLOQUEADO: ' + e.message, false);
     showToast('Apps Script desatualizado', 'err');
@@ -1580,6 +1663,11 @@ function getSystemPrompt() {
     'ABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n\n' +
     'VOLUME/TEMPO: 45min=15ser | 1h=20 | 1h15=24 | 1h30=28 (por sessao, rigido)\n\n' +
     'NOVO MESO: antes de gerar JSON, converse com o coach se faltar briefing, objetivo, restricoes ou divisao.\n\n' +
+    'SERIES AVANCADAS E COMBINACOES:\n' +
+    '- Use o campo "ultimaSerie" para tecnica feita somente na ultima serie: drop-set, rest-pause, cluster, parciais, GVT ou "sem tecnica avancada".\n' +
+    '- Use o campo "observacoes" para bi-set, tri-set, super-set, ordem combinada e instrucoes de transicao entre exercicios.\n' +
+    '- Iniciantes: evitar tecnicas avancadas; no maximo observacoes tecnicas simples. Intermediarios: tecnicas pontuais em isoladores. Avancados: tecnicas avancadas controladas, sem exagerar na fadiga sistemica.\n' +
+    '- Nao use tecnica avancada em todo exercicio; escolha apenas onde houver beneficio claro.\n\n' +
     'CONDICIONAMENTO FS — quando o coach solicitar cardio, aplique:\n' +
     '• Modelo polarizado Seiler: 80% volume em Z1-Z2 (RPE 4-6), 20% em Z4-Z5 (RPE 8-10)\n' +
     '• Interferência força-endurance (Wilson et al.): evitar HIIT no mesmo dia de treino pesado de inferiores; preferir cardio APÓS musculação ou em dias separados; Z1-Z2 se mesmo dia de pernas\n' +
@@ -1592,7 +1680,7 @@ function getSystemPrompt() {
     '• JSON cardio: {"dia":"TER","tipo":"Contínuo Z2","ergometro":"Bike","duracao":"30 min","intensidade":"Z2 / RPE 5-6 / 65-72% FCMax","faixaFc":"120-138 bpm","progressao":"+5min se ≥80% aderência","observacao":"após lower — baixa interferência"}\n' +
     '• dias de cardio puro (sem musculação): usar dia válido da semana, deixar "exercicios" sem entradas desse dia. Quando o pedido vier do modal Novo Meso, use o briefing enviado e gere JSON para preview; o app so escreve depois da confirmacao do coach.\n' +
     'Mantenha os mesmos dias de treino informados na aba base. Nao invente dias novos.\n' +
-    'JSON: {"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Hipertrofia","series":4,"repeticoes":"8-10","cadencia":"3010","rir":"2","criterio":"controle excentrico"}]}\n' +
+    'JSON: {"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Hipertrofia","series":4,"repeticoes":"8-10","cadencia":"3010","rir":"2","ultimaSerie":"sem tecnica avancada","criterio":"controle excentrico","observacoes":""}]}\n' +
     'dia=SEG/TER/QUA/QUI/SEX/SAB/DOM. RiR=0-3. Cadencia=4 digitos. Seja direto, sem saudacoes.' +
     (prefs.trim() ? '\nPREFS: ' + prefs.trim() : '');
 }
@@ -1672,10 +1760,16 @@ function addLoading(id) {
 function removeLoading(id) { const el=document.getElementById('ld-'+id); if(el) el.remove(); }
 
 async function callClaude(history, system, maxTok) {
+  var economical = modoEconomicoTokensAtivo();
+  var finalMax = maxTok || 2500;
+  if (economical) {
+    finalMax = Math.min(finalMax, 1800);
+    system = (system || '') + '\nModo economico ativo: responda com a menor saida util, sem explicacoes redundantes, mantendo JSON valido quando pedido.';
+  }
   const res = await fetch(PROXY_URL, {
     method:'POST',
     headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01'},
-    body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:maxTok||2500,system:system,messages:history})
+    body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:finalMax,system:system,messages:history})
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
@@ -1683,6 +1777,7 @@ async function callClaude(history, system, maxTok) {
 }
 
 function trimHistory(history, maxPairs) {
+  if (modoEconomicoTokensAtivo()) maxPairs = Math.min(maxPairs || 6, 3);
   // Mantém no máximo maxPairs trocas (user+assistant) para conter o crescimento do contexto
   var max = maxPairs * 2;
   if (history.length > max) history.splice(0, history.length - max);
@@ -2122,6 +2217,7 @@ function aplicarFaixasFcCardio(sessoes, perfil) {
 function getCardioContext() {
   var ativo = document.getElementById('cardio-ativo') && document.getElementById('cardio-ativo').checked;
   if (!ativo) return null;
+  var usarMacro = document.getElementById('cardio-usar-macro') && document.getElementById('cardio-usar-macro').checked;
   var ergometros = [];
   document.querySelectorAll('#cardio-ergometros input:checked').forEach(function(cb){ ergometros.push(cb.value); });
   var sessoes = [];
@@ -2138,6 +2234,9 @@ function getCardioContext() {
   });
   return {
     objetivo: document.getElementById('cardio-objetivo').value,
+    usarMacro: !!usarMacro,
+    freq: document.getElementById('cardio-freq') ? document.getElementById('cardio-freq').value : '',
+    duracao: document.getElementById('cardio-duracao') ? document.getElementById('cardio-duracao').value : '',
     ergometros: ergometros.join(', ') || 'Bike',
     restricoes: document.getElementById('cardio-restricoes').value.trim(),
     sessoes: sessoes,
@@ -2153,11 +2252,12 @@ async function confirmarNovoMeso() {
   });
   const instrucoes = document.getElementById('meso-instrucoes').value.trim();
   const tempoSessao = document.getElementById('meso-tempo').value;
+  const seriesAvancadasMeso = macroCampo('meso-series-avancadas');
   const cardioCtx = getCardioContext();
   const macroMesoCtx = obterContextoMacroParaMeso();
   window._macroMesoCtx = macroMesoCtx;
   window._previewCardioCtx = null;
-  if (cardioCtx && (!cardioCtx.sessoes || cardioCtx.sessoes.length === 0)) {
+  if (cardioCtx && !cardioCtx.usarMacro && (!cardioCtx.sessoes || cardioCtx.sessoes.length === 0)) {
     showToast('Marque pelo menos um dia de aeróbio', 'err');
     return;
   }
@@ -2228,6 +2328,9 @@ async function confirmarNovoMeso() {
   if (instrucoes) prompt += 'Briefing do aluno e instrucoes do coach: ' + instrucoes + '\n';
   if (window._obsAluno) prompt += 'Observações do aluno: ' + window._obsAluno + '\n';
   if (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length) prompt += 'Use SOMENTE estes dias de musculação: ' + window._diasPermitidosNovoMeso.join(', ') + '.\n';
+  prompt += 'Series avancadas neste meso: ' + (seriesAvancadasMeso || 'macro') + '.\n';
+  prompt += 'Use "ultimaSerie" em todos os exercicios: escreva a tecnica da ultima serie quando houver ou "sem tecnica avancada". Use "observacoes" para bi-set, tri-set, super-set ou combinacoes; deixe vazio quando nao houver.\n';
+  prompt += 'Regra por experiencia: iniciante evita tecnicas avancadas; intermediario usa pontualmente em isoladores; avancado pode usar drop-set, rest-pause, cluster, parciais ou GVT de forma dosada e coerente com o bloco.\n';
   if (macroMesoCtx) {
     prompt += '\n=== MACROCICLO SALVO DO ALUNO ===\n';
     if (macroMesoCtx.macro && macroMesoCtx.macro.ctx) {
@@ -2259,6 +2362,14 @@ async function confirmarNovoMeso() {
     prompt += '\n=== CONDICIONAMENTO FS ===\n';
     prompt += 'Prescreva cardio para este aluno junto com o meso, usando raciocinio de endurance, HIIT e intervalados baseado em Seiler, Laursen & Buchheit, Billat, Gibala, Ronnestad e Daniels.\n';
     prompt += 'Objetivo: ' + cardioCtx.objetivo + '\n';
+    if (cardioCtx.usarMacro && macroMesoCtx && macroMesoCtx.macro && macroMesoCtx.macro.ctx) {
+      var cardioMacro = macroMesoCtx.macro.ctx;
+      prompt += 'Usar cardio do macrociclo salvo como fonte principal: objetivo=' + (cardioMacro.cardioObjetivo || 'IA decide') +
+        ', frequencia=' + (cardioMacro.cardioFrequencia || 'IA decide') +
+        'x/sem, duracao=' + (cardioMacro.cardioDuracao || 'IA decide') +
+        ', modelo=' + (cardioMacro.cardioModelo || 'IA decide') + '.\n';
+      prompt += 'Se o coach marcou dias no modal, respeite esses dias. Se nao marcou, escolha os melhores dias conforme interferencia com inferiores e recuperacao.\n';
+    }
     if (cardioCtx.perfil) {
       prompt += 'Idade do aluno: ' + cardioCtx.perfil.idade + ' anos. FCmax pela formula 208-(0,7*idade): ' + cardioCtx.perfil.fcMax + ' bpm.\n';
       prompt += 'Zonas calculadas: Z1 ' + cardioCtx.perfil.zonas.z1 + ', Z2 ' + cardioCtx.perfil.zonas.z2 + ', Z3 ' + cardioCtx.perfil.zonas.z3 + ', Z4 ' + cardioCtx.perfil.zonas.z4 + ', Z5 ' + cardioCtx.perfil.zonas.z5 + '.\n';
@@ -2272,6 +2383,9 @@ async function confirmarNovoMeso() {
     } else {
       prompt += 'Frequência: ' + cardioCtx.freq + 'x/semana\n';
       prompt += 'Duração por sessão: ' + cardioCtx.duracao + '\n';
+      if (cardioCtx.usarMacro && macroMesoCtx && macroMesoCtx.macro && macroMesoCtx.macro.ctx) {
+        prompt += 'Ignore frequencia/duracao indefinidas acima e use os dados do macrociclo salvo para definir frequencia, duracao e modelo.\n';
+      }
       prompt += 'Escolha os dias mais adequados considerando interferencia com lower/upper, recuperacao e objetivo.\n';
     }
     prompt += 'Ergômetros disponíveis: ' + cardioCtx.ergometros + '\n';
@@ -2373,7 +2487,7 @@ function carregarContextoMacroAluno() {
   if (salvo) {
     try { ctx = JSON.parse(salvo); } catch(e) { ctx = {}; }
   }
-  ['duracao','inicio','nivel','dias','tempo','objetivo','prioridades','limitacoes','recursos','extra'].forEach(function(k) {
+  ['duracao','inicio','nivel','dias','tempo','objetivo','modelo','series-avancadas','cardio-objetivo','cardio-frequencia','cardio-duracao','cardio-modelo','prioridades','limitacoes','recursos','extra'].forEach(function(k) {
     var el = document.getElementById('macro-' + k);
     if (el && ctx[k]) el.value = ctx[k];
   });
@@ -2400,6 +2514,12 @@ function coletarContextoMacro() {
     dias: macroCampo('macro-dias'),
     tempo: macroCampo('macro-tempo'),
     objetivo: macroCampo('macro-objetivo'),
+    modelo: macroCampo('macro-modelo'),
+    seriesAvancadas: macroCampo('macro-series-avancadas'),
+    cardioObjetivo: macroCampo('macro-cardio-objetivo'),
+    cardioFrequencia: macroCampo('macro-cardio-frequencia'),
+    cardioDuracao: macroCampo('macro-cardio-duracao'),
+    cardioModelo: macroCampo('macro-cardio-modelo'),
     prioridades: macroCampo('macro-prioridades'),
     limitacoes: macroCampo('macro-limitacoes'),
     recursos: macroCampo('macro-recursos'),
@@ -2546,6 +2666,48 @@ function abrirMacroSalvo() {
   }
 }
 
+function documentoImpressaoHtml(titulo, corpo, cssExtra) {
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + escapeMacroHtml(titulo || 'PDF') + '</title>' +
+    '<style>@page{size:A4;margin:12mm}*{box-sizing:border-box}body{margin:0;background:#fff;color:#17202a;font-family:Arial,sans-serif}' +
+    'table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #dde5ea;padding:7px 8px;text-align:left;vertical-align:top}h1,h2,h3{color:#0F3460}p,li,td{font-size:12px;line-height:1.5}.macro-result{max-width:760px;margin:0 auto}.macro-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}.macro-kpi{border:1px solid #dde5ea;padding:8px}.macro-kpi strong{display:block;color:#1D9E75;font-size:16px}.macro-kpi span{font-size:9px;text-transform:uppercase;color:#596672}.fs-newsletter{background:#fff;font-family:Arial,sans-serif;color:#17202a}.fs-cover{background:#0F3460;color:#fff;padding:28px 34px;border-bottom:4px solid #1D9E75}.fs-brand{display:flex;justify-content:space-between;gap:18px;margin-bottom:24px}.fs-logo{font-size:10px;font-weight:800;text-transform:uppercase;color:#B8F1DE}.fs-date{font-size:10px;color:#D9E6F2;text-align:right}.fs-cover h1{margin:0 0 8px;font-size:30px;color:#fff}.fs-cover p{font-size:13px;color:#EAF3FA;max-width:650px}.fs-body{padding:22px 28px}.fs-section{background:#fff;border:1px solid #DDE5EA;border-radius:6px;padding:15px 18px;margin-bottom:11px;page-break-inside:avoid}.fs-section h2{font-size:16px;margin:0 0 8px;color:#0F3460}.fs-section h3{font-size:11px;margin:10px 0 6px;color:#1D9E75;text-transform:uppercase}.fs-section p,.fs-section li{font-size:11px;line-height:1.48;color:#26323d}.fs-highlights{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fs-highlight{border-left:4px solid #1D9E75;background:#F0FAF5;padding:9px 10px;font-size:10.8px;line-height:1.4}.fs-apply{background:#F5F8FB;padding:8px 10px;margin-top:8px}.fs-caution{border-left:4px solid #D97706;background:#FFF8EB;padding:8px 10px;margin-top:8px;font-size:10.8px}.fs-ref{font-size:8.8px;color:#596672;line-height:1.25;border-top:1px solid #E2E8EE;padding-top:5px;margin-top:5px}.fs-footer{font-size:9px;color:#687684;text-align:center;padding:0 20px 14px}' +
+    (cssExtra || '') + '</style></head><body>' + corpo + '<script>window.onload=function(){setTimeout(function(){window.print();},250);};<\/script></body></html>';
+}
+
+function abrirDialogoSalvarPdf(titulo, corpo, cssExtra) {
+  var w = window.open('', '_blank');
+  if (!w) { showToast('Permita pop-ups para abrir o dialogo de PDF', 'err'); return; }
+  w.document.open();
+  w.document.write(documentoImpressaoHtml(titulo, corpo, cssExtra));
+  w.document.close();
+}
+
+function exportarMacroPdf() {
+  if (!window._macroAtual || !window._macroAtual.markdown) {
+    showToast('Gere ou abra um macrociclo antes de exportar', 'err');
+    return;
+  }
+  var s = students.find(function(x){ return x.id === selectedId; });
+  var out = document.getElementById('macro-output');
+  var titulo = 'Macrociclo - ' + (s ? s.name : 'Aluno');
+  abrirDialogoSalvarPdf(titulo, out ? out.innerHTML : '', '');
+}
+
+async function protegerPlanilhaAluno() {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha do aluno nao configurada', 'err'); return; }
+  if (!confirm('Proteger a estrutura das abas semanais deste aluno e liberar apenas as areas de preenchimento?')) return;
+  try {
+    var res = await gsPost({ protegerEstrutura: true, spreadsheetId: sheetId });
+    var data = await res.json();
+    if (!data.sucesso) throw new Error((data.erros || []).join(' | ') || data.erro || 'Falha ao proteger');
+    showToast('Planilha protegida: ' + data.abasProtegidas + ' aba(s)', 'ok');
+  } catch(e) {
+    showToast('Erro ao proteger: ' + e.message, 'err');
+  }
+}
+
 async function ajustarMacrociclo() {
   var s = students.find(function(x){ return x.id === selectedId; });
   if (!s) { showToast('Selecione um aluno', 'err'); return; }
@@ -2591,6 +2753,9 @@ function montarPromptMacrociclo(ctx, historico) {
     'Periodo estimado: ' + (ctx.periodoEstimado || 'nao calculado') + '\n' +
     'Objetivo principal: ' + ctx.objetivo + '\n' +
     'Nivel: ' + ctx.nivel + '\n' +
+    'Modelo de periodizacao solicitado: ' + (ctx.modelo || 'IA decide') + '\n' +
+    'Orientacao de series avancadas: ' + (ctx.seriesAvancadas || 'IA decide') + '\n' +
+    'Cardio no macro: objetivo=' + (ctx.cardioObjetivo || 'IA decide') + ', frequencia=' + (ctx.cardioFrequencia || 'IA decide') + 'x/sem, duracao=' + (ctx.cardioDuracao || 'IA decide') + ', modelo=' + (ctx.cardioModelo || 'IA decide') + '\n' +
     'Dias por semana: ' + ctx.dias + '\n' +
     'Tempo por sessao: ' + ctx.tempo + '\n' +
     'Prioridades musculares: ' + (ctx.prioridades || 'nao informado') + '\n' +
@@ -2608,12 +2773,12 @@ function montarPromptMacrociclo(ctx, historico) {
     '## Diagnostico estrategico\n' +
     'Liste objetivo, riscos, prioridades e criterio de sucesso.\n\n' +
     '## Mapa do macrociclo\n' +
-    'Use uma tabela com colunas: Bloco, Semanas/Meses, Fase, Objetivo, Estrategia, Deload/Reavaliacao.\n\n' +
+    'Use uma tabela com colunas: Bloco, Semanas/Meses, Fase, Modelo, Objetivo, Estrategia forca, Cardio, Series avancadas, Deload/Reavaliacao.\n\n' +
     '## Logica de progressao\n' +
-    'Explique volume, intensidade, RIR/falha, troca de exercicios e cardio.\n\n' +
+    'Explique volume, intensidade, RIR/falha, troca de exercicios, cardio, series avancadas e variacao de 30% para reduzir monotonia sem perder progressao.\n\n' +
     '## Proximo mesociclo sugerido\n' +
     'Descreva o primeiro bloco pratico: foco, divisao semanal, prioridades, cuidados e o que medir ao final.\n\n' +
-    'Regras: nao engesse 52 semanas; pense como mapa anual adaptativo; inclua deloads; use os meses reais do periodo estimado para situar o coach no ano; use tom profissional e direto do Coach Felipe.\n\n' +
+    'Regras: conecte o modelo de periodizacao ao nivel do aluno. Iniciante usa modelos simples e poucas variacoes; intermediario pode usar ondulatoria parcial/blocos; avancado pode usar ATR, ondulatoria mais complexa e tecnicas avancadas. Inclua cardio periodizado junto da forca. Nao engesse 52 semanas; pense como mapa anual adaptativo; inclua deloads; use os meses reais do periodo estimado para situar o coach no ano; use tom profissional e direto do Coach Felipe.\n\n' +
     'Base teorica: use como pano de fundo os principios de periodizacao, progressao, variacao, especificidade, fadiga e recuperacao associados a autores como Tudor Bompa, Vladimir Issurin, Yuri Verkhoshansky, Michael Stone, William Kraemer, Steven Fleck, Brad Schoenfeld, Eric Helms, Mike Israetel, Greg Nuckols, Antonio Carlos Gomes, Paulo Gentil, Roberto Simao e outros autores relevantes da musculacao e treinamento de forca. Nao transforme a resposta em aula teorica; cite autores apenas quando isso justificar uma decisao pratica do macro.';
   return prompt;
 }
@@ -2679,7 +2844,7 @@ function showPage(page, el) {
   document.getElementById('page-alunos').style.display=page==='alunos'?'flex':'none';
   document.getElementById('page-config').style.display=page==='config'?'flex':'none';
   document.getElementById('page-newsletter').style.display=page==='newsletter'?'block':'none';
-  if (page==='config') { updateConfigStatus(); loadCoachPrefs(); loadZapiConfig(); }
+  if (page==='config') { updateConfigStatus(); loadCoachPrefs(); loadZapiConfig(); carregarModoEconomicoTokens(); }
   if (page==='newsletter') { carregarNewsletterSalva(); }
 }
 
@@ -2693,12 +2858,16 @@ function newsStatus(txt, erro) {
 function getNewsletterConfig() {
   var areas = [];
   document.querySelectorAll('#news-areas input:checked').forEach(function(cb){ areas.push(cb.value); });
+  var diasBusca = parseInt(document.getElementById('news-dias').value, 10) || 14;
+  var limiteArtigos = parseInt(document.getElementById('news-limite').value, 10) || 6;
+  diasBusca = Math.max(1, Math.min(diasBusca, 365));
+  limiteArtigos = Math.max(1, Math.min(limiteArtigos, 20));
   return {
     titulo: (document.getElementById('news-titulo').value || 'Radar Cientifico FS').trim(),
     publico: document.getElementById('news-publico').value,
     profundidade: document.getElementById('news-profundidade').value,
-    dias: parseInt(document.getElementById('news-dias').value, 10) || 14,
-    limite: parseInt(document.getElementById('news-limite').value, 10) || 6,
+    dias: diasBusca,
+    limite: limiteArtigos,
     areas: areas,
     extra: document.getElementById('news-extra').value.trim()
   };
@@ -2850,6 +3019,13 @@ async function criarPdfNewsletter() {
   }
 }
 
+function exportarNewsletterPdfLocal() {
+  if (!window._newsletterAtual || !window._newsletterAtual.html) { showToast('Gere a previa primeiro', 'err'); return; }
+  var titulo = (window._newsletterAtual.newsletter && window._newsletterAtual.newsletter.titulo) || 'Radar Cientifico FS';
+  abrirDialogoSalvarPdf(titulo, window._newsletterAtual.html, '');
+  newsStatus('Dialogo de impressao aberto. Escolha "Salvar como PDF" para selecionar o local no computador.');
+}
+
 async function enviarNewsletterWhatsapp() {
   if (!window._newsletterAtual || !window._newsletterAtual.pdfUrl) { showToast('Crie o PDF antes de enviar', 'err'); return; }
   if (!confirm('Enviar esta newsletter para todos os alunos ativos com telefone cadastrado?')) return;
@@ -2905,6 +3081,21 @@ function saveRefreshToken() {
     if (ok) showToast('Google conectado automaticamente!','ok');
     else showToast('Erro ao conectar. Verifique o token.','err');
   });
+}
+
+function modoEconomicoTokensAtivo() {
+  return localStorage.getItem('coach_modo_economico_tokens') === '1';
+}
+
+function salvarModoEconomicoTokens() {
+  var el = document.getElementById('modo-economico-input');
+  localStorage.setItem('coach_modo_economico_tokens', el && el.checked ? '1' : '0');
+  showToast(el && el.checked ? 'Modo economico ativado' : 'Modo economico desativado', 'ok');
+}
+
+function carregarModoEconomicoTokens() {
+  var el = document.getElementById('modo-economico-input');
+  if (el) el.checked = modoEconomicoTokensAtivo();
 }
 
 function saveCoachPrefs() {
@@ -3315,12 +3506,16 @@ function mostrarPreview(exercicios, nomeAba) {
 
     var depoisEl = document.createElement('div');
     depoisEl.className = 'preview-depois';
+    var ultimaSerie = ex.ultimaSerie || ex.ultima_serie || ex.serieAvancada || ex.tecnicaAvancada || '';
+    var observacoes = ex.observacoes || ex.observacao || ex.combinacao || '';
     depoisEl.innerHTML =
       '<strong>' + ex.nome + '</strong><br>' +
       (ex.series || (original && original.series) || '?') + 'x' +
       (ex.repeticoes || (original && original.repeticoes) || '?') +
       ' | ' + (ex.cadencia || (original && original.cadencia) || '?') +
-      ' | RiR ' + (ex.rir || (original && original.rir) || '?');
+      ' | RiR ' + (ex.rir || (original && original.rir) || '?') +
+      (ultimaSerie ? '<br><span style="color:#0F3460;font-size:11px;">Ultima serie: ' + ultimaSerie + '</span>' : '') +
+      (observacoes ? '<br><span style="color:#596672;font-size:11px;">Obs: ' + observacoes + '</span>' : '');
 
     row.appendChild(diaEl);
     row.appendChild(antesEl);

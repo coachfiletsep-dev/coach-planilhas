@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- saved from url=(0073)file:///C:/Users/Lenovo/Documents/Aplicativo/Coach%20Planilhas%20v46.html -->
+<!-- saved from url=(0073)file:///C:/Users/Lenovo/Documents/Aplicativo/Coach%20Planilhas%20v47.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coach Planilhas v46</title>
+<title>Coach Planilhas v47</title>
 <style>
   :root {
     --green: #1D9E75;
@@ -1240,7 +1240,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
 </div>
 
 <script>
-const APP_VERSION = 'v46';
+const APP_VERSION = 'v47';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM3xuEYX3XLmhPRdSNTZ4r6x94yqME9yC9JekFZlxs0CgMVV890woiMcGUKiVfPIsXrw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 
@@ -1278,6 +1278,46 @@ async function gsPostNoCors(payload) {
     mode: 'no-cors',
     headers: {'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify(payload)
+  });
+}
+
+function gerarConfirmacaoId() {
+  return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+}
+
+function gsPostViaForm(payload) {
+  if (APP_SECRET) payload.secret = APP_SECRET;
+  return new Promise(function(resolve) {
+    var id = 'gs_iframe_' + gerarConfirmacaoId();
+    var iframe = document.createElement('iframe');
+    iframe.name = id;
+    iframe.style.display = 'none';
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = APPS_SCRIPT_URL;
+    form.target = id;
+    form.enctype = 'application/x-www-form-urlencoded';
+    form.style.display = 'none';
+    var input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify(payload);
+    form.appendChild(input);
+    document.body.appendChild(iframe);
+    document.body.appendChild(form);
+    var finalizado = false;
+    function finalizar() {
+      if (finalizado) return;
+      finalizado = true;
+      setTimeout(function() {
+        try { form.remove(); } catch(e) {}
+        try { iframe.remove(); } catch(e) {}
+      }, 1000);
+      resolve();
+    }
+    iframe.onload = function() { setTimeout(finalizar, 800); };
+    form.submit();
+    setTimeout(finalizar, 3500);
   });
 }
 
@@ -1633,14 +1673,13 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
   }
 
   try {
-    await verificarAppsScriptAtualizado(46);
+    await verificarAppsScriptAtualizado(47);
   } catch(e) {
     if (erroAppsScriptVersaoAntiga(e)) {
       addMsg('msgs', 'BLOQUEADO: ' + e.message, false);
       showToast('Apps Script desatualizado', 'err');
       return;
     }
-    addMsg('msgs', 'Aviso: nao consegui verificar a versao do Apps Script. Vou tentar escrever e confirmar pela planilha.', false);
   }
 
   // Reconfere as abas no momento de escrever para evitar S antiga em cache.
@@ -1677,7 +1716,14 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
   addLoading('msgs');
   var payload = null;
   try {
-    payload = {acao: 'escreverNaPlanilha', aba:nomeAba, exercicios:exercicios, alunoNome: s ? s.name : ''};
+    payload = {
+      acao: 'escreverNaPlanilha',
+      aba: nomeAba,
+      exercicios: exercicios,
+      alunoNome: s ? s.name : '',
+      permitirSobrescrever: true,
+      confirmacaoId: gerarConfirmacaoId()
+    };
     payload.spreadsheetId = sheetId;
     if (cardioPayload.length > 0) {
       payload.perfilCardio = perfilCardioPayload;
@@ -1714,13 +1760,13 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
       showToast('Erro ao escrever', 'err');
     }
   } catch(e) {
-    addMsg('msgs', 'A resposta do Apps Script foi bloqueada pelo navegador (' + (e && e.message ? e.message : 'erro desconhecido') + '). Vou reenviar em modo compativel e confirmar pela planilha...', false);
     try {
-      await gsPostNoCors(payload);
-      var confirmado = await verificarEscritaViaSheetsApi(sheetId, nomeAba, exercicios.length);
+      addMsg('msgs', 'Confirmando escrita pelo modo compativel do Apps Script...', false);
+      await gsPostViaForm(payload);
+      var confirmado = await verificarEscritaViaSheetsApi(sheetId, nomeAba, exercicios.length, payload.confirmacaoId);
       removeLoading('msgs');
-      var msgCardioConfirmado = cardioPayload.length ? ' + cardio enviado' : '';
-      addMsg('msgs', confirmado.escritos + ' exercicios' + msgCardioConfirmado + ' confirmados na aba ' + confirmado.aba + '.<br><small>' + confirmado.aviso + '</small>', false);
+      var msgCardioConfirmado = cardioPayload.length ? ' + ' + cardioPayload.length + ' sessao(oes) de cardio' : '';
+      addMsg('msgs', confirmado.escritos + ' exercicios' + msgCardioConfirmado + ' escritos na aba ' + confirmado.aba + ' pelo Apps Script e confirmados pela planilha.', false);
       window._previewCardio = [];
       window._previewCardioCtx = null;
       registrarMesoNoMacro(confirmado.aba || nomeAba);
@@ -2268,7 +2314,7 @@ function esperar(ms) {
   return new Promise(function(resolve){ setTimeout(resolve, ms); });
 }
 
-async function verificarEscritaViaSheetsApi(sheetId, nomeAba, quantidadeExerciciosEsperada) {
+async function verificarEscritaViaSheetsApi(sheetId, nomeAba, quantidadeExerciciosEsperada, confirmacaoId) {
   var minimo = quantidadeExerciciosEsperada > 0 ? Math.max(1, Math.floor(quantidadeExerciciosEsperada * 0.6)) : 0;
   var ultimoErro = '';
   for (var tentativa = 0; tentativa < 5; tentativa++) {
@@ -2278,6 +2324,14 @@ async function verificarEscritaViaSheetsApi(sheetId, nomeAba, quantidadeExercici
       if ((abasInfo.abas || []).indexOf(nomeAba) === -1) {
         ultimoErro = 'A aba ' + nomeAba + ' ainda nao apareceu na planilha.';
         continue;
+      }
+      if (confirmacaoId) {
+        var marcador = await buscarValoresAbaViaSheetsApi(sheetId, nomeAba, 'Z1:Z1');
+        var valorMarcador = marcador && marcador[0] ? String(marcador[0][0] || '') : '';
+        if (valorMarcador !== 'coach_write_' + confirmacaoId) {
+          ultimoErro = 'A aba ' + nomeAba + ' existe, mas ainda nao recebeu a escrita valida do Apps Script.';
+          continue;
+        }
       }
       if (!quantidadeExerciciosEsperada) {
         return { sucesso: true, aba: nomeAba, escritos: 0, verificadoVia: 'sheets_api' };
@@ -2300,6 +2354,7 @@ async function verificarEscritaViaSheetsApi(sheetId, nomeAba, quantidadeExercici
   }
   throw new Error(ultimoErro || 'Nao consegui confirmar a escrita pela Sheets API.');
 }
+
 function useChip(el) { document.getElementById('ai-input').value=el.textContent; sendMsg(); }
 function useChip2(el) { document.getElementById('ai-input2').value=el.textContent; sendMsg2(); }
 

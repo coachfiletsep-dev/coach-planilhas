@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<!-- saved from url=(0073)file:///C:/Users/Lenovo/Documents/Aplicativo/Coach%20Planilhas%20v41.html -->
+<!-- saved from url=(0073)file:///C:/Users/Lenovo/Documents/Aplicativo/Coach%20Planilhas%20v43.html -->
 <html lang="pt-BR"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coach Planilhas v41</title>
+<title>Coach Planilhas v43</title>
 <style>
   :root {
     --green: #1D9E75;
@@ -100,6 +100,11 @@
   .macro-field input, .macro-field select, .macro-field textarea { width: 100%; border: .5px solid var(--border2); border-radius: var(--radius); padding: 7px 8px; font-size: 12px; background: var(--bg2); color: var(--text); outline: none; font-family: inherit; }
   .macro-field textarea { min-height: 62px; resize: vertical; line-height: 1.35; }
   .macro-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .macro-abas { display: flex; flex-wrap: wrap; gap: 5px; max-height: 92px; overflow: auto; padding: 7px; background: var(--bg2); border: .5px solid var(--border2); border-radius: var(--radius); }
+  .macro-abas label { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); border: .5px solid var(--border); border-radius: 99px; padding: 3px 8px; background: var(--bg); cursor: pointer; }
+  .macro-abas input { width: auto; }
+  .macro-mini { font-size: 10px; color: var(--text3); line-height: 1.35; margin-top: 4px; }
+  .macro-saved { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: .5px solid var(--border); }
   .macro-output { min-height: 520px; max-height: calc(100vh - 235px); overflow: auto; background: var(--bg); border: .5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; }
   .macro-empty { height: 100%; min-height: 420px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text3); font-size: 12px; line-height: 1.45; }
   .macro-result h2 { font-size: 18px; margin: 0 0 10px; }
@@ -299,7 +304,7 @@
         <input type="text" placeholder="Buscar aluno..." id="search-input" oninput="filterStudents()">
       </div>
     </div>
-    <div class="student-list" id="student-list"><div class="si"><div class="si-av">CM</div><div style="flex:1;min-width:0;"><div class="si-name">Caian Maroni</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si active"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fábio Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">DB</div><div style="flex:1;min-width:0;"><div class="si-name">Débora Bueno_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AP</div><div style="flex:1;min-width:0;"><div class="si-name">Ana Paula Oliveira_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">IM</div><div style="flex:1;min-width:0;"><div class="si-name">Iago Maroni_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">EF</div><div style="flex:1;min-width:0;"><div class="si-name">Eduardo Fernandes_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RR</div><div style="flex:1;min-width:0;"><div class="si-name">Rafhael Romero Bentos_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RC</div><div style="flex:1;min-width:0;"><div class="si-name">Raphael Castilho_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">WF</div><div style="flex:1;min-width:0;"><div class="si-name">Wendel Ferreira de Souza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">BA</div><div style="flex:1;min-width:0;"><div class="si-name">Bruna Araújo_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RP</div><div style="flex:1;min-width:0;"><div class="si-name">Renan Piro Braz do Carmo_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LC</div><div style="flex:1;min-width:0;"><div class="si-name">Layla Codogno_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">L</div><div style="flex:1;min-width:0;"><div class="si-name">Letícia  Bernardes Souza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">ET</div><div style="flex:1;min-width:0;"><div class="si-name">Eric Toyoda_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PM</div><div style="flex:1;min-width:0;"><div class="si-name">Patrick Mikhael dos Santos Barboza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">HS</div><div style="flex:1;min-width:0;"><div class="si-name">Hugo Silva Marques_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JM</div><div style="flex:1;min-width:0;"><div class="si-name">João Marcelo Lopes Gigi</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si active"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fábio Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PG</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Giroto</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LS</div><div style="flex:1;min-width:0;"><div class="si-name">Letícia Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fábio Santana</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PG</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Giroto</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">WF</div><div style="flex:1;min-width:0;"><div class="si-name">Wendel Ferreira de Souza</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">ET</div><div style="flex:1;min-width:0;"><div class="si-name">Eric Toyoda</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AR</div><div style="flex:1;min-width:0;"><div class="si-name">Anderson Rheinheimer</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AP</div><div style="flex:1;min-width:0;"><div class="si-name">Ana Paula Oliveira</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">EF</div><div style="flex:1;min-width:0;"><div class="si-name">Eduardo Fernendes</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">HB</div><div style="flex:1;min-width:0;"><div class="si-name">Henrique Bourroul</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">GG</div><div style="flex:1;min-width:0;"><div class="si-name">Giuseppe Gonzaga Dalio</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AM</div><div style="flex:1;min-width:0;"><div class="si-name">Afonso Medici Micheletti</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JB</div><div style="flex:1;min-width:0;"><div class="si-name">Joel Barbosa Moraes</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">HS</div><div style="flex:1;min-width:0;"><div class="si-name">Hugo Silva Marques</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">EA</div><div style="flex:1;min-width:0;"><div class="si-name">Eduardo Aragão Franklin Mesquita</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RP</div><div style="flex:1;min-width:0;"><div class="si-name">Renan Piro Braz do Carmo</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">MS</div><div style="flex:1;min-width:0;"><div class="si-name">Marcelo Silva</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">MD</div><div style="flex:1;min-width:0;"><div class="si-name">Marcelo de Carlis</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">BA</div><div style="flex:1;min-width:0;"><div class="si-name">Bruna Araujo Tavares de Souza</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PH</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Henrique Zirlis Naif de Andrade</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LC</div><div style="flex:1;min-width:0;"><div class="si-name">Layla Codogno</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LG</div><div style="flex:1;min-width:0;"><div class="si-name">Luis Guilherme Paulon Fontes</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PH</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Henrique Souza de Lima</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LS</div><div style="flex:1;min-width:0;"><div class="si-name">Leticia Santana</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AP</div><div style="flex:1;min-width:0;"><div class="si-name">Ana Paula Oliveira_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">IM</div><div style="flex:1;min-width:0;"><div class="si-name">Iago Maroni_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">EF</div><div style="flex:1;min-width:0;"><div class="si-name">Eduardo Fernandes_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">WF</div><div style="flex:1;min-width:0;"><div class="si-name">Wendel Ferreira de Souza_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">BA</div><div style="flex:1;min-width:0;"><div class="si-name">Bruna Araújo_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">GG</div><div style="flex:1;min-width:0;"><div class="si-name">Giuseppe Gonzaga Dalio</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RP</div><div style="flex:1;min-width:0;"><div class="si-name">Renan Piro Braz do Carmo_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PH</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Henrique Souza de Lima_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LC</div><div style="flex:1;min-width:0;"><div class="si-name">Layla Codogno_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PH</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Henrique Zirlis Naif de Andrade_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">ET</div><div style="flex:1;min-width:0;"><div class="si-name">Eric Toyoda_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PM</div><div style="flex:1;min-width:0;"><div class="si-name">Patrick Mikhael dos Santos Barboza_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JB</div><div style="flex:1;min-width:0;"><div class="si-name">Joel Barbosa Moraes_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">HS</div><div style="flex:1;min-width:0;"><div class="si-name">Hugo Silva Marques_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JM</div><div style="flex:1;min-width:0;"><div class="si-name">João Marcelo Lopes Gigi</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div></div>
+    <div class="student-list" id="student-list"><div class="si"><div class="si-av">CM</div><div style="flex:1;min-width:0;"><div class="si-name">Caian Maroni</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fábio Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">DB</div><div style="flex:1;min-width:0;"><div class="si-name">Débora Bueno_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AP</div><div style="flex:1;min-width:0;"><div class="si-name">Ana Paula Oliveira_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">IM</div><div style="flex:1;min-width:0;"><div class="si-name">Iago Maroni_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">EF</div><div style="flex:1;min-width:0;"><div class="si-name">Eduardo Fernandes_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RR</div><div style="flex:1;min-width:0;"><div class="si-name">Rafhael Romero Bentos_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RC</div><div style="flex:1;min-width:0;"><div class="si-name">Raphael Castilho_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">WF</div><div style="flex:1;min-width:0;"><div class="si-name">Wendel Ferreira de Souza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">BA</div><div style="flex:1;min-width:0;"><div class="si-name">Bruna Araújo_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RP</div><div style="flex:1;min-width:0;"><div class="si-name">Renan Piro Braz do Carmo_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LC</div><div style="flex:1;min-width:0;"><div class="si-name">Layla Codogno_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">L</div><div style="flex:1;min-width:0;"><div class="si-name">Letícia  Bernardes Souza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">ET</div><div style="flex:1;min-width:0;"><div class="si-name">Eric Toyoda_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PM</div><div style="flex:1;min-width:0;"><div class="si-name">Patrick Mikhael dos Santos Barboza_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">HS</div><div style="flex:1;min-width:0;"><div class="si-name">Hugo Silva Marques_2026</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JM</div><div style="flex:1;min-width:0;"><div class="si-name">João Marcelo Lopes Gigi</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fábio Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PG</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Giroto</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LS</div><div style="flex:1;min-width:0;"><div class="si-name">Letícia Santana</div><div class="si-meta">Ativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">FS</div><div style="flex:1;min-width:0;"><div class="si-name">Fábio Santana</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PG</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Giroto</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">WF</div><div style="flex:1;min-width:0;"><div class="si-name">Wendel Ferreira de Souza</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">ET</div><div style="flex:1;min-width:0;"><div class="si-name">Eric Toyoda</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AR</div><div style="flex:1;min-width:0;"><div class="si-name">Anderson Rheinheimer</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AP</div><div style="flex:1;min-width:0;"><div class="si-name">Ana Paula Oliveira</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">EF</div><div style="flex:1;min-width:0;"><div class="si-name">Eduardo Fernendes</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">HB</div><div style="flex:1;min-width:0;"><div class="si-name">Henrique Bourroul</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">GG</div><div style="flex:1;min-width:0;"><div class="si-name">Giuseppe Gonzaga Dalio</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AM</div><div style="flex:1;min-width:0;"><div class="si-name">Afonso Medici Micheletti</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JB</div><div style="flex:1;min-width:0;"><div class="si-name">Joel Barbosa Moraes</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">HS</div><div style="flex:1;min-width:0;"><div class="si-name">Hugo Silva Marques</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">EA</div><div style="flex:1;min-width:0;"><div class="si-name">Eduardo Aragão Franklin Mesquita</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RP</div><div style="flex:1;min-width:0;"><div class="si-name">Renan Piro Braz do Carmo</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">MS</div><div style="flex:1;min-width:0;"><div class="si-name">Marcelo Silva</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">MD</div><div style="flex:1;min-width:0;"><div class="si-name">Marcelo de Carlis</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">BA</div><div style="flex:1;min-width:0;"><div class="si-name">Bruna Araujo Tavares de Souza</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PH</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Henrique Zirlis Naif de Andrade</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LC</div><div style="flex:1;min-width:0;"><div class="si-name">Layla Codogno</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LG</div><div style="flex:1;min-width:0;"><div class="si-name">Luis Guilherme Paulon Fontes</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PH</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Henrique Souza de Lima</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LS</div><div style="flex:1;min-width:0;"><div class="si-name">Leticia Santana</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">AP</div><div style="flex:1;min-width:0;"><div class="si-name">Ana Paula Oliveira_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">IM</div><div style="flex:1;min-width:0;"><div class="si-name">Iago Maroni_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">EF</div><div style="flex:1;min-width:0;"><div class="si-name">Eduardo Fernandes_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">WF</div><div style="flex:1;min-width:0;"><div class="si-name">Wendel Ferreira de Souza_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">BA</div><div style="flex:1;min-width:0;"><div class="si-name">Bruna Araújo_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">GG</div><div style="flex:1;min-width:0;"><div class="si-name">Giuseppe Gonzaga Dalio</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">RP</div><div style="flex:1;min-width:0;"><div class="si-name">Renan Piro Braz do Carmo_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PH</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Henrique Souza de Lima_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">LC</div><div style="flex:1;min-width:0;"><div class="si-name">Layla Codogno_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PH</div><div style="flex:1;min-width:0;"><div class="si-name">Pedro Henrique Zirlis Naif de Andrade_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">ET</div><div style="flex:1;min-width:0;"><div class="si-name">Eric Toyoda_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">PM</div><div style="flex:1;min-width:0;"><div class="si-name">Patrick Mikhael dos Santos Barboza_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JB</div><div style="flex:1;min-width:0;"><div class="si-name">Joel Barbosa Moraes_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">HS</div><div style="flex:1;min-width:0;"><div class="si-name">Hugo Silva Marques_2026</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div><div class="si"><div class="si-av">JM</div><div style="flex:1;min-width:0;"><div class="si-name">João Marcelo Lopes Gigi</div><div class="si-meta">Inativo</div></div><div class="si-dot"></div></div></div>
 
     <div style="flex-shrink:0;padding:.5rem;display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--border);">
       <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
@@ -316,17 +321,17 @@
   </div>
 
   <div class="panel">
-    <div class="empty" id="empty-state" style="display: none;">
+    <div class="empty" id="empty-state">
       <div class="empty-icon">👥</div>
       <p>Selecione um aluno ou adicione um novo</p>
     </div>
-    <div id="student-view" style="display: flex; flex-direction: column; flex: 1 1 0%;">
+    <div id="student-view" style="display:none;flex-direction:column;flex:1;">
       <div class="panel-header">
         <div class="ph-left">
-          <div class="ph-av" id="ph-av">FS</div>
+          <div class="ph-av" id="ph-av">—</div>
           <div>
-            <div class="ph-name" id="ph-name">Fábio Santana</div>
-            <div class="ph-meta" id="ph-meta">Ativo</div>
+            <div class="ph-name" id="ph-name">—</div>
+            <div class="ph-meta" id="ph-meta">—</div>
           </div>
         </div>
         <div class="ph-actions">
@@ -341,11 +346,11 @@
         </div>
       </div>
       <div class="tabs">
-        <button class="tab" onclick="switchTab(&#39;treino&#39;,this)">Ações</button>
+        <button class="tab active" onclick="switchTab(&#39;treino&#39;,this)">Ações</button>
         <button class="tab" onclick="switchTab(&#39;ia&#39;,this)">Assistente IA</button>
-        <button class="tab active" onclick="switchTab(&#39;macro&#39;,this)">Macrociclo</button>
+        <button class="tab" onclick="switchTab(&#39;macro&#39;,this)">Macrociclo</button>
       </div>
-      <div class="tab-body" id="tab-treino" style="display: none;">
+      <div class="tab-body" id="tab-treino">
         <div class="ag">
           <button class="ac" onclick="runSheetAction(&#39;seg_qui&#39;)">
             <div class="ac-icon">📅</div>
@@ -379,7 +384,7 @@
             <span style="font-size:12px;font-weight:600;">Assistente IA</span>
             <span class="ai-badge">Claude</span>
           </div>
-          <div class="messages" id="msgs"><div class="msg msg-ai">Pronto para trabalhar com <strong>Fábio Santana</strong>.  Como posso ajudar?</div></div>
+          <div class="messages" id="msgs"></div>
           <div class="chips">
             <button class="chip" onclick="useChip(this)">Analisar mesociclo</button>
             <button class="chip" onclick="useChip(this)">Sugerir progressão de carga</button>
@@ -399,7 +404,7 @@
             <span style="font-size:12px;font-weight:600;">Chat completo</span>
             <span class="ai-badge">Claude</span>
           </div>
-          <div class="messages" id="msgs2" style="max-height:400px;"><div class="msg msg-ai">Chat aberto para Fábio Santana. Pergunte sobre programação, progressão ou qualquer ajuste.</div></div>
+          <div class="messages" id="msgs2" style="max-height:400px;"></div>
           <div class="chips">
             <button class="chip" onclick="useChip2(this)">Criar meso do zero</button>
             <button class="chip" onclick="useChip2(this)">Exercícios alternativos</button>
@@ -411,7 +416,7 @@
           </div>
         </div>
       </div>
-      <div class="tab-body" id="tab-macro" style="display: block;">
+      <div class="tab-body" id="tab-macro" style="display:none;">
         <div class="macro-grid">
           <div class="macro-panel">
             <div class="macro-title">Planejamento anual</div>
@@ -420,12 +425,19 @@
             <div class="macro-row">
               <div class="macro-field">
                 <label>Duracao</label>
-                <select id="macro-duracao">
-                  <option value="12 meses">12 meses</option>
-                  <option value="9 meses">9 meses</option>
-                  <option value="6 meses">6 meses</option>
-                  <option value="16 semanas">16 semanas</option>
-                </select>
+                <input id="macro-duracao" type="text" value="6 meses" list="macro-duracoes" placeholder="Ex.: 6 meses, 20 semanas">
+                <datalist id="macro-duracoes">
+                  <option value="3 meses"></option>
+                  <option value="4 meses"></option>
+                  <option value="5 meses"></option>
+                  <option value="6 meses"></option>
+                  <option value="8 meses"></option>
+                  <option value="9 meses"></option>
+                  <option value="12 meses"></option>
+                  <option value="16 semanas"></option>
+                  <option value="20 semanas"></option>
+                  <option value="24 semanas"></option>
+                </datalist>
               </div>
               <div class="macro-field">
                 <label>Nivel</label>
@@ -435,6 +447,18 @@
                   <option value="avancado">Avancado</option>
                 </select>
               </div>
+            </div>
+
+            <div class="macro-field">
+              <label>Mes de inicio</label>
+              <input id="macro-inicio" type="text" value="Junho" list="macro-meses" placeholder="Ex.: Junho">
+              <datalist id="macro-meses">
+                <option value="Janeiro"></option><option value="Fevereiro"></option><option value="Marco"></option>
+                <option value="Abril"></option><option value="Maio"></option><option value="Junho"></option>
+                <option value="Julho"></option><option value="Agosto"></option><option value="Setembro"></option>
+                <option value="Outubro"></option><option value="Novembro"></option><option value="Dezembro"></option>
+              </datalist>
+              <div class="macro-mini" id="macro-periodo-preview">Periodo estimado: Junho a Novembro</div>
             </div>
 
             <div class="macro-row">
@@ -480,13 +504,43 @@
               <textarea id="macro-extra" placeholder="Detalhes de rotina, calendario, viagens, competicoes, fases importantes..."></textarea>
             </div>
 
+            <div class="macro-field">
+              <label>Abas para analisar no historico</label>
+              <div class="macro-abas" id="macro-abas-lista">
+                <span style="font-size:11px;color:var(--text3)">Abra a aba Macrociclo para carregar as semanas.</span>
+              </div>
+              <div class="macro-actions" style="margin-top:6px;">
+                <button class="btn-ghost" onclick="carregarAbasMacrociclo(true)">Carregar abas</button>
+                <button class="btn-ghost" onclick="selecionarAbasMacro(&#39;ultimas4&#39;)">Ultimas 4</button>
+                <button class="btn-ghost" onclick="selecionarAbasMacro(&#39;limpar&#39;)">Limpar</button>
+              </div>
+              <div class="macro-mini">O modo "Usar historico" analisara somente as abas marcadas.</div>
+            </div>
+
             <div class="macro-actions">
               <button class="btn-green" onclick="gerarMacrociclo(&#39;zero&#39;)">Criar do zero</button>
               <button class="btn-ghost" onclick="gerarMacrociclo(&#39;historico&#39;)">Usar historico</button>
             </div>
+            <div class="macro-saved">
+              <button class="btn-ghost" onclick="salvarMacroAtual()">Salvar macro</button>
+              <button class="btn-ghost" onclick="abrirMacroSalvo()">Abrir salvo</button>
+            </div>
+
+            <div class="macro-field" style="margin-top:12px;">
+              <label>Ajustar macro gerado</label>
+              <textarea id="macro-ajuste" placeholder="Ex.: reduzir volume de perna no primeiro bloco, trocar foco para costas, adicionar cardio..."></textarea>
+              <div class="macro-actions">
+                <button class="btn-green" onclick="ajustarMacrociclo()">Conversar e ajustar</button>
+              </div>
+            </div>
           </div>
 
-          <div class="macro-output" id="macro-output"><div class="macro-empty">Macrociclo pronto para Fábio Santana.<br>Preencha o contexto e escolha criar do zero ou usar historico.</div></div>
+          <div class="macro-output" id="macro-output">
+            <div class="macro-empty">
+              Selecione um aluno, preencha o contexto e escolha uma porta de entrada.<br>
+              O resultado vira um mapa anual para aprovar antes de gerar cada mesociclo.
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -670,6 +724,11 @@
           <option value="1h15">1h15 (até 24 séries/sessão)</option>
           <option value="1h30">1h30 (até 28 séries/sessão)</option>
         </select>
+      </div>
+      <div class="fl" id="meso-macro-box" style="display:none;">
+        <label style="font-weight:600;">Bloco do macrociclo</label>
+        <select id="meso-macro-bloco" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"></select>
+        <div id="meso-macro-resumo" style="font-size:11px;color:var(--text3);padding:7px 8px;background:var(--bg2);border-radius:var(--radius);line-height:1.4;"></div>
       </div>
       <div class="fl">
         <label>Briefing do aluno e instruções do novo meso</label>
@@ -962,7 +1021,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
 </div>
 
 <script>
-const APP_VERSION = 'v41';
+const APP_VERSION = 'v43';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM3xuEYX3XLmhPRdSNTZ4r6x94yqME9yC9JekFZlxs0CgMVV890woiMcGUKiVfPIsXrw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 
@@ -1365,6 +1424,8 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
       if (resumoVolume) addMsg('msgs', resumoVolume, false);
       window._previewCardio = [];
       window._previewCardioCtx = null;
+      registrarMesoNoMacro(abaFinal);
+      window._macroMesoCtx = null;
       await atualizarAbasDoAlunoAtual();
       showToast('Planilha atualizada!', 'ok');
     } else if (data.errosValidacao) {
@@ -1577,6 +1638,118 @@ async function atualizarAbasDoAlunoAtual() {
 function useChip(el) { document.getElementById('ai-input').value=el.textContent; sendMsg(); }
 function useChip2(el) { document.getElementById('ai-input2').value=el.textContent; sendMsg2(); }
 
+function carregarMacroSalvoObjeto() {
+  var raw = localStorage.getItem(chaveMacroSalvoAluno());
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch(e) { return null; }
+}
+
+function extrairBlocosDoMacro(markdown) {
+  var linhas = String(markdown || '').split(/\r?\n/);
+  var blocos = [];
+  for (var i = 0; i < linhas.length; i++) {
+    var linha = linhas[i].trim();
+    if (!/^\|.+\|$/.test(linha)) continue;
+    var header = linha.toLowerCase();
+    if (header.indexOf('bloco') === -1 || (header.indexOf('objetivo') === -1 && header.indexOf('fase') === -1)) continue;
+    var headers = linha.split('|').slice(1, -1).map(function(h){ return h.trim(); });
+    i += 2;
+    while (i < linhas.length && /^\|.+\|$/.test(linhas[i].trim())) {
+      var cols = linhas[i].split('|').slice(1, -1).map(function(c){ return c.trim(); });
+      var obj = { raw: linhas[i].trim() };
+      headers.forEach(function(h, idx) { obj[h.toLowerCase()] = cols[idx] || ''; });
+      var bloco = obj.bloco || obj['bloco/fase'] || cols[0] || ('Bloco ' + (blocos.length + 1));
+      var periodo = obj['semanas/meses'] || obj.semanas || obj.meses || obj.periodo || cols[1] || '';
+      var fase = obj.fase || cols[2] || '';
+      var objetivo = obj.objetivo || cols[3] || '';
+      var estrategia = obj.estrategia || cols[4] || '';
+      blocos.push({
+        id: String(blocos.length),
+        bloco: bloco,
+        periodo: periodo,
+        fase: fase,
+        objetivo: objetivo,
+        estrategia: estrategia,
+        raw: obj.raw,
+        label: bloco + (periodo ? ' - ' + periodo : '') + (fase ? ' | ' + fase : '')
+      });
+      i++;
+    }
+  }
+  return blocos;
+}
+
+function renderMesoMacroOptions() {
+  var box = document.getElementById('meso-macro-box');
+  var sel = document.getElementById('meso-macro-bloco');
+  var resumo = document.getElementById('meso-macro-resumo');
+  if (!box || !sel || !resumo) return;
+  var macro = carregarMacroSalvoObjeto();
+  window._macroMesoDisponivel = macro;
+  window._macroBlocosDisponiveis = macro ? extrairBlocosDoMacro(macro.markdown) : [];
+  sel.innerHTML = '';
+  if (!macro || !macro.markdown) {
+    box.style.display = 'none';
+    window._macroMesoDisponivel = null;
+    window._macroBlocosDisponiveis = [];
+    return;
+  }
+  box.style.display = 'flex';
+  var optLivre = document.createElement('option');
+  optLivre.value = '';
+  optLivre.textContent = 'Usar macro geral, sem bloco especifico';
+  sel.appendChild(optLivre);
+  window._macroBlocosDisponiveis.forEach(function(b) {
+    var opt = document.createElement('option');
+    opt.value = b.id;
+    opt.textContent = b.label;
+    sel.appendChild(opt);
+  });
+  if (window._macroBlocosDisponiveis.length) sel.value = window._macroBlocosDisponiveis[0].id;
+  sel.onchange = atualizarResumoBlocoMeso;
+  atualizarResumoBlocoMeso();
+}
+
+function atualizarResumoBlocoMeso() {
+  var sel = document.getElementById('meso-macro-bloco');
+  var resumo = document.getElementById('meso-macro-resumo');
+  if (!sel || !resumo) return;
+  var macro = window._macroMesoDisponivel;
+  if (!macro) { resumo.textContent = ''; return; }
+  var bloco = (window._macroBlocosDisponiveis || []).find(function(b){ return b.id === sel.value; });
+  if (bloco) {
+    resumo.textContent = 'Este mesociclo sera criado como execucao de: ' + bloco.label + '. Objetivo: ' + (bloco.objetivo || 'nao identificado') + '.';
+  } else {
+    resumo.textContent = 'O macro salvo sera usado como norte geral do mesociclo.';
+  }
+}
+
+function obterContextoMacroParaMeso() {
+  var macro = window._macroMesoDisponivel || carregarMacroSalvoObjeto();
+  if (!macro || !macro.markdown) return null;
+  var sel = document.getElementById('meso-macro-bloco');
+  var bloco = sel ? (window._macroBlocosDisponiveis || []).find(function(b){ return b.id === sel.value; }) : null;
+  return {
+    macro: macro,
+    bloco: bloco || null,
+    texto: bloco ? bloco.raw : String(macro.markdown || '').slice(0, 5000)
+  };
+}
+
+function registrarMesoNoMacro(abaFinal) {
+  var ctx = window._macroMesoCtx;
+  if (!ctx || !ctx.macro) return;
+  var macro = carregarMacroSalvoObjeto() || ctx.macro;
+  if (!macro.mesosGerados) macro.mesosGerados = [];
+  macro.mesosGerados.push({
+    aba: abaFinal || window._previewAba || '',
+    bloco: ctx.bloco ? ctx.bloco.label : 'Macro geral',
+    data: new Date().toISOString()
+  });
+  localStorage.setItem(chaveMacroSalvoAluno(), JSON.stringify(macro));
+  window._macroAtual = macro;
+}
+
 async function runAction(type) {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
   window._nomeAluno = s.name;
@@ -1585,6 +1758,7 @@ async function runAction(type) {
   document.getElementById('meso-abas-loading').style.display = 'block';
   document.getElementById('meso-abas-lista').style.display = 'none';
   document.getElementById('meso-modal').style.display = 'flex';
+  renderMesoMacroOptions();
 
   try {
     var estado = await atualizarAbasDoAlunoAtual();
@@ -1846,6 +2020,8 @@ async function confirmarNovoMeso() {
   const instrucoes = document.getElementById('meso-instrucoes').value.trim();
   const tempoSessao = document.getElementById('meso-tempo').value;
   const cardioCtx = getCardioContext();
+  const macroMesoCtx = obterContextoMacroParaMeso();
+  window._macroMesoCtx = macroMesoCtx;
   window._previewCardioCtx = null;
   if (cardioCtx && (!cardioCtx.sessoes || cardioCtx.sessoes.length === 0)) {
     showToast('Marque pelo menos um dia de aeróbio', 'err');
@@ -1918,6 +2094,31 @@ async function confirmarNovoMeso() {
   if (instrucoes) prompt += 'Briefing do aluno e instrucoes do coach: ' + instrucoes + '\n';
   if (window._obsAluno) prompt += 'Observações do aluno: ' + window._obsAluno + '\n';
   if (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length) prompt += 'Use SOMENTE estes dias de musculação: ' + window._diasPermitidosNovoMeso.join(', ') + '.\n';
+  if (macroMesoCtx) {
+    prompt += '\n=== MACROCICLO SALVO DO ALUNO ===\n';
+    if (macroMesoCtx.macro && macroMesoCtx.macro.ctx) {
+      prompt += 'Contexto do macro: ' + JSON.stringify(macroMesoCtx.macro.ctx).slice(0, 2500) + '\n';
+    }
+    if (macroMesoCtx.bloco) {
+      prompt += 'BLOCO ATUAL DO MACRO (este mesociclo deve executar este bloco):\n';
+      prompt += JSON.stringify({
+        bloco: macroMesoCtx.bloco.bloco,
+        periodo: macroMesoCtx.bloco.periodo,
+        fase: macroMesoCtx.bloco.fase,
+        objetivo: macroMesoCtx.bloco.objetivo,
+        estrategia: macroMesoCtx.bloco.estrategia,
+        linhaOriginal: macroMesoCtx.bloco.raw
+      }) + '\n';
+      prompt += 'Interprete objetivo, fase, estrategia, deload/reavaliacao e prioridades deste bloco. O treino da planilha deve ser uma aplicacao pratica dele, nao um meso solto.\n';
+    } else {
+      prompt += 'Use o macrociclo abaixo como plano-mae do aluno. Escolha o melhor encaixe para o proximo mesociclo de acordo com a proxima aba, historico e briefing:\n';
+      prompt += macroMesoCtx.texto + '\n';
+    }
+    if (macroMesoCtx.macro && macroMesoCtx.macro.mesosGerados && macroMesoCtx.macro.mesosGerados.length) {
+      prompt += 'Mesociclos ja gerados a partir do macro: ' + JSON.stringify(macroMesoCtx.macro.mesosGerados).slice(0, 1800) + '\n';
+    }
+    prompt += 'Ao montar exercicios, volume, intensidade, RIR, deload, cardio e prioridades, respeite a fase do macro e avance a estrategia anual de forma logica.\n';
+  }
 
   // Cardio context
   if (cardioCtx) {
@@ -2000,6 +2201,36 @@ function chaveMacroAluno() {
   return 'coach_macro_ctx_' + (selectedId || 'sem_aluno');
 }
 
+function chaveMacroSalvoAluno() {
+  return 'coach_macro_saved_' + (selectedId || 'sem_aluno');
+}
+
+function normalizarTextoMacro(txt) {
+  var s = String(txt || '').toLowerCase().trim();
+  try { s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch(e) {}
+  return s;
+}
+
+function calcularPeriodoMacro(duracao, inicio) {
+  var meses = ['janeiro','fevereiro','marco','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  var mesesLabel = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var ini = meses.indexOf(normalizarTextoMacro(inicio));
+  if (ini < 0) return '';
+  var textoDuracao = normalizarTextoMacro(duracao);
+  var numero = parseInt((textoDuracao.match(/\d+/) || [0])[0], 10);
+  if (!numero) return mesesLabel[ini];
+  var qtdMeses = textoDuracao.indexOf('semana') > -1 ? Math.ceil(numero / 4) : numero;
+  var fim = (ini + Math.max(qtdMeses, 1) - 1) % 12;
+  return mesesLabel[ini] + ' a ' + mesesLabel[fim];
+}
+
+function atualizarPreviewPeriodoMacro() {
+  var el = document.getElementById('macro-periodo-preview');
+  if (!el) return;
+  var periodo = calcularPeriodoMacro(macroCampo('macro-duracao'), macroCampo('macro-inicio'));
+  el.textContent = periodo ? 'Periodo estimado: ' + periodo : 'Informe duracao e mes inicial para calcular o periodo.';
+}
+
 function carregarContextoMacroAluno() {
   var s = students.find(function(x){ return x.id === selectedId; });
   if (!s) return;
@@ -2008,10 +2239,15 @@ function carregarContextoMacroAluno() {
   if (salvo) {
     try { ctx = JSON.parse(salvo); } catch(e) { ctx = {}; }
   }
-  ['duracao','nivel','dias','tempo','objetivo','prioridades','limitacoes','recursos','extra'].forEach(function(k) {
+  ['duracao','inicio','nivel','dias','tempo','objetivo','prioridades','limitacoes','recursos','extra'].forEach(function(k) {
     var el = document.getElementById('macro-' + k);
     if (el && ctx[k]) el.value = ctx[k];
   });
+  var dur = document.getElementById('macro-duracao');
+  var ini = document.getElementById('macro-inicio');
+  if (dur) dur.oninput = atualizarPreviewPeriodoMacro;
+  if (ini) ini.oninput = atualizarPreviewPeriodoMacro;
+  atualizarPreviewPeriodoMacro();
   var out = document.getElementById('macro-output');
   if (out && !out.dataset.temResultado) {
     out.innerHTML = '<div class="macro-empty">Macrociclo pronto para ' + escapeMacroHtml(s.name) + '.<br>Preencha o contexto e escolha criar do zero ou usar historico.</div>';
@@ -2024,6 +2260,8 @@ function coletarContextoMacro() {
     aluno: s ? s.name : '',
     obsAluno: s ? (s.obs || '') : '',
     duracao: macroCampo('macro-duracao'),
+    inicio: macroCampo('macro-inicio'),
+    periodoEstimado: calcularPeriodoMacro(macroCampo('macro-duracao'), macroCampo('macro-inicio')),
     nivel: macroCampo('macro-nivel'),
     dias: macroCampo('macro-dias'),
     tempo: macroCampo('macro-tempo'),
@@ -2037,6 +2275,63 @@ function coletarContextoMacro() {
 
 function salvarContextoMacro(ctx) {
   localStorage.setItem(chaveMacroAluno(), JSON.stringify(ctx));
+}
+
+async function carregarAbasMacrociclo(forcar) {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  var lista = document.getElementById('macro-abas-lista');
+  if (!lista || !s) return;
+  if (lista.dataset.carregado === selectedId && !forcar) return;
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) {
+    lista.innerHTML = '<span style="font-size:11px;color:var(--red)">Planilha nao configurada.</span>';
+    return;
+  }
+  lista.innerHTML = '<span style="font-size:11px;color:var(--text3)">Carregando abas...</span>';
+  try {
+    var res = await fetch(APPS_SCRIPT_URL + '?action=getAbas&spreadsheetId=' + sheetId);
+    var data = await res.json();
+    var abas = data.abas || [];
+    lista.dataset.carregado = selectedId;
+    lista.innerHTML = '';
+    if (!abas.length) {
+      lista.innerHTML = '<span style="font-size:11px;color:var(--text3)">Nenhuma aba S encontrada.</span>';
+      return;
+    }
+    abas.forEach(function(aba, idx) {
+      var label = document.createElement('label');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = aba;
+      cb.checked = idx >= Math.max(0, abas.length - 4);
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(aba));
+      lista.appendChild(label);
+    });
+  } catch(e) {
+    lista.innerHTML = '<span style="font-size:11px;color:var(--red)">Erro ao carregar abas.</span>';
+  }
+}
+
+function getAbasMacroSelecionadas() {
+  var lista = document.getElementById('macro-abas-lista');
+  var abas = [];
+  if (!lista) return abas;
+  lista.querySelectorAll('input:checked').forEach(function(cb) { abas.push(cb.value); });
+  return abas;
+}
+
+function selecionarAbasMacro(modo) {
+  var lista = document.getElementById('macro-abas-lista');
+  if (!lista) return;
+  var checks = Array.prototype.slice.call(lista.querySelectorAll('input[type="checkbox"]'));
+  if (modo === 'limpar') {
+    checks.forEach(function(cb) { cb.checked = false; });
+    return;
+  }
+  if (modo === 'ultimas4') {
+    checks.forEach(function(cb, idx) { cb.checked = idx >= Math.max(0, checks.length - 4); });
+  }
 }
 
 function escapeMacroHtml(txt) {
@@ -2094,6 +2389,61 @@ function renderMacroMarkdown(md, meta) {
   out.innerHTML = '<div class="macro-result">' + kpis + html + '</div>';
 }
 
+function salvarMacroAtual() {
+  if (!window._macroAtual || !window._macroAtual.markdown) {
+    showToast('Gere um macrociclo antes de salvar', 'err');
+    return;
+  }
+  window._macroAtual.salvoEm = new Date().toISOString();
+  localStorage.setItem(chaveMacroSalvoAluno(), JSON.stringify(window._macroAtual));
+  showToast('Macrociclo salvo!', 'ok');
+}
+
+function abrirMacroSalvo() {
+  var raw = localStorage.getItem(chaveMacroSalvoAluno());
+  if (!raw) { showToast('Nenhum macro salvo para este aluno', 'err'); return; }
+  try {
+    var macro = JSON.parse(raw);
+    window._macroAtual = macro;
+    renderMacroMarkdown(macro.markdown, macro.meta || null);
+    showToast('Macrociclo salvo aberto', 'ok');
+  } catch(e) {
+    showToast('Erro ao abrir macro salvo', 'err');
+  }
+}
+
+async function ajustarMacrociclo() {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  var ajuste = macroCampo('macro-ajuste');
+  if (!ajuste) { showToast('Escreva o ajuste desejado', 'err'); return; }
+  if (!window._macroAtual || !window._macroAtual.markdown) {
+    showToast('Gere ou abra um macrociclo antes de ajustar', 'err');
+    return;
+  }
+  var out = document.getElementById('macro-output');
+  out.innerHTML = '<div class="macro-empty">Ajustando o macrociclo com base no seu pedido...</div>';
+  try {
+    var ctx = coletarContextoMacro();
+    salvarContextoMacro(ctx);
+    var prompt = 'Reescreva o macrociclo abaixo atendendo ao ajuste pedido pelo coach.\n\n' +
+      'ALUNO: ' + s.name + '\n' +
+      'CONTEXTO ATUAL: ' + JSON.stringify(ctx) + '\n\n' +
+      'MACROCICLO ATUAL:\n' + window._macroAtual.markdown + '\n\n' +
+      'AJUSTE SOLICITADO:\n' + ajuste + '\n\n' +
+      'Mantenha a mesma estrutura em markdown: Diagnostico estrategico, Mapa do macrociclo em tabela, Logica de progressao e Proximo mesociclo sugerido. Retorne apenas a nova versao.';
+    var system = getSystemPrompt() + '\n\nVoce revisa periodizacao anual com base em autores classicos e contemporaneos da musculacao, sem citar bibliografia longa se isso nao ajudar a decisao pratica.';
+    var reply = await callClaude([{ role: 'user', content: prompt }], system, 4500);
+    var meta = { duracao: ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: 'Ajustado' };
+    window._macroAtual = { markdown: reply, ctx: ctx, meta: meta, ajuste: ajuste, atualizadoEm: new Date().toISOString() };
+    renderMacroMarkdown(reply, meta);
+    showToast('Macrociclo ajustado!', 'ok');
+  } catch(e) {
+    out.innerHTML = '<div class="macro-empty" style="color:var(--red)">Erro ao ajustar:<br>' + escapeMacroHtml(e.message) + '</div>';
+    showToast('Erro ao ajustar macro', 'err');
+  }
+}
+
 function formatMacroInline(txt) {
   return escapeMacroHtml(txt).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 }
@@ -2103,6 +2453,8 @@ function montarPromptMacrociclo(ctx, historico) {
     'Aluno: ' + ctx.aluno + '\n' +
     'Observacoes cadastradas: ' + (ctx.obsAluno || 'sem observacoes') + '\n' +
     'Duracao: ' + ctx.duracao + '\n' +
+    'Mes de inicio: ' + (ctx.inicio || 'nao informado') + '\n' +
+    'Periodo estimado: ' + (ctx.periodoEstimado || 'nao calculado') + '\n' +
     'Objetivo principal: ' + ctx.objetivo + '\n' +
     'Nivel: ' + ctx.nivel + '\n' +
     'Dias por semana: ' + ctx.dias + '\n' +
@@ -2127,7 +2479,8 @@ function montarPromptMacrociclo(ctx, historico) {
     'Explique volume, intensidade, RIR/falha, troca de exercicios e cardio.\n\n' +
     '## Proximo mesociclo sugerido\n' +
     'Descreva o primeiro bloco pratico: foco, divisao semanal, prioridades, cuidados e o que medir ao final.\n\n' +
-    'Regras: nao engesse 52 semanas; pense como mapa anual adaptativo; inclua deloads; use tom profissional e direto do Coach Felipe.';
+    'Regras: nao engesse 52 semanas; pense como mapa anual adaptativo; inclua deloads; use os meses reais do periodo estimado para situar o coach no ano; use tom profissional e direto do Coach Felipe.\n\n' +
+    'Base teorica: use como pano de fundo os principios de periodizacao, progressao, variacao, especificidade, fadiga e recuperacao associados a autores como Tudor Bompa, Vladimir Issurin, Yuri Verkhoshansky, Michael Stone, William Kraemer, Steven Fleck, Brad Schoenfeld, Eric Helms, Mike Israetel, Greg Nuckols, Antonio Carlos Gomes, Paulo Gentil, Roberto Simao e outros autores relevantes da musculacao e treinamento de forca. Nao transforme a resposta em aula teorica; cite autores apenas quando isso justificar uma decisao pratica do macro.';
   return prompt;
 }
 
@@ -2150,7 +2503,13 @@ async function gerarMacrociclo(modo) {
         return;
       }
       out.innerHTML = '<div class="macro-empty">Lendo historico das abas anteriores...</div>';
-      var resHist = await gsPost({ lerHistoricoMacrociclo: true, spreadsheetId: sheetId, limiteAbas: 12 });
+      var abasSelecionadas = getAbasMacroSelecionadas();
+      if (!abasSelecionadas.length) {
+        out.innerHTML = '<div class="macro-empty" style="color:var(--red)">Selecione pelo menos uma aba para analisar o historico.</div>';
+        showToast('Selecione as abas do historico', 'err');
+        return;
+      }
+      var resHist = await gsPost({ lerHistoricoMacrociclo: true, spreadsheetId: sheetId, limiteAbas: 12, abasSelecionadas: abasSelecionadas });
       historico = await resHist.json();
       if (!historico.sucesso) throw new Error(historico.erro || 'Nao foi possivel ler o historico');
       out.innerHTML = '<div class="macro-empty">Historico lido. Agora a IA esta desenhando a sequencia do ano...</div>';
@@ -2158,7 +2517,9 @@ async function gerarMacrociclo(modo) {
 
     var system = getSystemPrompt() + '\n\nVoce tambem e especialista em periodizacao anual, macrociclo adaptativo, deloads, reavaliacao e tomada de decisao baseada em historico.';
     var reply = await callClaude([{ role: 'user', content: montarPromptMacrociclo(ctx, historico) }], system, 4500);
-    renderMacroMarkdown(reply, { duracao: ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: modo === 'historico' ? 'Historico' : 'Zero' });
+    var meta = { duracao: ctx.periodoEstimado || ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: modo === 'historico' ? 'Historico' : 'Zero' };
+    window._macroAtual = { markdown: reply, ctx: ctx, meta: meta, historico: historico ? { abasAnalisadas: historico.abasAnalisadas, totalSeries: historico.totalSeries } : null, criadoEm: new Date().toISOString() };
+    renderMacroMarkdown(reply, meta);
     showToast('Macrociclo gerado!', 'ok');
   } catch(e) {
     out.innerHTML = '<div class="macro-empty" style="color:var(--red)">Erro ao gerar macrociclo:<br>' + escapeMacroHtml(e.message) + '</div>';
@@ -2172,7 +2533,10 @@ function switchTab(tab, el) {
   document.getElementById('tab-treino').style.display=tab==='treino'?'block':'none';
   document.getElementById('tab-ia').style.display=tab==='ia'?'block':'none';
   document.getElementById('tab-macro').style.display=tab==='macro'?'block':'none';
-  if (tab === 'macro') carregarContextoMacroAluno();
+  if (tab === 'macro') {
+    carregarContextoMacroAluno();
+    carregarAbasMacrociclo(false);
+  }
 }
 
 function showPage(page, el) {

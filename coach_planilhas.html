@@ -1898,12 +1898,38 @@ async function buscarAbasSpreadsheet(sheetId) {
     if (data.erro || data.error) throw new Error(data.erro || data.error);
     return data;
   } catch(getErr) {
-    var resPost = await gsPost({ action: 'getAbas', spreadsheetId: sheetId });
-    var txtPost = await resPost.text();
-    var dataPost = JSON.parse(txtPost);
-    if (dataPost.erro || dataPost.error) throw new Error(dataPost.erro || dataPost.error);
-    return dataPost;
+    try {
+      var resPost = await gsPost({ action: 'getAbas', spreadsheetId: sheetId });
+      var txtPost = await resPost.text();
+      var dataPost = JSON.parse(txtPost);
+      if (dataPost.erro || dataPost.error) throw new Error(dataPost.erro || dataPost.error);
+      return dataPost;
+    } catch(postErr) {
+      return buscarAbasViaSheetsApi(sheetId, postErr && postErr.message ? postErr.message : getErr.message);
+    }
   }
+}
+
+async function buscarAbasViaSheetsApi(sheetId, erroAnterior) {
+  if (!accessToken && refreshToken) await renovarToken();
+  if (!accessToken) {
+    throw new Error((erroAnterior || 'Failed to fetch') + '. Conecte o Google na Configuracao para usar a rota alternativa.');
+  }
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + encodeURIComponent(sheetId) + '?fields=sheets.properties.title';
+  var res = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
+  if (res.status === 401 && refreshToken) {
+    var ok = await renovarToken();
+    if (ok) res = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
+  }
+  var data = await res.json();
+  if (!res.ok) throw new Error((data && data.error && data.error.message) || erroAnterior || 'Falha ao ler abas');
+  var abas = (data.sheets || [])
+    .map(function(s){ return s.properties && s.properties.title; })
+    .filter(function(nome){ return /^S\d+$/i.test(String(nome || '')); })
+    .sort(function(a,b){ return (parseInt(String(a).replace(/\D/g,''), 10) || 0) - (parseInt(String(b).replace(/\D/g,''), 10) || 0); });
+  var abaAtual = abas.length ? abas[abas.length - 1] : '';
+  var numAtual = parseInt(String(abaAtual).replace(/\D/g,''), 10) || 0;
+  return { abas: abas, abaAtual: abaAtual, proximaAba: 'S' + (numAtual + 1), fonte: 'sheets_api' };
 }
 function useChip(el) { document.getElementById('ai-input').value=el.textContent; sendMsg(); }
 function useChip2(el) { document.getElementById('ai-input2').value=el.textContent; sendMsg2(); }
@@ -4944,6 +4970,7 @@ async function analisarAjustesPlanilha() {
 
 init();
 </script>
+
 
 
 

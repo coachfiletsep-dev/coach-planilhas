@@ -2564,7 +2564,7 @@ async function confirmarNovoMeso() {
         estrategia: macroMesoCtx.bloco.estrategia,
         linhaOriginal: macroMesoCtx.bloco.raw
       }) + '\n';
-      prompt += 'Interprete objetivo, fase, estrategia, deload/reavaliacao e prioridades deste bloco. O treino da planilha deve ser uma aplicacao pratica dele, nao um meso solto.\n';
+      prompt += 'Interprete objetivo, fase, estrategia, modelo de periodizacao aplicado neste bloco, deload/reavaliacao e prioridades. O treino da planilha deve ser uma aplicacao pratica deste bloco especifico, nao do rotulo geral do macro.\n';
     } else {
       prompt += 'Use o macrociclo abaixo como plano-mae do aluno. Escolha o melhor encaixe para o proximo mesociclo de acordo com a proxima aba, historico e briefing:\n';
       prompt += macroMesoCtx.texto + '\n';
@@ -2572,7 +2572,7 @@ async function confirmarNovoMeso() {
     if (macroMesoCtx.macro && macroMesoCtx.macro.mesosGerados && macroMesoCtx.macro.mesosGerados.length) {
       prompt += 'Mesociclos ja gerados a partir do macro: ' + JSON.stringify(macroMesoCtx.macro.mesosGerados).slice(0, 1800) + '\n';
     }
-    prompt += 'Ao montar exercicios, volume, intensidade, RIR, deload, cardio e prioridades, respeite a fase do macro e avance a estrategia anual de forma logica.\n';
+    prompt += 'Ao montar exercicios, volume, intensidade, RIR, deload, cardio e prioridades, respeite a fase e o modelo aplicado no bloco atual. Nao aplique automaticamente o mesmo modelo ao meso inteiro se o bloco pedir transicao, deload ou mudanca de fase.\n';
   }
 
   // Cardio context
@@ -2994,6 +2994,7 @@ function montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCom
     'Nivel: ' + ctx.nivel + '\n' +
     'Diretriz de divisao: ' + (ctx.divisao || 'preservar atual') + '\n' +
     'Modelo de periodizacao solicitado: ' + (ctx.modelo || 'IA decide') + '\n' +
+    'Importante: o modelo solicitado nao deve virar rotulo unico do macrociclo inteiro. Use-o como preferencia/estrutura dominante quando fizer sentido, mas distribua modelos de periodizacao por bloco/fase com logica sequencial.\n' +
     'Orientacao de series avancadas: ' + (ctx.seriesAvancadas || 'IA decide') + '\n' +
     'Cardio no macro: objetivo=' + (ctx.cardioObjetivo || 'IA decide') + ', frequencia=' + (ctx.cardioFrequencia || 'IA decide') + 'x/sem, duracao=' + (ctx.cardioDuracao || 'IA decide') + ', modelo=' + (ctx.cardioModelo || 'IA decide') + '\n' +
     'Dias por semana: ' + ctx.dias + '\n' +
@@ -3019,12 +3020,12 @@ function montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCom
     '## Diagnostico estrategico\n' +
     'Liste objetivo, riscos, prioridades e criterio de sucesso.\n\n' +
     '## Mapa do macrociclo\n' +
-    'Use uma tabela com colunas: Bloco, Semanas/Meses, Fase, Modelo, Objetivo, Estrategia forca, Cardio, Series avancadas, Deload/Reavaliacao.\n\n' +
+    'Use uma tabela com colunas: Bloco, Semanas/Meses, Fase, Modelo aplicado no bloco, Justificativa do modelo, Objetivo, Estrategia forca, Cardio, Series avancadas, Deload/Reavaliacao.\n\n' +
     '## Logica de progressao\n' +
     'Explique volume, intensidade, RIR/falha, troca de exercicios, cardio, series avancadas e variacao de 30% para reduzir monotonia sem perder progressao.\n\n' +
     '## Proximo mesociclo sugerido\n' +
     'Descreva o primeiro bloco pratico: foco, divisao semanal, prioridades, cuidados e o que medir ao final.\n\n' +
-    'Regras: conecte o modelo de periodizacao ao nivel do aluno. Preserve a divisao atual quando a diretriz pedir; se sugerir mudanca de divisao, explique por que e deixe claro que precisa de confirmacao do coach. Iniciante usa modelos simples e poucas variacoes; intermediario pode usar ondulatoria parcial/blocos; avancado pode usar ATR, ondulatoria mais complexa e tecnicas avancadas. Inclua cardio periodizado junto da forca. Nao engesse 52 semanas; pense como mapa anual adaptativo; inclua deloads; use os meses reais do periodo estimado para situar o coach no ano; use tom profissional e direto do Coach Felipe.\n\n' +
+    'Regras: distribua os modelos de periodizacao ao longo do macrociclo por bloco/fase. Nao escreva "macro inteiro = linear/ondulatorio/blocos/ATR". Cada bloco deve ter modelo aplicado, motivo da escolha e conexao com o bloco anterior e o proximo. Conecte cada modelo ao nivel do aluno. Preserve a divisao atual quando a diretriz pedir; se sugerir mudanca de divisao, explique por que e deixe claro que precisa de confirmacao do coach. Iniciante usa modelos simples e poucas variacoes; intermediario pode usar ondulatoria parcial/blocos; avancado pode usar ATR, ondulatoria mais complexa e tecnicas avancadas. Inclua cardio periodizado junto da forca. Nao engesse 52 semanas; pense como mapa anual adaptativo; inclua deloads; use os meses reais do periodo estimado para situar o coach no ano; use tom profissional e direto do Coach Felipe.\n\n' +
     'Base teorica: use como pano de fundo os principios de periodizacao, progressao, variacao, especificidade, fadiga e recuperacao associados a autores como Tudor Bompa, Vladimir Issurin, Yuri Verkhoshansky, Michael Stone, William Kraemer, Steven Fleck, Brad Schoenfeld, Eric Helms, Mike Israetel, Greg Nuckols, Antonio Carlos Gomes, Paulo Gentil, Roberto Simao e outros autores relevantes da musculacao e treinamento de forca. Nao transforme a resposta em aula teorica; cite autores apenas quando isso justificar uma decisao pratica do macro.';
   return prompt;
 }
@@ -4970,6 +4971,7 @@ async function analisarAjustesPlanilha() {
 
 init();
 </script>
+
 
 
 

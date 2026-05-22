@@ -3042,6 +3042,7 @@ async function gerarMacrociclo(modo) {
   var historico = null;
   var memoriaTecnica = carregarMemoriaTecnicaAluno();
   var usarHistoricoCompleto = document.getElementById('macro-historico-completo') && document.getElementById('macro-historico-completo').checked;
+  var avisoHistorico = '';
   try {
     if (modo === 'historico') {
       var sheetId = getSheetId(s.sheet);
@@ -3057,24 +3058,34 @@ async function gerarMacrociclo(modo) {
         showToast('Selecione as abas do historico', 'err');
         return;
       }
-      var resHist = await gsPost({ lerHistoricoMacrociclo: true, spreadsheetId: sheetId, limiteAbas: 12, abasSelecionadas: abasSelecionadas });
-      historico = await resHist.json();
-      if (!historico.sucesso) throw new Error(historico.erro || 'Nao foi possivel ler o historico');
-      memoriaTecnica = montarMemoriaTecnicaMacro(ctx, historico);
-      salvarMemoriaTecnicaAluno(memoriaTecnica);
-      out.innerHTML = '<div class="macro-empty">Historico lido. Agora a IA esta desenhando a sequencia do ano...</div>';
+      try {
+        var resHist = await gsPost({ lerHistoricoMacrociclo: true, spreadsheetId: sheetId, limiteAbas: 12, abasSelecionadas: abasSelecionadas });
+        var txtHist = await resHist.text();
+        historico = JSON.parse(txtHist);
+        if (!historico.sucesso) throw new Error(historico.erro || 'Nao foi possivel ler o historico');
+        memoriaTecnica = montarMemoriaTecnicaMacro(ctx, historico);
+        salvarMemoriaTecnicaAluno(memoriaTecnica);
+        out.innerHTML = '<div class="macro-empty">Historico lido. Agora a IA esta desenhando a sequencia do ano...</div>';
+      } catch(histErr) {
+        avisoHistorico = 'Nao consegui ler o historico pelo Apps Script (' + (histErr.message || 'falha desconhecida') + '). Vou seguir com a memoria compacta e os campos preenchidos.';
+        memoriaTecnica = montarMemoriaTecnicaMacro(ctx, memoriaTecnica && memoriaTecnica.historico ? { sucesso:true, ...memoriaTecnica.historico } : null);
+        out.innerHTML = '<div class="macro-empty">' + escapeMacroHtml(avisoHistorico) + '<br><br>Gerando macrociclo mesmo assim...</div>';
+      }
     } else {
       memoriaTecnica = montarMemoriaTecnicaMacro(ctx, memoriaTecnica && memoriaTecnica.historico ? { sucesso:true, ...memoriaTecnica.historico } : null);
     }
 
     var system = getSystemPrompt() + '\n\nVoce tambem e especialista em periodizacao anual, macrociclo adaptativo, deloads, reavaliacao e tomada de decisao baseada em historico.';
+    if (avisoHistorico) system += '\nAviso operacional: ' + avisoHistorico;
     var reply = await callClaude([{ role: 'user', content: montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCompleto) }], system, 4500);
     var meta = { duracao: ctx.periodoEstimado || ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: modo === 'historico' ? 'Historico' : 'Zero' };
     window._macroAtual = { markdown: reply, ctx: ctx, meta: meta, historico: historico ? { abasAnalisadas: historico.abasAnalisadas, totalSeries: historico.totalSeries } : null, criadoEm: new Date().toISOString() };
     renderMacroMarkdown(reply, meta);
     showToast('Macrociclo gerado!', 'ok');
   } catch(e) {
-    out.innerHTML = '<div class="macro-empty" style="color:var(--red)">Erro ao gerar macrociclo:<br>' + escapeMacroHtml(e.message) + '</div>';
+    var msgErro = e.message || 'erro desconhecido';
+    if (/failed to fetch/i.test(msgErro)) msgErro += '<br><br>Provavel causa: bloqueio de chamada externa no arquivo local, proxy da IA inacessivel ou Apps Script nao implantado/sem permissao.';
+    out.innerHTML = '<div class="macro-empty" style="color:var(--red)">Erro ao gerar macrociclo:<br>' + msgErro + '</div>';
     showToast('Erro ao gerar macrociclo', 'err');
   }
 }
@@ -4971,6 +4982,7 @@ async function analisarAjustesPlanilha() {
 
 init();
 </script>
+
 
 
 

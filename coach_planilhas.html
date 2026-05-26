@@ -203,7 +203,9 @@
   .notice { padding: .625rem 1rem; font-size: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 0.5px solid var(--border); }
   .notice.warn { background: #fef9ec; color: #92600a; }
   .notice.ok { background: var(--green-light); color: var(--green-dark); }
-  @media (prefers-color-scheme: dark) { .notice.warn { background: #2d2410; color: #e8b84b; } }
+  .notice.err { background: #fde8e8; color: #9b1c1c; }
+  @media (prefers-color-scheme: dark) { .notice.warn { background: #2d2410; color: #e8b84b; } .notice.err { background: #3b0e0e; color: #f87171; } }
+  .notice-btn { margin-left: 8px; padding: 3px 10px; border-radius: 4px; border: 1.5px solid currentColor; background: transparent; color: inherit; font-size: 11px; cursor: pointer; font-weight: 700; }
   .toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 16px; border-radius: var(--radius); font-size: 13px; font-weight: 500; z-index: 999; animation: fadeup .25s ease; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
   .toast.ok { background: var(--green); color: #fff; }
   .toast.err { background: var(--red); color: #fff; }
@@ -1259,6 +1261,58 @@ let refreshToken = localStorage.getItem('coach_refresh_token') || '';
 // Configure aqui o mesmo valor definido no PropertiesService do GS
 const APP_SECRET = localStorage.getItem('coach_app_secret') || '';
 
+// ============================================================
+// LOCALSTORAGE COM TTL — lsSet / lsGet
+// Evita dados obsoletos entre versões do app.
+// ============================================================
+function lsSet(key, value, ttlMinutes) {
+  try {
+    var item = JSON.stringify({ v: value, exp: ttlMinutes ? Date.now() + ttlMinutes * 60000 : null });
+    localStorage.setItem(key, item);
+  } catch(e) {}
+}
+function lsGet(key) {
+  try {
+    var raw = localStorage.getItem(key);
+    if (!raw) return null;
+    var item = JSON.parse(raw);
+    // Fallback para formato antigo (JSON simples sem wrapper)
+    if (item === null || typeof item !== 'object' || item.v === undefined) return raw;
+    if (item.exp && Date.now() > item.exp) { localStorage.removeItem(key); return null; }
+    return item.v;
+  } catch(e) { return localStorage.getItem(key); }
+}
+
+// ============================================================
+// BANNER DE SESSÃO GOOGLE EXPIRADA
+// ============================================================
+function mostrarBannerTokenExpirado() {
+  var n = document.getElementById('notice-bar');
+  if (!n) return;
+  n.className = 'notice err';
+  n.innerHTML = '⚠️ Sessão Google expirada — ações que acessam a planilha não vão funcionar. <button class="notice-btn" onclick="showAuthModal()">Reconectar</button>';
+}
+function mostrarBannerConectado() {
+  var n = document.getElementById('notice-bar');
+  if (!n) return;
+  n.className = 'notice ok';
+  n.textContent = 'Google conectado — todas as ações disponíveis.';
+}
+
+// ============================================================
+// DIAGNÓSTICO DE RESPOSTA INVÁLIDA DA IA
+// ============================================================
+function diagnosticarRespostaIA(reply) {
+  if (!reply || reply.length < 5) return 'A IA retornou uma resposta vazia ou em branco.';
+  if (reply.length < 120) return 'A IA retornou uma resposta muito curta (possível erro de API): ' + reply;
+  if (!reply.includes('{')) return 'A IA não retornou JSON — nenhum { encontrado. Resposta: ' + reply.slice(0, 300);
+  if (!reply.includes('"aba"')) return 'O JSON está faltando o campo "aba". Verifique o prompt. Fragmento: ' + reply.slice(0, 300);
+  if (!reply.includes('"exercicios"') && !reply.includes('"cardio"')) return 'O JSON está faltando os campos "exercicios" / "cardio". Fragmento: ' + reply.slice(0, 300);
+  var lastBrace = reply.lastIndexOf('}');
+  if (lastBrace < reply.length - 60) return 'O JSON parece truncado (sem } final — possível limite de tokens atingido). Tente reduzir o histórico ou ativar o modo econômico. Fragmento final: ...' + reply.slice(-200);
+  return 'JSON inválido após limpeza (possível encoding). Fragmento: ' + reply.slice(0, 400);
+}
+
 // Wrapper que injeta o secret em todos os POSTs ao Apps Script
 async function gsPost(payload) {
   if (APP_SECRET) payload.secret = APP_SECRET;
@@ -1379,16 +1433,18 @@ async function renovarToken() {
       accessToken = data.access_token;
       localStorage.setItem('coach_token', accessToken);
       setAuthConnected();
+      mostrarBannerConectado();
       return true;
     }
+    mostrarBannerTokenExpirado();
     return false;
-  } catch(e) { return false; }
+  } catch(e) { mostrarBannerTokenExpirado(); return false; }
 }
 
 async function init() {
   accessToken = localStorage.getItem('coach_token') || null;
   // localStorage como cache inicial — fonte de verdade é a planilha
-  const raw = localStorage.getItem('coach_students_v2');
+  const raw = lsGet('coach_students_v2');
   if (raw) { try { students = JSON.parse(raw); } catch(e) { students = []; } }
   if (accessToken) {
     setAuthConnected();
@@ -1404,7 +1460,7 @@ async function init() {
   sincronizarSeConectado();
 }
 
-function saveAll() { localStorage.setItem('coach_students_v2', JSON.stringify(students)); }
+function saveAll() { lsSet('coach_students_v2', JSON.stringify(students), 24 * 60); }
 
 function normalizarDataNascimentoApp(valor) {
   if (!valor) return '';
@@ -1733,7 +1789,7 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
   try {
     var estadoAtual = await atualizarAbasDoAlunoAtual();
     if (nomeAba !== estadoAtual.proximaAba && !estadoAtual.abas.includes(nomeAba)) {
-      addMsg('msgs', 'A aba do preview estava desatualizada (' + nomeAba + '). Vou usar a pr�xima aba real: ' + estadoAtual.proximaAba + '.', false);
+      addMsg('msgs', 'A aba do preview estava desatualizada (' + nomeAba + '). Vou usar a próxima aba real: ' + estadoAtual.proximaAba + '.', false);
       nomeAba = estadoAtual.proximaAba;
     }
   } catch(e) {
@@ -1790,7 +1846,8 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
       if (data.errosCardio && data.errosCardio.length > 0) avisos = avisos.concat(data.errosCardio.map(function(e){ return 'Cardio: ' + e; }));
       var avisosTxt = avisos.length > 0 ? '<br><small>' + avisos.join(' | ') + '</small>' : '';
       var msgCardioOk = data.escritosCardio ? ' + ' + data.escritosCardio + ' sessao(oes) de cardio' : '';
-      addMsg('msgs', escritos + ' exercicios' + msgCardioOk + ' escritos na aba ' + abaFinal + '!' + avisosTxt, false);
+      var undoBtn = '<br><button onclick="desfazerEscrita()" style="margin-top:6px;padding:3px 10px;border-radius:4px;border:1px solid #aaa;background:transparent;font-size:11px;cursor:pointer;">↩ Desfazer (10 min)</button>';
+      addMsg('msgs', escritos + ' exercicios' + msgCardioOk + ' escritos na aba ' + abaFinal + '!' + avisosTxt + undoBtn, false);
       var resumoVolume = montarResumoVolumeSemanalHTML(data.volumeSemanal);
       if (resumoVolume) addMsg('msgs', resumoVolume, false);
       window._previewCardio = [];
@@ -2074,8 +2131,11 @@ async function sendMsg() {
       addMsg('msgs', reply, false);
       msgHistory.push({role:'assistant',content:reply});
     }
-  } catch(e) { removeLoading('msgs'); addMsg('msgs','Erro: '+e.message,false); }
-  isLoading = false; document.getElementById('send-btn').disabled = false;
+  } catch(e) {
+    removeLoading('msgs'); addMsg('msgs','Erro: '+e.message,false);
+  } finally {
+    isLoading = false; document.getElementById('send-btn').disabled = false;
+  }
 }
 
 async function sendMsg2() {
@@ -2663,7 +2723,7 @@ function useChip(el) { document.getElementById('ai-input').value=el.textContent;
 function useChip2(el) { document.getElementById('ai-input2').value=el.textContent; sendMsg2(); }
 
 function carregarMacroSalvoObjeto() {
-  var raw = localStorage.getItem(chaveMacroSalvoAluno());
+  var raw = lsGet(chaveMacroSalvoAluno());
   if (!raw) return null;
   try { return JSON.parse(raw); } catch(e) { return null; }
 }
@@ -2770,7 +2830,7 @@ function registrarMesoNoMacro(abaFinal) {
     bloco: ctx.bloco ? ctx.bloco.label : 'Macro geral',
     data: new Date().toISOString()
   });
-  localStorage.setItem(chaveMacroSalvoAluno(), JSON.stringify(macro));
+  lsSet(chaveMacroSalvoAluno(), JSON.stringify(macro), 7 * 24 * 60);
   window._macroAtual = macro;
 }
 
@@ -3529,6 +3589,7 @@ function getCardioContext() {
 }
 
 async function confirmarNovoMeso() {
+  if (isLoading) { showToast('Aguarde a operação atual terminar', 'warn'); return; }
   window._modoEdicao = false; // novo meso sempre usa escreverNaPlanilha
   var abasSelecionadas = [];
   document.getElementById('meso-abas-lista').querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){
@@ -3744,9 +3805,19 @@ async function confirmarNovoMeso() {
   }
 
   prompt += 'Retorne APENAS JSON valido e completo, sem explicacao antes ou depois, para preview. Nao escreva na planilha; o app vai pedir confirmacao antes.\n';
+  // Limitar contextoAbas para não ultrapassar ~35k chars no total do prompt
+  var LIMITE_CONTEXTO = 32000;
+  if (contextoAbas.length > LIMITE_CONTEXTO) {
+    var cortado = contextoAbas.slice(0, LIMITE_CONTEXTO);
+    var ultimaQuebraDeLinha = cortado.lastIndexOf('\n');
+    contextoAbas = cortado.slice(0, ultimaQuebraDeLinha > 0 ? ultimaQuebraDeLinha : LIMITE_CONTEXTO) +
+      '\n[contexto truncado para caber no limite de tokens — histórico mais antigo omitido]\n';
+  }
   prompt += contextoAbas;
 
   // Gera preview; a escrita so acontece apos confirmacao.
+  // Limpar histórico antigo antes de empurrar o prompt grande (evita crescimento ilimitado)
+  trimHistory(msgHistory, 2);
   msgHistory.push({role:'user',content:prompt});
   document.getElementById('tab-treino').style.display='block';
   document.getElementById('tab-ia').style.display='none';
@@ -3763,12 +3834,12 @@ async function confirmarNovoMeso() {
       var errosPrimeiraTentativa = obterErrosNovoMeso(parsed.exercicios);
       if (textoErrosNovoMeso(errosPrimeiraTentativa).length) {
         msgHistory.push({role:'assistant',content:reply});
-        addMsg('msgs', '[correcao v48.2] ' + (window._divisaoBriefingNovoMeso ? 'A primeira resposta nao respeitou a divisao do briefing.' : 'A primeira resposta mudou a divisao da aba base.') + ' Vou pedir uma correcao automatica mantendo exatamente todos os dias e grupos.', false);
+        addMsg('msgs', '🔄 Tentativa 1 de 3 — ' + (window._divisaoBriefingNovoMeso ? 'ajustando para respeitar a divisão do briefing...' : 'ajustando divisão de dias conforme a aba base...'), false);
         addLoading('msgs');
         msgHistory.push({role:'user',content:montarPromptCorrecaoNovoMeso(errosPrimeiraTentativa)});
         const replyCorrigido = await callClaude(msgHistory, getSystemPrompt(), 9000);
         removeLoading('msgs');
-        const parsedCorrigido = tryParseJSON(replyCorrigido);
+        let parsedCorrigido = tryParseJSON(replyCorrigido);
         if (parsedCorrigido && parsedCorrigido.exercicios && parsedCorrigido.aba) {
           if (cardioCtx) parsedCorrigido.cardio = normalizarCardioComContexto(parsedCorrigido.cardio || [], cardioCtx);
           else if (parsedCorrigido.cardio && parsedCorrigido.cardio.length) parsedCorrigido.cardio = normalizarCardioComContexto(parsedCorrigido.cardio, null);
@@ -3781,12 +3852,12 @@ async function confirmarNovoMeso() {
             publicarPreviewNovoMeso(parsedCorrigido);
           } else {
             var errosSegundaTentativa = obterErrosNovoMeso(parsedCorrigido.exercicios);
-            addMsg('msgs', 'A primeira correcao ainda veio incompleta. Vou tentar uma ultima correcao com os dias/grupos faltantes.', false);
+            addMsg('msgs', '🔄 Tentativa 2 de 3 — ainda faltam dias/grupos. Aplicando última correção...', false);
             addLoading('msgs');
             msgHistory.push({role:'user',content:montarPromptCorrecaoNovoMeso(errosSegundaTentativa) + '\n\nATENCAO: mantenha TODOS os dias obrigatorios. Nao remova dias que ja estavam corretos. Retorne o JSON completo, nao apenas os dias corrigidos.'});
             const replyCorrigido2 = await callClaude(msgHistory, getSystemPrompt(), 9000);
             removeLoading('msgs');
-            const parsedCorrigido2 = tryParseJSON(replyCorrigido2);
+            let parsedCorrigido2 = tryParseJSON(replyCorrigido2);
             if (parsedCorrigido2 && parsedCorrigido2.exercicios && parsedCorrigido2.aba) {
               if (cardioCtx) parsedCorrigido2.cardio = normalizarCardioComContexto(parsedCorrigido2.cardio || [], cardioCtx);
               else if (parsedCorrigido2.cardio && parsedCorrigido2.cardio.length) parsedCorrigido2.cardio = normalizarCardioComContexto(parsedCorrigido2.cardio, null);
@@ -3800,12 +3871,12 @@ async function confirmarNovoMeso() {
                 publicarPreviewNovoMeso(parsedCorrigido2);
               }
             } else {
-              addMsg('msgs', replyCorrigido2, false);
+              addMsg('msgs', '⚠️ Tentativa 3 de 3 falhou. ' + diagnosticarRespostaIA(replyCorrigido2), false);
               msgHistory.push({role:'assistant',content:replyCorrigido2});
             }
           }
         } else {
-          addMsg('msgs', replyCorrigido, false);
+          addMsg('msgs', '⚠️ Correção retornou JSON inválido. ' + diagnosticarRespostaIA(replyCorrigido), false);
           msgHistory.push({role:'assistant',content:replyCorrigido});
         }
       } else {
@@ -3828,11 +3899,14 @@ async function confirmarNovoMeso() {
       window._previewAba = parsed.aba;
       mostrarPreviewCardio(parsed.cardio, parsed.aba);
     } else {
-      addMsg('msgs', reply, false);
+      addMsg('msgs', '⚠️ Resposta da IA sem JSON válido. ' + diagnosticarRespostaIA(reply), false);
       msgHistory.push({role:'assistant',content:reply});
     }
-  } catch(e) { removeLoading('msgs'); addMsg('msgs','Erro: '+e.message,false); }
-  isLoading = false; document.getElementById('send-btn').disabled = false;
+  } catch(e) {
+    removeLoading('msgs'); addMsg('msgs','Erro: '+e.message,false);
+  } finally {
+    isLoading = false; document.getElementById('send-btn').disabled = false;
+  }
 }
 
 function macroCampo(id) {
@@ -3877,7 +3951,7 @@ function atualizarPreviewPeriodoMacro() {
 function carregarContextoMacroAluno() {
   var s = students.find(function(x){ return x.id === selectedId; });
   if (!s) return;
-  var salvo = localStorage.getItem(chaveMacroAluno());
+  var salvo = lsGet(chaveMacroAluno());
   var ctx = {};
   if (salvo) {
     try { ctx = JSON.parse(salvo); } catch(e) { ctx = {}; }
@@ -3945,7 +4019,7 @@ function coletarContextoMacro() {
 }
 
 function salvarContextoMacro(ctx) {
-  localStorage.setItem(chaveMacroAluno(), JSON.stringify(ctx));
+  lsSet(chaveMacroAluno(), JSON.stringify(ctx), 7 * 24 * 60);
 }
 
 async function carregarAbasMacrociclo(forcar) {
@@ -4070,12 +4144,12 @@ function salvarMacroAtual() {
     return;
   }
   window._macroAtual.salvoEm = new Date().toISOString();
-  localStorage.setItem(chaveMacroSalvoAluno(), JSON.stringify(window._macroAtual));
+  lsSet(chaveMacroSalvoAluno(), JSON.stringify(window._macroAtual), 7 * 24 * 60);
   showToast('Macrociclo salvo!', 'ok');
 }
 
 function abrirMacroSalvo() {
-  var raw = localStorage.getItem(chaveMacroSalvoAluno());
+  var raw = lsGet(chaveMacroSalvoAluno());
   if (!raw) { showToast('Nenhum macro salvo para este aluno', 'err'); return; }
   try {
     var macro = JSON.parse(raw);
@@ -4446,7 +4520,7 @@ function newsletterTextToHtml(text, cfg, artigos) {
 }
 
 function carregarNewsletterSalva() {
-  var raw = localStorage.getItem('coach_newsletter_atual');
+  var raw = lsGet('coach_newsletter_atual');
   if (!raw) return;
   try {
     window._newsletterAtual = JSON.parse(raw);
@@ -4472,7 +4546,7 @@ async function gerarNewsletter() {
       newsStatus('A IA retornou texto livre. Previa montada mesmo assim; revise antes do PDF.');
     }
     window._newsletterAtual = { config: cfg, artigos: data.artigos || [], newsletter: parsed, html: html, criadoEm: new Date().toISOString() };
-    localStorage.setItem('coach_newsletter_atual', JSON.stringify(window._newsletterAtual));
+    lsSet('coach_newsletter_atual', JSON.stringify(window._newsletterAtual), 60);
     document.getElementById('news-preview').innerHTML = html;
     if (parsed.subtitulo === 'Previa em texto livre') newsStatus('Previa gerada em texto livre. Revise antes de criar o PDF.');
     else newsStatus('Previa gerada. Revise antes de criar o PDF.');
@@ -4492,7 +4566,7 @@ async function criarPdfNewsletter() {
     if (!data.sucesso) throw new Error(data.erro || 'Falha ao criar PDF');
     window._newsletterAtual.pdfUrl = data.url;
     window._newsletterAtual.pdfId = data.fileId;
-    localStorage.setItem('coach_newsletter_atual', JSON.stringify(window._newsletterAtual));
+    lsSet('coach_newsletter_atual', JSON.stringify(window._newsletterAtual), 60);
     newsStatus('PDF criado: ' + data.url);
     showToast('PDF criado!', 'ok');
     window.open(data.url, '_blank');
@@ -5057,6 +5131,15 @@ async function confirmarPreview() {
   var exercicios = window._previewExercicios;
   var aba = window._previewAba;
   var modo = window._previewModo;
+  // Salvar snapshot para desfazer (TTL 10 min)
+  var studentId = selectedId || 'sem_aluno';
+  lsSet('coach_undo_snapshot_' + studentId, JSON.stringify({
+    exercicios: exercicios,
+    cardio: window._previewCardio || [],
+    aba: aba,
+    modo: modo,
+    ts: Date.now()
+  }), 10);
   fecharPreview();
   if (modo === 'novo') {
     await escreverNaPlanilha(exercicios, aba);
@@ -5065,6 +5148,24 @@ async function confirmarPreview() {
     registrarHistorico(exercicios, aba);
     await editarNaPlanilha(exercicios, aba);
   }
+}
+
+function desfazerEscrita() {
+  var studentId = selectedId || 'sem_aluno';
+  var raw = lsGet('coach_undo_snapshot_' + studentId);
+  if (!raw) { showToast('Snapshot de desfazer expirado ou não disponível', 'err'); return; }
+  try {
+    var snap = JSON.parse(raw);
+    localStorage.removeItem('coach_undo_snapshot_' + studentId);
+    window._previewExercicios = snap.exercicios;
+    window._previewAba = snap.aba;
+    window._previewModo = snap.modo || 'novo';
+    window._previewCardio = snap.cardio || [];
+    mostrarPreview(snap.exercicios, snap.aba);
+    var n = document.getElementById('notice-bar');
+    if (n && n.className.indexOf('err') !== -1) return; // não sobrescrever banner de token
+    if (n) { n.className = 'notice warn'; n.textContent = 'Preview restaurado — revise e confirme novamente se quiser reescrever.'; }
+  } catch(e) { showToast('Erro ao desfazer: ' + e.message, 'err'); }
 }
 
 // ============================================================

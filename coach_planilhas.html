@@ -381,6 +381,7 @@
           <button class="icon-btn" onclick="abrirSalvarTemplate()" title="Salvar aba atual como template">📌</button>
           <button class="icon-btn" onclick="ativarLinksAluno()" title="Ativar troca automática dos links">🔗</button>
           <button class="icon-btn" onclick="corrigirLinksAbaAtual()" title="Corrigir links da aba atual">↻</button>
+          <button class="icon-btn" onclick="gerarLinkAluno()" title="Gerar link do App Aluno">📱</button>
           <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;">✏️ Editar aba</button>
           <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
         </div>
@@ -1195,6 +1196,35 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="document.getElementById(&#39;comparar-modal&#39;).style.display=&#39;none&#39;">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL APP ALUNO LINK -->
+<div class="overlay" id="link-aluno-modal" style="display:none;">
+  <div class="modal" style="width:480px;max-width:95vw;">
+    <div class="modal-header">
+      <span class="modal-title">📱 Link do App Aluno</span>
+      <button class="icon-btn" onclick="document.getElementById('link-aluno-modal').style.display='none'" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px;">
+        Envie este código para <strong id="link-aluno-nome">—</strong> via WhatsApp. O aluno cola no App Aluno para acessar o treino.
+      </div>
+      <textarea id="link-aluno-token" readonly style="width:100%;height:90px;padding:10px;font-size:12px;font-family:monospace;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);resize:none;word-break:break-all;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn-green" onclick="copiarLinkAluno()" style="flex:1;" id="copiar-link-btn">📋 Copiar código</button>
+        <button class="btn-ghost" onclick="enviarLinkWhatsapp()" style="flex:1;">📤 Enviar via WhatsApp</button>
+      </div>
+      <div style="margin-top:12px;padding:10px;background:var(--bg2);border-radius:var(--radius);font-size:11px;color:var(--text3);line-height:1.6;">
+        <strong>Como funciona:</strong><br>
+        1. Compartilhe o arquivo <code>App Aluno v1.html</code> com o aluno (1x só).<br>
+        2. Envie o código acima via WhatsApp.<br>
+        3. O aluno abre o arquivo, cola o código e já vê o treino.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="document.getElementById('link-aluno-modal').style.display='none'">Fechar</button>
     </div>
   </div>
 </div>
@@ -5166,6 +5196,58 @@ function desfazerEscrita() {
     if (n && n.className.indexOf('err') !== -1) return; // não sobrescrever banner de token
     if (n) { n.className = 'notice warn'; n.textContent = 'Preview restaurado — revise e confirme novamente se quiser reescrever.'; }
   } catch(e) { showToast('Erro ao desfazer: ' + e.message, 'err'); }
+}
+
+// ============================================================
+// APP ALUNO — GERAR LINK / TOKEN
+// ============================================================
+function gerarLinkAluno() {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno primeiro', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Aluno sem planilha vinculada', 'err'); return; }
+  var secret = localStorage.getItem('coach_app_secret') || APP_SECRET || '';
+  if (!secret) { showToast('APP_SECRET não definido — configure nas opções', 'warn'); }
+  var payload = { n: s.name, id: s.id, s: sheetId, k: secret };
+  var token = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  document.getElementById('link-aluno-nome').textContent = s.name;
+  document.getElementById('link-aluno-token').value = token;
+  var btn = document.getElementById('copiar-link-btn');
+  if (btn) btn.textContent = '📋 Copiar código';
+  document.getElementById('link-aluno-modal').style.display = 'flex';
+}
+
+function copiarLinkAluno() {
+  var ta = document.getElementById('link-aluno-token');
+  if (!ta || !ta.value) { showToast('Nenhum código gerado', 'err'); return; }
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(ta.value).then(function() {
+      var btn = document.getElementById('copiar-link-btn');
+      if (btn) { btn.textContent = '✓ Copiado!'; setTimeout(function(){ btn.textContent = '📋 Copiar código'; }, 2500); }
+    }).catch(function() { _copiarFallback(ta); });
+  } else {
+    _copiarFallback(ta);
+  }
+}
+function _copiarFallback(ta) {
+  ta.select(); ta.setSelectionRange(0, 99999);
+  try {
+    document.execCommand('copy');
+    var btn = document.getElementById('copiar-link-btn');
+    if (btn) { btn.textContent = '✓ Copiado!'; setTimeout(function(){ btn.textContent = '📋 Copiar código'; }, 2500); }
+  } catch(e) { showToast('Não foi possível copiar automaticamente', 'err'); }
+}
+
+function enviarLinkWhatsapp() {
+  var ta = document.getElementById('link-aluno-token');
+  var nome = document.getElementById('link-aluno-nome').textContent || 'aluno';
+  if (!ta || !ta.value) { showToast('Gere o código antes de enviar', 'err'); return; }
+  var msg = 'Olá ' + nome + '! 👋\n\nAqui está seu código de acesso ao *App de Treino*:\n\n' +
+    ta.value + '\n\n' +
+    '📱 Abra o App Aluno, cole esse código no campo de acesso e você verá seu treino completo.\n\n' +
+    'Qualquer dúvida, me chame! 💪';
+  var url = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
 }
 
 // ============================================================

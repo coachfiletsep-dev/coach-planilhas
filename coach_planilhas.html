@@ -2087,17 +2087,21 @@ function addLoading(id) {
 
 function removeLoading(id) { const el=document.getElementById('ld-'+id); if(el) el.remove(); }
 
-async function callClaude(history, system, maxTok) {
+// Sistema mínimo para chamadas de correção (mais rápido — sem o prompt cheio)
+var SYSTEM_CORRECAO = 'Você é um corretor de JSON de treino. Corrija o JSON conforme a instrução anterior. Retorne SOMENTE o JSON completo e válido, sem markdown, sem blocos de código, sem explicações.';
+
+async function callClaude(history, system, maxTok, model) {
   var economical = modoEconomicoTokensAtivo();
   var finalMax = maxTok || 2500;
   if (economical) {
     finalMax = Math.min(finalMax, 1800);
     system = (system || '') + '\nModo economico ativo: responda com a menor saida util, sem explicacoes redundantes, mantendo JSON valido quando pedido.';
   }
+  var modelId = model || 'claude-sonnet-4-5';
   const res = await fetch(PROXY_URL, {
     method:'POST',
     headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01'},
-    body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:finalMax,system:system,messages:history})
+    body:JSON.stringify({model:modelId,max_tokens:finalMax,system:system,messages:history})
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message);
@@ -3855,7 +3859,7 @@ async function confirmarNovoMeso() {
   addMsg('msgs', prompt, true); addLoading('msgs');
   isLoading = true; document.getElementById('send-btn').disabled = true;
   try {
-    const reply = await callClaude(msgHistory, getSystemPrompt(), 9000);
+    const reply = await callClaude(msgHistory, getSystemPrompt(), 5500);
     removeLoading('msgs');
     const parsed = tryParseJSON(reply);
     if (parsed && parsed.exercicios && parsed.aba) {
@@ -3867,7 +3871,7 @@ async function confirmarNovoMeso() {
         addMsg('msgs', '🔄 Tentativa 1 de 3 — ' + (window._divisaoBriefingNovoMeso ? 'ajustando para respeitar a divisão do briefing...' : 'ajustando divisão de dias conforme a aba base...'), false);
         addLoading('msgs');
         msgHistory.push({role:'user',content:montarPromptCorrecaoNovoMeso(errosPrimeiraTentativa)});
-        const replyCorrigido = await callClaude(msgHistory, getSystemPrompt(), 9000);
+        const replyCorrigido = await callClaude(msgHistory, SYSTEM_CORRECAO, 3000, 'claude-haiku-4-5-20251001');
         removeLoading('msgs');
         let parsedCorrigido = tryParseJSON(replyCorrigido);
         if (parsedCorrigido && parsedCorrigido.exercicios && parsedCorrigido.aba) {
@@ -3885,7 +3889,7 @@ async function confirmarNovoMeso() {
             addMsg('msgs', '🔄 Tentativa 2 de 3 — ainda faltam dias/grupos. Aplicando última correção...', false);
             addLoading('msgs');
             msgHistory.push({role:'user',content:montarPromptCorrecaoNovoMeso(errosSegundaTentativa) + '\n\nATENCAO: mantenha TODOS os dias obrigatorios. Nao remova dias que ja estavam corretos. Retorne o JSON completo, nao apenas os dias corrigidos.'});
-            const replyCorrigido2 = await callClaude(msgHistory, getSystemPrompt(), 9000);
+            const replyCorrigido2 = await callClaude(msgHistory, SYSTEM_CORRECAO, 3000, 'claude-haiku-4-5-20251001');
             removeLoading('msgs');
             let parsedCorrigido2 = tryParseJSON(replyCorrigido2);
             if (parsedCorrigido2 && parsedCorrigido2.exercicios && parsedCorrigido2.aba) {
@@ -5210,10 +5214,26 @@ function gerarLinkAluno() {
   if (!secret) { showToast('APP_SECRET não definido — configure nas opções', 'warn'); }
   var payload = { n: s.name, id: s.id, s: sheetId, k: secret };
   var token = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  var url = APPS_SCRIPT_URL + '?aluno=' + encodeURIComponent(token);
+
   document.getElementById('link-aluno-nome').textContent = s.name;
-  document.getElementById('link-aluno-token').value = token;
+  document.getElementById('link-aluno-token').value = url;
   var btn = document.getElementById('copiar-link-btn');
-  if (btn) btn.textContent = '📋 Copiar código';
+  if (btn) btn.textContent = '📋 Copiar link';
+
+  // Atualizar instruções no modal para refletir o fluxo por link
+  var instrEl = document.querySelector('#link-aluno-modal .modal-body > div:first-child');
+  if (instrEl) instrEl.innerHTML = 'Envie este <strong>link</strong> para <strong id="link-aluno-nome">' +
+    (s.name || '').replace(/</g,'&lt;') + '</strong> via WhatsApp. O aluno <strong>clica no link</strong> e o treino abre direto no celular.';
+
+  var comoEl = document.querySelector('#link-aluno-modal .modal-body > div:last-child');
+  if (comoEl && comoEl.querySelector) {
+    comoEl.innerHTML = '<strong>Como funciona:</strong><br>' +
+      '1. Clique em "Enviar via WhatsApp" abaixo.<br>' +
+      '2. O aluno clica no link pelo celular.<br>' +
+      '3. O treino abre automaticamente — sem precisar instalar nada.<br>' +
+      '<span style="color:var(--text3)">(Requer arquivo <code>AppAluno.html</code> no projeto GAS)</span>';
+  }
   document.getElementById('link-aluno-modal').style.display = 'flex';
 }
 
@@ -5241,11 +5261,21 @@ function _copiarFallback(ta) {
 function enviarLinkWhatsapp() {
   var ta = document.getElementById('link-aluno-token');
   var nome = document.getElementById('link-aluno-nome').textContent || 'aluno';
-  if (!ta || !ta.value) { showToast('Gere o código antes de enviar', 'err'); return; }
-  var msg = 'Olá ' + nome + '! 👋\n\nAqui está seu código de acesso ao *App de Treino*:\n\n' +
-    ta.value + '\n\n' +
-    '📱 Abra o App Aluno, cole esse código no campo de acesso e você verá seu treino completo.\n\n' +
-    'Qualquer dúvida, me chame! 💪';
+  if (!ta || !ta.value) { showToast('Gere o link antes de enviar', 'err'); return; }
+  var content = ta.value;
+  var isUrl = content.indexOf('http') === 0;
+  var msg;
+  if (isUrl) {
+    msg = 'Olá ' + nome + '! 👋\n\nAqui está o link do seu *App de Treino*:\n\n' +
+      content + '\n\n' +
+      '📱 É só clicar no link pelo celular para ver seu treino completo.\n\n' +
+      'Qualquer dúvida, me chame! 💪';
+  } else {
+    msg = 'Olá ' + nome + '! 👋\n\nAqui está seu código de acesso ao *App de Treino*:\n\n' +
+      content + '\n\n' +
+      '📱 Abra o App Aluno, cole esse código no campo de acesso e você verá seu treino completo.\n\n' +
+      'Qualquer dúvida, me chame! 💪';
+  }
   var url = 'https://wa.me/?text=' + encodeURIComponent(msg);
   window.open(url, '_blank');
 }

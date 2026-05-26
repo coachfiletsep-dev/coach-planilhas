@@ -3245,7 +3245,7 @@ function validarDiasNovoMeso(exercicios, silencioso) {
       addMsg('msgs', 'A IA tentou usar dias fora da aba base: ' + erros.fora.join(', ') + '. Ajuste o briefing ou gere novamente. Dias permitidos: ' + permitidos.join(', ') + '.', false);
       showToast('Dias diferentes da aba base', 'err');
     } else if (erros.faltandoDias.length) {
-      addMsg('msgs', 'A IA nao manteve todos os dias da aba base. Faltou: ' + erros.faltandoDias.join(', ') + '. Gere novamente ou ajuste o pedido.', false);
+      addMsg('msgs', 'Bloqueei o preview porque ainda faltaram dias obrigatorios da aba base: ' + erros.faltandoDias.join(', ') + '. A correcao automatica nao conseguiu recuperar esses dias com seguranca.', false);
       showToast('Divisao diferente da aba base', 'err');
     } else if (erros.divisaoBriefing && erros.divisaoBriefing.length) {
       addMsg('msgs', 'A IA nao respeitou a divisao escrita no briefing:<br>' + erros.divisaoBriefing.slice(0, 8).join('<br>'), false);
@@ -3283,6 +3283,59 @@ function montarPromptCorrecaoNovoMeso(erros) {
     '- Cada dia deve conter pelo menos 1 exercicio para cada grupo listado nele, mesmo em deload.\n' +
     '- Nao aplique regras fixas de upper/lower, PPL ou full-body se elas contradisserem a distribuicao abaixo.\n' +
     'Distribuicao obrigatoria: ' + distribuicao + '.';
+}
+
+function diasPresentesExerciciosApp(exercicios) {
+  var dias = [];
+  (exercicios || []).forEach(function(ex) {
+    var dia = String(ex && ex.dia || '').toUpperCase();
+    if (dia && dias.indexOf(dia) === -1) dias.push(dia);
+  });
+  return dias;
+}
+
+function gruposExercicioNovoMesoApp(ex) {
+  var grupos = [];
+  if (ex && ex.grupo) grupos = grupos.concat(gruposDiaParaListaApp(ex.grupo));
+  if (ex && ex.grupoMuscular) grupos = grupos.concat(gruposDiaParaListaApp(ex.grupoMuscular));
+  if (ex && ex.grupos) grupos = grupos.concat(gruposDiaParaListaApp(ex.grupos));
+  gruposExercicioFallbackApp(ex && ex.nome).forEach(function(g) { if (grupos.indexOf(g) === -1) grupos.push(g); });
+  return grupos;
+}
+
+function exercicioRespeitaGruposDiaApp(ex, gruposPermitidos) {
+  if (!gruposPermitidos || !gruposPermitidos.length) return true;
+  var grupos = gruposExercicioNovoMesoApp(ex);
+  return grupos.length && grupos.every(function(g) { return gruposPermitidos.indexOf(g) > -1; });
+}
+
+function completarDiasAusentesNovoMesoApp(preferido, fallback) {
+  var obrigatorios = window._diasPermitidosNovoMeso || [];
+  if (!obrigatorios.length || !preferido || !fallback) return preferido;
+  var gruposBase = window._gruposPorDiaBaseNovoMeso || {};
+  var presentes = diasPresentesExerciciosApp(preferido.exercicios);
+  var exercicios = (preferido.exercicios || []).slice();
+  var adicionados = [];
+
+  obrigatorios.forEach(function(dia) {
+    if (presentes.indexOf(dia) > -1) return;
+    var gruposPermitidos = gruposBase[dia] || [];
+    var candidatos = (fallback.exercicios || []).filter(function(ex) {
+      return String(ex && ex.dia || '').toUpperCase() === dia && exercicioRespeitaGruposDiaApp(ex, gruposPermitidos);
+    });
+    if (!candidatos.length) {
+      candidatos = (fallback.exercicios || []).filter(function(ex) {
+        return String(ex && ex.dia || '').toUpperCase() === dia;
+      });
+    }
+    candidatos.forEach(function(ex) { exercicios.push(Object.assign({}, ex, { dia: dia })); });
+    if (candidatos.length) adicionados.push(dia);
+  });
+
+  if (!adicionados.length) return preferido;
+  var out = Object.assign({}, preferido, { exercicios: exercicios });
+  out._diasCompletadosDoPreviewAnterior = adicionados;
+  return out;
 }
 
 function publicarPreviewNovoMeso(parsed) {
@@ -3719,8 +3772,12 @@ async function confirmarNovoMeso() {
         if (parsedCorrigido && parsedCorrigido.exercicios && parsedCorrigido.aba) {
           if (cardioCtx) parsedCorrigido.cardio = normalizarCardioComContexto(parsedCorrigido.cardio || [], cardioCtx);
           else if (parsedCorrigido.cardio && parsedCorrigido.cardio.length) parsedCorrigido.cardio = normalizarCardioComContexto(parsedCorrigido.cardio, null);
+          parsedCorrigido = completarDiasAusentesNovoMesoApp(parsedCorrigido, parsed);
           msgHistory.push({role:'assistant',content:replyCorrigido});
           if (validarDiasNovoMeso(parsedCorrigido.exercicios, true)) {
+            if (parsedCorrigido._diasCompletadosDoPreviewAnterior) {
+              addMsg('msgs', 'Completei automaticamente os dias que a correcao tinha removido: ' + parsedCorrigido._diasCompletadosDoPreviewAnterior.join(', ') + '.', false);
+            }
             publicarPreviewNovoMeso(parsedCorrigido);
           } else {
             var errosSegundaTentativa = obterErrosNovoMeso(parsedCorrigido.exercicios);
@@ -3733,8 +3790,15 @@ async function confirmarNovoMeso() {
             if (parsedCorrigido2 && parsedCorrigido2.exercicios && parsedCorrigido2.aba) {
               if (cardioCtx) parsedCorrigido2.cardio = normalizarCardioComContexto(parsedCorrigido2.cardio || [], cardioCtx);
               else if (parsedCorrigido2.cardio && parsedCorrigido2.cardio.length) parsedCorrigido2.cardio = normalizarCardioComContexto(parsedCorrigido2.cardio, null);
+              parsedCorrigido2 = completarDiasAusentesNovoMesoApp(parsedCorrigido2, parsedCorrigido);
+              parsedCorrigido2 = completarDiasAusentesNovoMesoApp(parsedCorrigido2, parsed);
               msgHistory.push({role:'assistant',content:replyCorrigido2});
-              if (validarDiasNovoMeso(parsedCorrigido2.exercicios)) publicarPreviewNovoMeso(parsedCorrigido2);
+              if (validarDiasNovoMeso(parsedCorrigido2.exercicios)) {
+                if (parsedCorrigido2._diasCompletadosDoPreviewAnterior) {
+                  addMsg('msgs', 'Completei automaticamente os dias que a correcao tinha removido: ' + parsedCorrigido2._diasCompletadosDoPreviewAnterior.join(', ') + '.', false);
+                }
+                publicarPreviewNovoMeso(parsedCorrigido2);
+              }
             } else {
               addMsg('msgs', replyCorrigido2, false);
               msgHistory.push({role:'assistant',content:replyCorrigido2});

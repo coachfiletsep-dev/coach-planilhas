@@ -3270,17 +3270,18 @@ function montarPromptCorrecaoNovoMeso(erros) {
       '- Nao transforme a divisao pedida em upper/lower, push/pull/legs ou full-body se isso nao foi pedido.\n';
   }
   var gruposBase = window._gruposPorDiaBaseNovoMeso || {};
+  var diasObrigatorios = window._diasPermitidosNovoMeso || Object.keys(gruposBase);
   var distribuicao = Object.keys(gruposBase).map(function(dia) {
     return dia + '=' + gruposBase[dia].join('+');
   }).join('; ');
   return 'O JSON anterior foi bloqueado porque violou a divisao fixa da aba base. Corrija e retorne APENAS JSON valido completo, sem explicacao.\n' +
     'Erros a corrigir:\n- ' + textoErrosNovoMeso(erros).join('\n- ') + '\n\n' +
     'Regras obrigatorias:\n' +
+    '- O JSON deve conter exercicios em TODOS estes dias, sem remover nenhum: ' + diasObrigatorios.join(', ') + '.\n' +
+    '- Se faltou um dia, recrie esse dia usando somente os grupos permitidos para ele.\n' +
     '- Nao use grupos fora da distribuicao permitida por dia.\n' +
     '- Cada dia deve conter pelo menos 1 exercicio para cada grupo listado nele, mesmo em deload.\n' +
-    '- Nao use panturrilha se PANTURRILHA nao estiver listado no dia.\n' +
-    '- Nao use BICEPS em SEX, pois BICEPS nao esta na distribuicao da sexta.\n' +
-    '- Em SEG inclua pelo menos 1 exercicio de QUADRICEPS permitido, por exemplo CADEIRA EXTENSORA, LEG PRESS 45, HACK ANGULAR ou BULGARO COM HALTERES.\n' +
+    '- Nao aplique regras fixas de upper/lower, PPL ou full-body se elas contradisserem a distribuicao abaixo.\n' +
     'Distribuicao obrigatoria: ' + distribuicao + '.';
 }
 
@@ -3709,7 +3710,7 @@ async function confirmarNovoMeso() {
       var errosPrimeiraTentativa = obterErrosNovoMeso(parsed.exercicios);
       if (textoErrosNovoMeso(errosPrimeiraTentativa).length) {
         msgHistory.push({role:'assistant',content:reply});
-        addMsg('msgs', 'A primeira resposta mudou a divisao da aba base. Vou pedir uma correcao automatica mantendo exatamente os grupos por dia.', false);
+        addMsg('msgs', (window._divisaoBriefingNovoMeso ? 'A primeira resposta nao respeitou a divisao do briefing.' : 'A primeira resposta mudou a divisao da aba base.') + ' Vou pedir uma correcao automatica mantendo exatamente dias e grupos.', false);
         addLoading('msgs');
         msgHistory.push({role:'user',content:montarPromptCorrecaoNovoMeso(errosPrimeiraTentativa)});
         const replyCorrigido = await callClaude(msgHistory, getSystemPrompt(), 9000);
@@ -3719,7 +3720,26 @@ async function confirmarNovoMeso() {
           if (cardioCtx) parsedCorrigido.cardio = normalizarCardioComContexto(parsedCorrigido.cardio || [], cardioCtx);
           else if (parsedCorrigido.cardio && parsedCorrigido.cardio.length) parsedCorrigido.cardio = normalizarCardioComContexto(parsedCorrigido.cardio, null);
           msgHistory.push({role:'assistant',content:replyCorrigido});
-          if (validarDiasNovoMeso(parsedCorrigido.exercicios)) publicarPreviewNovoMeso(parsedCorrigido);
+          if (validarDiasNovoMeso(parsedCorrigido.exercicios, true)) {
+            publicarPreviewNovoMeso(parsedCorrigido);
+          } else {
+            var errosSegundaTentativa = obterErrosNovoMeso(parsedCorrigido.exercicios);
+            addMsg('msgs', 'A primeira correcao ainda veio incompleta. Vou tentar uma ultima correcao com os dias/grupos faltantes.', false);
+            addLoading('msgs');
+            msgHistory.push({role:'user',content:montarPromptCorrecaoNovoMeso(errosSegundaTentativa) + '\n\nATENCAO: mantenha TODOS os dias obrigatorios. Nao remova dias que ja estavam corretos. Retorne o JSON completo, nao apenas os dias corrigidos.'});
+            const replyCorrigido2 = await callClaude(msgHistory, getSystemPrompt(), 9000);
+            removeLoading('msgs');
+            const parsedCorrigido2 = tryParseJSON(replyCorrigido2);
+            if (parsedCorrigido2 && parsedCorrigido2.exercicios && parsedCorrigido2.aba) {
+              if (cardioCtx) parsedCorrigido2.cardio = normalizarCardioComContexto(parsedCorrigido2.cardio || [], cardioCtx);
+              else if (parsedCorrigido2.cardio && parsedCorrigido2.cardio.length) parsedCorrigido2.cardio = normalizarCardioComContexto(parsedCorrigido2.cardio, null);
+              msgHistory.push({role:'assistant',content:replyCorrigido2});
+              if (validarDiasNovoMeso(parsedCorrigido2.exercicios)) publicarPreviewNovoMeso(parsedCorrigido2);
+            } else {
+              addMsg('msgs', replyCorrigido2, false);
+              msgHistory.push({role:'assistant',content:replyCorrigido2});
+            }
+          }
         } else {
           addMsg('msgs', replyCorrigido, false);
           msgHistory.push({role:'assistant',content:replyCorrigido});

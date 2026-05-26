@@ -3242,7 +3242,7 @@ function validarDiasNovoMeso(exercicios, silencioso) {
   if (!linhas.length) return true;
   if (!silencioso) {
     if (erros.fora.length) {
-      addMsg('msgs', 'A IA tentou usar dias fora da aba base: ' + erros.fora.join(', ') + '. Ajuste o briefing ou gere novamente. Dias permitidos: ' + permitidos.join(', ') + '.', false);
+      addMsg('msgs', 'Bloqueei o preview porque a IA tentou usar dias fora da aba base: ' + erros.fora.join(', ') + '. Dias permitidos: ' + permitidos.join(', ') + '.', false);
       showToast('Dias diferentes da aba base', 'err');
     } else if (erros.faltandoDias.length) {
       addMsg('msgs', 'Bloqueei o preview porque ainda faltaram dias obrigatorios da aba base: ' + erros.faltandoDias.join(', ') + '. A correcao automatica nao conseguiu recuperar esses dias com seguranca.', false);
@@ -3763,7 +3763,7 @@ async function confirmarNovoMeso() {
       var errosPrimeiraTentativa = obterErrosNovoMeso(parsed.exercicios);
       if (textoErrosNovoMeso(errosPrimeiraTentativa).length) {
         msgHistory.push({role:'assistant',content:reply});
-        addMsg('msgs', (window._divisaoBriefingNovoMeso ? 'A primeira resposta nao respeitou a divisao do briefing.' : 'A primeira resposta mudou a divisao da aba base.') + ' Vou pedir uma correcao automatica mantendo exatamente dias e grupos.', false);
+        addMsg('msgs', '[correcao v48.2] ' + (window._divisaoBriefingNovoMeso ? 'A primeira resposta nao respeitou a divisao do briefing.' : 'A primeira resposta mudou a divisao da aba base.') + ' Vou pedir uma correcao automatica mantendo exatamente todos os dias e grupos.', false);
         addLoading('msgs');
         msgHistory.push({role:'user',content:montarPromptCorrecaoNovoMeso(errosPrimeiraTentativa)});
         const replyCorrigido = await callClaude(msgHistory, getSystemPrompt(), 9000);

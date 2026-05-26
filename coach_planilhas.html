@@ -377,6 +377,8 @@
           <button class="icon-btn" onclick="abrirRelatorio()" title="Relatório do aluno">📊</button>
           <button class="icon-btn" onclick="abrirComparar()" title="Comparar abas">🔀</button>
           <button class="icon-btn" onclick="abrirSalvarTemplate()" title="Salvar aba atual como template">📌</button>
+          <button class="icon-btn" onclick="ativarLinksAluno()" title="Ativar troca automática dos links">🔗</button>
+          <button class="icon-btn" onclick="corrigirLinksAbaAtual()" title="Corrigir links da aba atual">↻</button>
           <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;">✏️ Editar aba</button>
           <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
         </div>
@@ -1245,7 +1247,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
 </div>
 
 <script>
-const APP_VERSION = 'v47';
+const APP_VERSION = 'v48';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM3xuEYX3XLmhPRdSNTZ4r6x94yqME9yC9JekFZlxs0CgMVV890woiMcGUKiVfPIsXrw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 
@@ -1718,7 +1720,7 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
   }
 
   try {
-    await verificarAppsScriptAtualizado(47);
+    await verificarAppsScriptAtualizado(48);
   } catch(e) {
     if (erroAppsScriptVersaoAntiga(e)) {
       addMsg('msgs', 'BLOQUEADO: ' + e.message, false);
@@ -2611,8 +2613,8 @@ async function verificarEscritaViaSheetsApi(sheetId, nomeAba, exerciciosEsperado
   var minimo = quantidadeExerciciosEsperada > 0 ? Math.max(1, Math.floor(quantidadeExerciciosEsperada * 0.6)) : 0;
   var minimoNomes = recebeuListaExercicios && quantidadeExerciciosEsperada > 0 ? Math.max(1, Math.floor(quantidadeExerciciosEsperada * 0.5)) : 0;
   var ultimoErro = '';
-  for (var tentativa = 0; tentativa < 5; tentativa++) {
-    if (tentativa > 0) await esperar(1500);
+  for (var tentativa = 0; tentativa < 16; tentativa++) {
+    if (tentativa > 0) await esperar(3000);
     try {
       var abasInfo = await buscarAbasViaSheetsApi(sheetId, '');
       if ((abasInfo.abas || []).indexOf(nomeAba) === -1) {
@@ -2991,6 +2993,85 @@ function classificarTipoDiaApp(grupos) {
   return grupos.length ? grupos.join('+') : 'Sem musculacao';
 }
 
+function detectarDivisaoBriefingNovoMeso(texto) {
+  var original = String(texto || '');
+  var t = normalizarTextoMacro(original).toLowerCase();
+  var qtd = null;
+  var num = t.match(/(\d+)\s*(?:treinos?|dias?|sessoes?|x\s*\/?\s*sem)/i);
+  if (num) qtd = parseInt(num[1], 10);
+  var palavras = { 'dois': 2, 'duas': 2, 'tres': 3, 'três': 3, 'quatro': 4, 'cinco': 5, 'seis': 6, 'sete': 7 };
+  Object.keys(palavras).forEach(function(p) {
+    if (qtd) return;
+    var re = new RegExp('\\b' + p + '\\b\\s*(?:treinos?|dias?|sessoes?)', 'i');
+    if (re.test(t)) qtd = palavras[p];
+  });
+  if (/full\s*body|full-body|corpo\s*inteiro/.test(t)) {
+    return { tipo: 'full_body', label: 'full-body', diasEsperados: qtd };
+  }
+  if (/push\s*\/?\s*pull\s*\/?\s*legs|\bppl\b|empurrar.*puxar.*pern|pern.*empurrar.*puxar/.test(t)) {
+    return { tipo: 'push_pull_legs', label: 'push/pull/legs', diasEsperados: qtd };
+  }
+  if (/upper\s*\/?\s*lower|superior\s*\/?\s*inferior|inferior\s*\/?\s*superior/.test(t)) {
+    return { tipo: 'upper_lower', label: 'upper/lower', diasEsperados: qtd };
+  }
+  return null;
+}
+
+function classificarDiaParaDivisaoSolicitadaApp(grupos, tipo) {
+  grupos = grupos || [];
+  var push = grupos.some(function(g){ return ['PEITO','OMBRO','TRICEPS'].indexOf(g) > -1; });
+  var pull = grupos.some(function(g){ return ['COSTAS','BICEPS'].indexOf(g) > -1; });
+  var lower = grupos.some(function(g){ return ['QUADRICEPS','POSTERIOR','PANTURRILHA','GMAX','GMEDIO'].indexOf(g) > -1; });
+  var upper = push || pull;
+  if (tipo === 'full_body') return upper && lower ? 'full-body' : '';
+  if (tipo === 'upper_lower') {
+    if (upper && !lower) return 'upper';
+    if (lower && !upper) return 'lower';
+    return '';
+  }
+  if (tipo === 'push_pull_legs') {
+    if (push && !pull && !lower) return 'push';
+    if (pull && !push && !lower) return 'pull';
+    if (lower && !push && !pull) return 'legs';
+    return '';
+  }
+  return '';
+}
+
+function validarDivisaoSolicitadaBriefingApp(exercicios, divisao) {
+  var erros = [];
+  if (!divisao || !divisao.tipo) return erros;
+  var porDia = {};
+  (exercicios || []).forEach(function(ex) {
+    var dia = String(ex.dia || '').toUpperCase();
+    if (!dia) return;
+    if (!porDia[dia]) porDia[dia] = [];
+    var grupos = [];
+    if (ex.grupo) grupos = grupos.concat(gruposDiaParaListaApp(ex.grupo));
+    if (ex.grupoMuscular) grupos = grupos.concat(gruposDiaParaListaApp(ex.grupoMuscular));
+    if (ex.grupos) grupos = grupos.concat(gruposDiaParaListaApp(ex.grupos));
+    gruposExercicioFallbackApp(ex.nome).forEach(function(g) { if (grupos.indexOf(g) === -1) grupos.push(g); });
+    grupos.forEach(function(g) { if (porDia[dia].indexOf(g) === -1) porDia[dia].push(g); });
+  });
+  var dias = Object.keys(porDia);
+  if (divisao.diasEsperados && dias.length !== divisao.diasEsperados) {
+    erros.push('Briefing pediu ' + divisao.diasEsperados + ' dia(s)/treino(s) na divisão ' + divisao.label + ', mas o preview trouxe ' + dias.length + '.');
+  }
+  var classes = {};
+  dias.forEach(function(dia) {
+    var cls = classificarDiaParaDivisaoSolicitadaApp(porDia[dia], divisao.tipo);
+    if (!cls) erros.push(dia + ': grupos [' + porDia[dia].join(', ') + '] não formam um dia ' + divisao.label + '.');
+    else classes[cls] = true;
+  });
+  if (divisao.tipo === 'upper_lower' && dias.length > 1 && (!classes.upper || !classes.lower)) {
+    erros.push('Briefing pediu upper/lower, mas faltou pelo menos um dia upper e um dia lower.');
+  }
+  if (divisao.tipo === 'push_pull_legs' && dias.length >= 3 && (!classes.push || !classes.pull || !classes.legs)) {
+    erros.push('Briefing pediu push/pull/legs, mas faltou push, pull ou legs.');
+  }
+  return erros;
+}
+
 function resumirDivisaoPorAbaApp(aba) {
   var dias = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
   var divisao = {};
@@ -3089,16 +3170,21 @@ function formatarMemoriaTecnicaParaPrompt(memoria) {
 
 function obterErrosNovoMeso(exercicios) {
   var permitidos = window._diasPermitidosNovoMeso || [];
-  var out = { fora: [], faltandoDias: [], grupos: [] };
-  if (!permitidos.length) return out;
+  var divisaoBriefing = window._divisaoBriefingNovoMeso || null;
+  var out = { fora: [], faltandoDias: [], grupos: [], divisaoBriefing: [] };
   var fora = [];
   var usados = [];
   (exercicios || []).forEach(function(ex) {
     var dia = String(ex.dia || '').toUpperCase();
     if (dia && usados.indexOf(dia) === -1) usados.push(dia);
-    if (permitidos.indexOf(dia) === -1 && fora.indexOf(dia) === -1) fora.push(dia);
+    if (!divisaoBriefing && permitidos.length && permitidos.indexOf(dia) === -1 && fora.indexOf(dia) === -1) fora.push(dia);
   });
   out.fora = fora;
+  if (divisaoBriefing) {
+    out.divisaoBriefing = validarDivisaoSolicitadaBriefingApp(exercicios, divisaoBriefing);
+    return out;
+  }
+  if (!permitidos.length) return out;
   var modo = String(window._divisaoModoNovoMeso || '').toLowerCase();
   if (modo.indexOf('manter divisao') > -1) {
     var faltando = permitidos.filter(function(dia) { return usados.indexOf(dia) === -1; });
@@ -3143,12 +3229,14 @@ function textoErrosNovoMeso(erros) {
   if (erros && erros.fora && erros.fora.length) linhas.push('Dias fora da aba base: ' + erros.fora.join(', '));
   if (erros && erros.faltandoDias && erros.faltandoDias.length) linhas.push('Faltou manter dia da aba base: ' + erros.faltandoDias.join(', '));
   if (erros && erros.grupos && erros.grupos.length) linhas = linhas.concat(erros.grupos);
+  if (erros && erros.divisaoBriefing && erros.divisaoBriefing.length) linhas = linhas.concat(erros.divisaoBriefing);
   return linhas;
 }
 
 function validarDiasNovoMeso(exercicios, silencioso) {
   var permitidos = window._diasPermitidosNovoMeso || [];
-  if (!permitidos.length) return true;
+  var divisaoBriefing = window._divisaoBriefingNovoMeso || null;
+  if (!permitidos.length && !divisaoBriefing) return true;
   var erros = obterErrosNovoMeso(exercicios);
   var linhas = textoErrosNovoMeso(erros);
   if (!linhas.length) return true;
@@ -3159,6 +3247,9 @@ function validarDiasNovoMeso(exercicios, silencioso) {
     } else if (erros.faltandoDias.length) {
       addMsg('msgs', 'A IA nao manteve todos os dias da aba base. Faltou: ' + erros.faltandoDias.join(', ') + '. Gere novamente ou ajuste o pedido.', false);
       showToast('Divisao diferente da aba base', 'err');
+    } else if (erros.divisaoBriefing && erros.divisaoBriefing.length) {
+      addMsg('msgs', 'A IA nao respeitou a divisao escrita no briefing:<br>' + erros.divisaoBriefing.slice(0, 8).join('<br>'), false);
+      showToast('Divisao diferente do briefing', 'err');
     } else {
       addMsg('msgs', 'A IA alterou a distribuicao muscular da aba base. Bloqueei o preview para evitar escrever uma divisao nova:<br>' + erros.grupos.slice(0, 8).join('<br>'), false);
       showToast('Distribuicao diferente da S base', 'err');
@@ -3168,6 +3259,16 @@ function validarDiasNovoMeso(exercicios, silencioso) {
 }
 
 function montarPromptCorrecaoNovoMeso(erros) {
+  var divisaoBriefing = window._divisaoBriefingNovoMeso || null;
+  if (divisaoBriefing) {
+    return 'O JSON anterior foi bloqueado porque violou a divisao que o coach escreveu no briefing. Corrija e retorne APENAS JSON valido completo, sem explicacao.\n' +
+      'Divisao obrigatoria do briefing: ' + divisaoBriefing.label + (divisaoBriefing.diasEsperados ? ' em ' + divisaoBriefing.diasEsperados + ' treino(s)' : '') + '.\n' +
+      'Erros a corrigir:\n- ' + textoErrosNovoMeso(erros).join('\n- ') + '\n\n' +
+      'Regras obrigatorias:\n' +
+      '- A divisao escrita no briefing prevalece sobre a divisao da aba base.\n' +
+      '- Use a aba base apenas para historico, volume, preferencias e referencias de exercicios.\n' +
+      '- Nao transforme a divisao pedida em upper/lower, push/pull/legs ou full-body se isso nao foi pedido.\n';
+  }
   var gruposBase = window._gruposPorDiaBaseNovoMeso || {};
   var distribuicao = Object.keys(gruposBase).map(function(dia) {
     return dia + '=' + gruposBase[dia].join('+');
@@ -3380,6 +3481,7 @@ async function confirmarNovoMeso() {
     abasSelecionadas.push(cb.value);
   });
   const instrucoes = document.getElementById('meso-instrucoes').value.trim();
+  const divisaoBriefingMeso = detectarDivisaoBriefingNovoMeso(instrucoes);
   const blocoSemana = (document.getElementById('meso-bloco-semana') && document.getElementById('meso-bloco-semana').value.trim()) || '';
   const tempoSessao = document.getElementById('meso-tempo').value;
   const seriesAvancadasMeso = macroCampo('meso-series-avancadas');
@@ -3419,6 +3521,7 @@ async function confirmarNovoMeso() {
   var memoriaTecnicaMeso = carregarMemoriaTecnicaAluno();
   window._diasPermitidosNovoMeso = [];
   window._divisaoModoNovoMeso = divisaoModoMeso;
+  window._divisaoBriefingNovoMeso = divisaoBriefingMeso;
   window._gruposPorDiaBaseNovoMeso = {};
   if (abasSelecionadas.length > 0 && window._sheetIdAtual) {
     addMsg('msgs', 'Analisando ' + abasSelecionadas.length + ' semana(s): ' + abasSelecionadas.join(', ') + '...', false);
@@ -3468,14 +3571,19 @@ async function confirmarNovoMeso() {
         if (window._diasPermitidosNovoMeso.length) {
           contextoAbas += '\nDIAS DA ABA BASE (OBRIGATORIO MANTER): ' + window._diasPermitidosNovoMeso.join(', ') + '. Nao crie exercicios em outros dias.\n';
         }
-        if (divisaoModoMeso === 'manter divisao atual' && Object.keys(window._gruposPorDiaBaseNovoMeso).length) {
+        if (!divisaoBriefingMeso && divisaoModoMeso === 'manter divisao atual' && Object.keys(window._gruposPorDiaBaseNovoMeso).length) {
           contextoAbas += 'DISTRIBUICAO MUSCULAR DA ABA BASE (OBRIGATORIO MANTER): ' +
             Object.keys(window._gruposPorDiaBaseNovoMeso).map(function(dia) {
               return dia + '=' + window._gruposPorDiaBaseNovoMeso[dia].join('+');
             }).join('; ') + '.\n';
           contextoAbas += 'REGRA RIGIDA: cada exercicio deve pertencer somente aos grupos permitidos no seu dia. Nao inclua PANTURRILHA se o dia nao tiver PANTURRILHA. Nao inclua BICEPS em dia sem BICEPS. Cada grupo listado no dia precisa aparecer ao menos uma vez, mesmo em deload.\n';
+        } else if (divisaoBriefingMeso) {
+          contextoAbas += 'DIVISAO EXPLICITA DO BRIEFING (OBRIGATORIO): ' + divisaoBriefingMeso.label +
+            (divisaoBriefingMeso.diasEsperados ? ' em ' + divisaoBriefingMeso.diasEsperados + ' treino(s)' : '') +
+            '. Esta divisao prevalece sobre a divisao da aba base.\n';
         }
-        contextoAbas += 'Modo da divisao escolhido pelo coach: ' + divisaoModoMeso + '. Preserve a estrutura da divisao quando este modo pedir.\n';
+        contextoAbas += 'Modo da divisao escolhido pelo coach: ' + divisaoModoMeso + '. ' +
+          (divisaoBriefingMeso ? 'Como ha divisao explicita no briefing, ela prevalece sobre este modo.\n' : 'Preserve a estrutura da divisao quando este modo pedir.\n');
         var divResumoEl = document.getElementById('meso-divisao-resumo');
         if (divResumoEl && memoriaTecnicaMeso && memoriaTecnicaMeso.divisaoAtual) divResumoEl.textContent = 'Detectado: ' + JSON.stringify(memoriaTecnicaMeso.divisaoAtual);
         addMsg('msgs', 'Analise concluida! Montando preview do mesociclo...', false);
@@ -3491,15 +3599,27 @@ async function confirmarNovoMeso() {
   if (tempoSessao && tempoMap[tempoSessao]) prompt += 'LIMITE DE VOLUME: ' + tempoSessao + ' por sessão = ' + tempoMap[tempoSessao] + '. Respeite rigorosamente.\n';
   prompt += 'REGRA FIXA: NUNCA use o exercicio ELEVACAO LATERAL COM ELASTICO. Ele esta bloqueado pelo coach e nao pode aparecer nem como substituicao.\n';
   if (instrucoes) prompt += 'Briefing do aluno e instrucoes do coach: ' + instrucoes + '\n';
+  if (divisaoBriefingMeso) {
+    prompt += 'DIVISAO PEDIDA NO BRIEFING: ' + divisaoBriefingMeso.label +
+      (divisaoBriefingMeso.diasEsperados ? ' em exatamente ' + divisaoBriefingMeso.diasEsperados + ' treino(s)' : '') + '.\n';
+    prompt += 'REGRA DOMINANTE: respeite exatamente a divisao escrita pelo coach no briefing. Se ela contradisser a aba base, a divisao do briefing vence; use a aba base apenas para historico, volume, preferencias e referencias.\n';
+  }
   if (blocoSemana) prompt += 'POSICAO NO BLOCO (periodizacao): ' + blocoSemana + '. Use este tag para determinar exatamente onde o aluno esta no ciclo: ajuste reps, RiR, series e intensidade conforme a semana dentro do bloco e o modelo de periodizacao do macrociclo. bloco1-sem1=inicio da fase (volume alto, intensidade moderada, RiR 3); sem2=progressao; sem3=pico do bloco (intensidade alta, RiR 0-1); sem4 ou deload=reducao 40-50% volume, RiR 3-4, exercicios base.\n';
   if (window._obsAluno) prompt += 'Observações do aluno: ' + window._obsAluno + '\n';
-  if (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length) prompt += 'Use SOMENTE estes dias de musculação: ' + window._diasPermitidosNovoMeso.join(', ') + '.\n';
+  if (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length) {
+    if (divisaoBriefingMeso) prompt += 'Dias da aba base para referencia: ' + window._diasPermitidosNovoMeso.join(', ') + '. Se a divisao escrita no briefing pedir outra quantidade/estrutura, priorize o briefing.\n';
+    else prompt += 'Use SOMENTE estes dias de musculacao: ' + window._diasPermitidosNovoMeso.join(', ') + '.\n';
+  }
   if (memoriaTecnicaMeso) {
     prompt += '\n=== REGRAS DE DIVISAO E MEMORIA TECNICA ===\n';
     prompt += 'Modo da divisao: ' + divisaoModoMeso + '.\n';
     prompt += 'Memoria tecnica compacta: ' + formatarMemoriaTecnicaParaPrompt(memoriaTecnicaMeso) + '\n';
-    prompt += 'Se o modo for "manter divisao atual", preserve dias, tipo do dia e grupos por dia da memoria. Se for "manter dias, ajustar grupos", nao crie dias novos. Se for "IA pode propor nova divisao", ainda retorne a proposta no JSON final para preview.\n';
-    if (divisaoModoMeso === 'manter divisao atual' && window._gruposPorDiaBaseNovoMeso && Object.keys(window._gruposPorDiaBaseNovoMeso).length) {
+    if (divisaoBriefingMeso) {
+      prompt += 'Como o briefing trouxe uma divisao explicita, nao preserve a divisao antiga se ela contradisser o briefing. Preserve somente preferencias, historico, exercicios bem tolerados e volume adequado.\n';
+    } else {
+      prompt += 'Se o modo for "manter divisao atual", preserve dias, tipo do dia e grupos por dia da memoria. Se for "manter dias, ajustar grupos", nao crie dias novos. Se for "IA pode propor nova divisao", ainda retorne a proposta no JSON final para preview.\n';
+    }
+    if (!divisaoBriefingMeso && divisaoModoMeso === 'manter divisao atual' && window._gruposPorDiaBaseNovoMeso && Object.keys(window._gruposPorDiaBaseNovoMeso).length) {
       prompt += 'CHECKLIST OBRIGATORIO antes de responder: valide dia por dia se todos os grupos da divisao base aparecem e se nenhum grupo fora da divisao foi incluido. Se um exercicio for de PANTURRILHA, so pode entrar em dia que tenha PANTURRILHA na divisao. Se um exercicio for de BICEPS, so pode entrar em dia que tenha BICEPS na divisao.\n';
     }
   }
@@ -3922,6 +4042,44 @@ async function protegerPlanilhaAluno() {
     showToast('Planilha protegida: ' + data.abasProtegidas + ' aba(s)', 'ok');
   } catch(e) {
     showToast('Erro ao proteger: ' + e.message, 'err');
+  }
+}
+
+async function ativarLinksAluno() {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha do aluno nao configurada', 'err'); return; }
+  try {
+    var res = await gsPost({ acao: 'configurarTriggerLinksExerciciosPlanilha', spreadsheetId: sheetId });
+    var data = await res.json();
+    if (!data.sucesso) throw new Error(data.erro || ((data.erros || []).join(' | ')) || 'Nao consegui ativar');
+    showToast('Links automáticos ativados para este aluno', 'ok');
+    addMsg('msgs', 'Links automáticos ativados. Agora, ao trocar o exercício na coluna B, o link logo abaixo deve acompanhar.', false);
+  } catch(e) {
+    showToast('Erro ao ativar links: ' + e.message, 'err');
+  }
+}
+
+async function corrigirLinksAbaAtual() {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha do aluno nao configurada', 'err'); return; }
+  var aba = window._abaAtual || '';
+  try {
+    var estado = await atualizarAbasDoAlunoAtual();
+    aba = estado.abaAtual || aba;
+  } catch(eAtual) {}
+  if (!aba) { showToast('Nao encontrei a aba atual', 'err'); return; }
+  try {
+    var res = await gsPost({ acao: 'atualizarLinksExercicios', spreadsheetId: sheetId, aba: aba });
+    var data = await res.json();
+    if (!data.sucesso) throw new Error(data.erro || ((data.erros || []).join(' | ')) || 'Nao consegui corrigir');
+    showToast('Links corrigidos na ' + aba + ': ' + (data.atualizados || 0), 'ok');
+    addMsg('msgs', 'Corrigi os links da aba ' + aba + ': ' + (data.atualizados || 0) + ' atualizados' + (data.semLink ? ', ' + data.semLink + ' sem link no banco' : '') + '.', false);
+  } catch(e) {
+    showToast('Erro ao corrigir links: ' + e.message, 'err');
   }
 }
 

@@ -418,6 +418,26 @@
             <div class="ac-label">Analisar ajustes</div>
             <div class="ac-desc">Sugere carga ou reps com base na semana anterior</div>
           </button>
+          <button class="ac" onclick="abrirRelatorioTipo('semanal')">
+            <div class="ac-icon">📈</div>
+            <div class="ac-label">Relatório Semanal</div>
+            <div class="ac-desc">Plano Performance — última semana, análise completa</div>
+          </button>
+          <button class="ac" onclick="abrirRelatorioTipo('quinzenal')">
+            <div class="ac-icon">📊</div>
+            <div class="ac-label">Relatório Quinzenal</div>
+            <div class="ac-desc">Plano Evolução — comparativo das 2 últimas semanas</div>
+          </button>
+          <button class="ac" onclick="abrirRelatorioTipo('mensal')">
+            <div class="ac-icon">🗓️</div>
+            <div class="ac-label">Relatório Mensal</div>
+            <div class="ac-desc">Plano Essencial — resumo do mês (4 semanas)</div>
+          </button>
+          <button class="ac" onclick="abrirRelatorioFimMeso()">
+            <div class="ac-icon">🏁</div>
+            <div class="ac-label">Fim de Meso</div>
+            <div class="ac-desc">Compilado do ciclo completo (6–10 semanas)</div>
+          </button>
         </div>
         <div class="ai-box">
           <div class="ai-top">
@@ -1119,7 +1139,8 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
     <div class="modal-header">
       <span class="modal-title">📊 Relatório do aluno</span>
       <div style="display:flex;gap:6px;">
-        <button class="btn-ghost" onclick="imprimirRelatorio()" style="font-size:11px;">🖨️ Imprimir / PDF</button>
+        <button class="btn-ghost" onclick="imprimirRelatorio()" style="font-size:11px;">🖨️ PDF</button>
+        <button class="btn-ghost" onclick="enviarRelatorioWhatsapp()" style="font-size:11px;color:#25D366;border-color:#25D366;">📲 WhatsApp</button>
         <button class="icon-btn" onclick="document.getElementById(&#39;relatorio-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
       </div>
     </div>
@@ -5671,6 +5692,81 @@ function usarTemplate(tpl) {
 // ============================================================
 // RELATÓRIO DO ALUNO
 // ============================================================
+// ============================================================
+// RELATÓRIOS POR TIPO (Semanal / Quinzenal / Mensal)
+// ============================================================
+var _relatorioTipoAtual = null; // guarda o tipo para o botão WhatsApp
+
+async function abrirRelatorioTipo(tipo) {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
+
+  var nSemanas = tipo === 'semanal' ? 1 : tipo === 'quinzenal' ? 2 : 4;
+  var tituloTipo = tipo === 'semanal' ? 'Relatório Semanal' : tipo === 'quinzenal' ? 'Relatório Quinzenal' : 'Relatório Mensal';
+  // nota: 'fimmeso' é tratado por abrirRelatorioFimMeso() — não passa por aqui
+  _relatorioTipoAtual = tipo;
+
+  var abas = [];
+  try {
+    var data = await buscarAbasSpreadsheet(sheetId);
+    abas = data.abas || [];
+  } catch(e) { showToast('Erro ao buscar abas: ' + (e && e.message ? e.message : 'desconhecido'), 'err'); return; }
+
+  if (abas.length === 0) { showToast('Nenhuma semana encontrada na planilha', 'err'); return; }
+
+  // Pré-selecionar as últimas N semanas
+  var abasSel = abas.slice(-nSemanas);
+
+  var lista = document.getElementById('rel-abas-lista');
+  lista.innerHTML = '';
+  abas.forEach(function(aba) {
+    var label = document.createElement('label');
+    label.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg2);';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.value = aba;
+    cb.checked = abasSel.indexOf(aba) > -1;
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(aba));
+    lista.appendChild(label);
+  });
+
+  document.querySelector('#relatorio-modal .modal-title').textContent = '📊 ' + tituloTipo;
+  document.getElementById('rel-conteudo').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">⏳ Gerando ' + tituloTipo.toLowerCase() + '...</div>';
+  document.getElementById('relatorio-modal').style.display = 'flex';
+
+  // Gerar automaticamente
+  await gerarRelatorioHTML();
+}
+
+async function enviarRelatorioWhatsapp() {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
+
+  // Verificar se o relatório foi gerado
+  var conteudo = document.getElementById('rel-conteudo');
+  if (!conteudo || !conteudo.textContent.trim() || conteudo.querySelector('[style*="text-align:center"]')) {
+    showToast('Gere o relatório antes de enviar', 'err'); return;
+  }
+
+  if (!confirm('Enviar relatório para ' + s.name + ' via WhatsApp?')) return;
+
+  try {
+    var res = await gsPost({ dispararRelatorio: true, spreadsheetId: sheetId, nomeAluno: s.name });
+    var data = await res.json();
+    if (data.sucesso) {
+      showToast('✅ Relatório enviado para ' + s.name.split(' ')[0] + ' via WhatsApp!', 'ok');
+    } else {
+      showToast('Erro ao enviar: ' + (data.erro || 'desconhecido'), 'err');
+    }
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'err');
+  }
+}
+
 async function abrirRelatorio() {
   var s = students.find(function(x){return x.id===selectedId;});
   if (!s) { showToast('Selecione um aluno','err'); return; }
@@ -5721,8 +5817,17 @@ async function gerarRelatorioHTML() {
       return;
     }
 
-    if (abasSel.length > 1) {
-      // Modo comparativo — IA gera a análise
+    var tipo = _relatorioTipoAtual;
+    if (tipo === 'fimmeso') {
+      conteudo.innerHTML = '';
+      await gerarRelatorioFimMesoAsync(s.name, data, conteudo);
+    } else if (tipo === 'mensal') {
+      conteudo.innerHTML = '';
+      await gerarRelatorioMensalAsync(s.name, data, conteudo);
+    } else if (tipo === 'quinzenal') {
+      conteudo.innerHTML = '';
+      await gerarRelatorioQuinzenalAsync(s.name, data, conteudo);
+    } else if (abasSel.length > 1) {
       conteudo.innerHTML = '';
       await gerarRelatorioComparativoAsync(s.name, data, conteudo);
     } else {
@@ -5741,6 +5846,455 @@ function montarHTMLRelatorio(nomeAluno, data) {
     return montarRelatorioComparativoIA(nomeAluno, data);
   }
   return montarRelatorioSemanal(nomeAluno, data.abas[0], data);
+}
+
+// ──────────────────────────────────────────────────────────────
+// RELATÓRIO MENSAL — 1 página, visão macro (Plano Essencial)
+// ──────────────────────────────────────────────────────────────
+async function gerarRelatorioMensalAsync(nomeAluno, data, containerEl) {
+  containerEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:24px;margin-bottom:12px">📅</div><div style="font-size:14px;font-weight:500">Compilando relatório mensal...</div></div>';
+
+  var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+  var totalTreinos = 0, totalPossivel = 0, totalVL = 0;
+  var histExercicios = {}, freqPorSemana = [];
+
+  data.abas.forEach(function(aba) {
+    var realizados = 0, possivel = 0;
+    diasOrdem.forEach(function(dia) {
+      var d = aba.dias[dia];
+      if (!d || d.totalExercicios === 0) return;
+      possivel++;
+      if (d.treinou) realizados++;
+      d.exercicios.forEach(function(ex) {
+        if (!ex.realizado) return;
+        totalVL += ex.volumeLoad || 0;
+        if (!histExercicios[ex.nome]) histExercicios[ex.nome] = [];
+        var cargaMax = ex.seriesAtual.length > 0 ? Math.max.apply(null, ex.seriesAtual.map(function(s){ return s.carga; })) : 0;
+        histExercicios[ex.nome].push({ aba: aba.aba, cargaMax: cargaMax });
+      });
+    });
+    totalTreinos += realizados;
+    totalPossivel += possivel;
+    freqPorSemana.push({ aba: aba.aba, realizados: realizados, total: possivel });
+  });
+
+  var progressoes = [];
+  Object.keys(histExercicios).forEach(function(nome) {
+    var hist = histExercicios[nome];
+    if (hist.length < 2) return;
+    var diff = hist[hist.length - 1].cargaMax - hist[0].cargaMax;
+    if (diff > 0) progressoes.push({ nome: nome, de: hist[0].cargaMax, para: hist[hist.length - 1].cargaMax, diff: diff });
+  });
+  progressoes.sort(function(a, b) { return b.diff - a.diff; });
+
+  var freqPct = totalPossivel > 0 ? Math.round((totalTreinos / totalPossivel) * 100) : 0;
+  var primeiroNome = nomeAluno.split(' ')[0];
+  var hoje = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+  var periodo = data.abas[0].aba + ' – ' + data.abas[data.abas.length - 1].aba;
+  var fmt = function(n) { if (!n) return '0'; if (n >= 1000) return (n / 1000).toFixed(1) + 'k'; return String(Math.round(n)); };
+
+  // IA: parágrafo mensal
+  var ctx = 'Aluno: ' + nomeAluno + '\nPeríodo: ' + periodo + '\nTreinos: ' + totalTreinos + '/' + totalPossivel + ' (' + freqPct + '%)\n';
+  progressoes.slice(0, 3).forEach(function(p) { ctx += p.nome + ': ' + p.de + 'kg → ' + p.para + 'kg (+' + p.diff + 'kg)\n'; });
+  var textoMensal = freqPct >= 75
+    ? primeiroNome + ', seu mês foi consistente — ' + totalTreinos + ' treinos e ' + progressoes.length + ' exercícios em progressão de carga. Os números confirmam que o método está funcionando. Mantenha a regularidade no próximo ciclo. — Felipe'
+    : 'O mês teve altos e baixos, ' + primeiroNome + ', mas você apareceu quando importava. ' + totalTreinos + ' treinos realizados. No próximo mês, vamos focar em manter a frequência acima de 75% — esse é o gatilho principal de resultado. — Felipe';
+
+  try {
+    var r = await fetch('https://coach-proxy.coachfiletsep.workers.dev', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 220,
+        system: 'Coach de treino. Parágrafo mensal direto, 2-3 frases, sem formatação.',
+        messages: [{ role: 'user', content: ctx + '\nEscreva parágrafo mensal para o aluno. Tom direto de coach. Assine "— Felipe".' }] })
+    });
+    var rd = await r.json();
+    if (!rd.error && rd.content && rd.content[0]) textoMensal = rd.content[0].text.trim();
+  } catch(e) {}
+
+  // ── Montar HTML ──
+  var freqHtml = '';
+  freqPorSemana.forEach(function(f) {
+    var pct = f.total > 0 ? Math.round((f.realizados / f.total) * 100) : 0;
+    freqHtml += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">' +
+      '<span style="font-size:11px;font-weight:600;width:28px;color:#6B6B66">' + f.aba + '</span>' +
+      '<div style="flex:1;background:#ECEAE4;border-radius:4px;height:8px;overflow:hidden">' +
+        '<div style="height:8px;background:#1D9E75;width:' + pct + '%;border-radius:4px"></div></div>' +
+      '<span style="font-size:12px;font-weight:600;color:#1D9E75;width:50px;text-align:right">' + f.realizados + '/' + f.total + '</span>' +
+    '</div>';
+  });
+
+  var progHtml = progressoes.length > 0
+    ? progressoes.slice(0, 4).map(function(p) {
+        return '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#F0FAF5;border-radius:8px;margin-bottom:8px;border:1px solid #C6EFE0">' +
+          '<span style="font-size:18px">↑</span>' +
+          '<div style="flex:1"><div style="font-size:13px;font-weight:600">' + p.nome + '</div>' +
+          '<div style="font-size:11px;color:#6B6B66">' + p.de + 'kg → ' + p.para + 'kg</div></div>' +
+          '<span style="font-size:11px;font-weight:700;background:#1D9E75;color:#fff;padding:3px 10px;border-radius:99px">+' + p.diff + 'kg</span></div>';
+      }).join('')
+    : '<p style="font-size:13px;color:#6B6B66">Dados insuficientes para calcular progressão.</p>';
+
+  containerEl.innerHTML = '<style>' +
+    '@import url(\'https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap\');' +
+    '.rm{font-family:\'DM Sans\',sans-serif;color:#1a1a18;max-width:680px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '.rm-h{background:#F0FAF5;border:2px solid #1D9E75;border-radius:12px;padding:32px 40px;margin-bottom:20px}' +
+    '.rm-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}' +
+    '.rm-card{background:#fff;border:1px solid #ECEAE4;border-radius:10px;padding:18px 16px;text-align:center}' +
+    '.rm-cv{font-family:\'DM Serif Display\',serif;font-size:34px;color:#1D9E75;line-height:1;margin-bottom:4px}' +
+    '.rm-cl{font-size:9px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#6B6B66}' +
+    '.rm-sec{background:#fff;border:1px solid #ECEAE4;border-radius:10px;padding:22px 26px;margin-bottom:16px}' +
+    '.rm-st{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#1D9E75;margin-bottom:14px}' +
+    '@media print{.rm{max-width:100%}}' +
+    '</style>' +
+    '<div class="rm">' +
+      '<div class="rm-h">' +
+        '<div style="font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#1D9E75;margin-bottom:8px">Relatório Mensal · ' + periodo + '</div>' +
+        '<div style="font-family:\'DM Serif Display\',serif;font-size:30px;color:#1a1a18;margin-bottom:4px">' + nomeAluno + '</div>' +
+        '<div style="font-size:12px;color:#6B6B66">Resumo do mês · Coach Felipe Luiz</div>' +
+      '</div>' +
+      '<div class="rm-cards">' +
+        '<div class="rm-card"><div class="rm-cv">' + totalTreinos + '</div><div class="rm-cl">Treinos no mês</div></div>' +
+        '<div class="rm-card"><div class="rm-cv">' + freqPct + '%</div><div class="rm-cl">Frequência</div></div>' +
+        '<div class="rm-card"><div class="rm-cv">' + progressoes.length + '</div><div class="rm-cl">Exercícios em alta</div></div>' +
+      '</div>' +
+      '<div class="rm-sec"><div class="rm-st">Frequência por semana</div>' + freqHtml + '</div>' +
+      '<div class="rm-sec"><div class="rm-st">Maiores evoluções do mês</div>' + progHtml + '</div>' +
+      '<div style="background:#2C2C2A;border-radius:10px;padding:22px 28px;color:#fff;font-size:13px;line-height:1.8">' + textoMensal + '</div>' +
+      '<div style="text-align:right;font-size:10px;color:#BEBCB5;margin-top:10px">' + hoje + '</div>' +
+    '</div>';
+}
+
+// ──────────────────────────────────────────────────────────────
+// RELATÓRIO FIM DE MESO — abertura e geração
+// ──────────────────────────────────────────────────────────────
+async function abrirRelatorioFimMeso() {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
+
+  _relatorioTipoAtual = 'fimmeso';
+
+  var abas = [];
+  try {
+    var data = await buscarAbasSpreadsheet(sheetId);
+    abas = data.abas || [];
+  } catch(e) { showToast('Erro ao buscar abas: ' + (e && e.message ? e.message : 'desconhecido'), 'err'); return; }
+
+  if (abas.length === 0) { showToast('Nenhuma semana encontrada na planilha', 'err'); return; }
+
+  // Pré-selecionar as últimas 8 semanas (meso padrão)
+  var abasSel = abas.slice(-8);
+
+  var lista = document.getElementById('rel-abas-lista');
+  lista.innerHTML = '';
+  abas.forEach(function(aba) {
+    var label = document.createElement('label');
+    label.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg2);';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.value = aba;
+    cb.checked = abasSel.indexOf(aba) > -1;
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(aba));
+    lista.appendChild(label);
+  });
+
+  document.querySelector('#relatorio-modal .modal-title').textContent = '🏁 Relatório Fim de Meso';
+  document.getElementById('rel-conteudo').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">⏳ Compilando meso...</div>';
+  document.getElementById('relatorio-modal').style.display = 'flex';
+
+  await gerarRelatorioHTML();
+}
+
+async function gerarRelatorioFimMesoAsync(nomeAluno, data, containerEl) {
+  containerEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:24px;margin-bottom:12px">🏁</div><div style="font-size:14px;font-weight:500">Compilando fim de meso...</div></div>';
+
+  var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+  var fmt = function(n) { if (!n) return '0'; if (n >= 1000) return (n/1000).toFixed(1)+'k'; return String(Math.round(n)); };
+  var primeiroNome = nomeAluno.split(' ')[0];
+  var hoje = new Date().toLocaleDateString('pt-BR', {day:'numeric',month:'long',year:'numeric'});
+
+  // ── Calcular agregados por semana ──
+  var totalTreinos = 0, totalPossivel = 0, totalVL = 0, totalRecs = 0;
+  var vlPorSemana = [];
+  var histExercicios = {}; // nome → [{aba, cargaMax}]
+
+  data.abas.forEach(function(aba) {
+    var realizados = 0, possivel = 0, vlSemana = 0, recsSemana = 0;
+    diasOrdem.forEach(function(dia) {
+      var d = aba.dias[dia];
+      if (!d || d.totalExercicios === 0) return;
+      possivel++;
+      if (d.treinou) realizados++;
+      d.exercicios.forEach(function(ex) {
+        if (!ex.realizado) return;
+        var vl = ex.volumeLoad || 0;
+        vlSemana += vl;
+        totalVL += vl;
+        if (ex.recordePersonal) recsSemana++;
+        if (!histExercicios[ex.nome]) histExercicios[ex.nome] = [];
+        var cargaMax = ex.seriesAtual && ex.seriesAtual.length > 0
+          ? Math.max.apply(null, ex.seriesAtual.map(function(s){ return s.carga||0; }))
+          : 0;
+        histExercicios[ex.nome].push({ aba: aba.aba, cargaMax: cargaMax });
+      });
+    });
+    totalTreinos += realizados;
+    totalPossivel += possivel;
+    totalRecs += recsSemana;
+    vlPorSemana.push({ aba: aba.aba, vl: vlSemana, realizados: realizados, total: possivel });
+  });
+
+  var freqPct = totalPossivel > 0 ? Math.round((totalTreinos / totalPossivel) * 100) : 0;
+  var nSemanas = data.abas.length;
+  var periodo = data.abas[0].aba + ' → ' + data.abas[nSemanas-1].aba;
+
+  // ── Top progressões do meso (início → fim) ──
+  var progressoes = [];
+  Object.keys(histExercicios).forEach(function(nome) {
+    var hist = histExercicios[nome];
+    if (hist.length < 2) return;
+    var cargaInicio = hist[0].cargaMax;
+    var cargaFim = hist[hist.length-1].cargaMax;
+    var diff = cargaFim - cargaInicio;
+    if (diff > 0) progressoes.push({ nome: nome, de: cargaInicio, para: cargaFim, diff: diff });
+  });
+  progressoes.sort(function(a,b){ return b.diff - a.diff; });
+
+  // ── Mini gráfico de barras VL por semana ──
+  var vlMax = Math.max.apply(null, vlPorSemana.map(function(s){ return s.vl; })) || 1;
+  var vlBarsHtml = vlPorSemana.map(function(s) {
+    var pct = Math.round((s.vl / vlMax) * 100);
+    var freqOk = s.total > 0 && (s.realizados / s.total) >= 0.75;
+    var cor = freqOk ? '#1D9E75' : '#E5C05E';
+    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">' +
+      '<div style="width:100%;background:#ECEAE4;border-radius:4px;height:48px;display:flex;align-items:flex-end;overflow:hidden">' +
+        '<div style="width:100%;background:' + cor + ';height:' + pct + '%;border-radius:3px 3px 0 0;transition:height .3s"></div>' +
+      '</div>' +
+      '<div style="font-size:8px;font-weight:600;color:#9B9B96;text-align:center">' + s.aba + '</div>' +
+      '<div style="font-size:8px;color:#6B6B66;text-align:center">' + fmt(s.vl) + '</div>' +
+    '</div>';
+  }).join('');
+
+  // ── HTML progressões ──
+  var progHtml = progressoes.length > 0
+    ? progressoes.slice(0, 5).map(function(p) {
+        return '<tr>' +
+          '<td style="font-weight:500;padding:9px 10px 9px 0">' + p.nome + '</td>' +
+          '<td style="padding:9px 10px;color:#9B9B96">' + p.de + 'kg</td>' +
+          '<td style="padding:9px 10px;color:#1D9E75;font-weight:600">' + p.para + 'kg</td>' +
+          '<td style="padding:9px 0"><span style="font-size:10px;font-weight:700;background:#1D9E75;color:#fff;padding:2px 8px;border-radius:99px">+' + p.diff + 'kg</span></td>' +
+        '</tr>';
+      }).join('')
+    : '<tr><td colspan="4" style="color:#9B9B96;padding:10px 0;font-size:11px">Nenhuma progressão detectada no período</td></tr>';
+
+  // ── IA: parágrafo fim de meso ──
+  var ctx = 'Aluno: ' + nomeAluno + '\nMeso: ' + periodo + ' (' + nSemanas + ' semanas)\n';
+  ctx += 'Total treinos: ' + totalTreinos + '/' + totalPossivel + ' (' + freqPct + '%)\n';
+  ctx += 'Volume Load total: ' + fmt(totalVL) + ' kg\nRecordes pessoais: ' + totalRecs + '\n';
+  progressoes.slice(0, 4).forEach(function(p){ ctx += p.nome + ': ' + p.de + 'kg → ' + p.para + 'kg (+' + p.diff + 'kg)\n'; });
+  var txFallback = freqPct >= 75
+    ? primeiroNome + ', o meso foi sólido — ' + totalTreinos + ' treinos e ' + progressoes.length + ' exercícios em progressão. O volume load total de ' + fmt(totalVL) + ' kg reflete o trabalho acumulado. Hora de descansar, recuperar e preparar o próximo ciclo. — Felipe'
+    : primeiroNome + ', o meso teve inconsistências — ' + totalTreinos + '/' + totalPossivel + ' treinos (' + freqPct + '%). Ainda assim, houve progressões reais. No próximo meso, priorizamos frequência acima de 80% como fundação. — Felipe';
+
+  var textoFimMeso = txFallback;
+  try {
+    var r = await fetch('https://coach-proxy.coachfiletsep.workers.dev', {
+      method: 'POST', headers: {'Content-Type':'application/json','anthropic-version':'2023-06-01'},
+      body: JSON.stringify({ model:'claude-haiku-4-5-20251001', max_tokens: 320,
+        system: 'Coach de treino esportivo. Escreva um parágrafo de encerramento de mesociclo, direto, motivador e técnico. 3-4 frases. Sem formatação. Assine "— Felipe".',
+        messages: [{ role:'user', content: ctx + '\nEscreva o parágrafo de encerramento de meso para o aluno.' }] })
+    });
+    var rd = await r.json();
+    if (!rd.error && rd.content && rd.content[0]) textoFimMeso = rd.content[0].text.trim();
+  } catch(e) {}
+
+  containerEl.innerHTML =
+    // HEADER
+    '<div style="background:linear-gradient(135deg,#1a1a18 0%,#2C3E2C 100%);border-radius:12px 12px 0 0;padding:28px 36px">' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">' +
+        '<span style="font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.45)">Fim de Mesociclo</span>' +
+        '<span style="font-size:9px;font-weight:700;background:#1D9E75;color:#fff;padding:2px 10px;border-radius:99px;letter-spacing:.08em">' + nSemanas + ' SEMANAS</span>' +
+      '</div>' +
+      '<div style="font-family:\'DM Serif Display\',serif;font-size:26px;color:#fff;margin-bottom:2px">' + nomeAluno + '</div>' +
+      '<div style="font-size:11px;color:rgba(255,255,255,.4)">' + periodo + ' · Coach Felipe Luiz</div>' +
+    '</div>' +
+    // CORPO
+    '<div style="background:#fff;border:1px solid #ECEAE4;border-top:none;border-radius:0 0 12px 12px;padding:24px 32px">' +
+      // KPIs
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px">' +
+        '<div style="border:1px solid #ECEAE4;border-radius:10px;padding:14px 16px;text-align:center">' +
+          '<div style="font-size:26px;font-weight:700;color:#1D9E75;line-height:1">' + totalTreinos + '</div>' +
+          '<div style="font-size:8px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9B9B96;margin-top:4px">Treinos</div>' +
+        '</div>' +
+        '<div style="border:1px solid #ECEAE4;border-radius:10px;padding:14px 16px;text-align:center">' +
+          '<div style="font-size:26px;font-weight:700;color:' + (freqPct>=75?'#1D9E75':'#E5C05E') + ';line-height:1">' + freqPct + '%</div>' +
+          '<div style="font-size:8px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9B9B96;margin-top:4px">Frequência</div>' +
+        '</div>' +
+        '<div style="border:1px solid #ECEAE4;border-radius:10px;padding:14px 16px;text-align:center">' +
+          '<div style="font-size:26px;font-weight:700;color:#1D9E75;line-height:1">' + fmt(totalVL) + '</div>' +
+          '<div style="font-size:8px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9B9B96;margin-top:4px">VL Total kg</div>' +
+        '</div>' +
+        '<div style="border:1px solid #ECEAE4;border-radius:10px;padding:14px 16px;text-align:center">' +
+          '<div style="font-size:26px;font-weight:700;color:#1D9E75;line-height:1">' + totalRecs + '</div>' +
+          '<div style="font-size:8px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9B9B96;margin-top:4px">Recordes</div>' +
+        '</div>' +
+      '</div>' +
+      // GRÁFICO VL
+      '<div style="margin-bottom:22px">' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#1D9E75;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #ECEAE4">📊 Volume Load por semana</div>' +
+        '<div style="display:flex;gap:6px;align-items:flex-end;height:80px">' + vlBarsHtml + '</div>' +
+        '<div style="font-size:9px;color:#9B9B96;margin-top:6px">🟢 ≥75% frequência &nbsp; 🟡 &lt;75% frequência</div>' +
+      '</div>' +
+      // TABELA PROGRESSÕES
+      '<div style="margin-bottom:22px">' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#1D9E75;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #ECEAE4">📈 Maiores evoluções do meso</div>' +
+        '<table style="width:100%;border-collapse:collapse;font-size:11px">' +
+          '<thead><tr style="border-bottom:2px solid #2C2C2A">' +
+            '<th style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B6B66;padding-bottom:8px;text-align:left">Exercício</th>' +
+            '<th style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9B9B96;padding:0 10px 8px">Início</th>' +
+            '<th style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1D9E75;padding:0 10px 8px">Fim</th>' +
+            '<th style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B6B66;padding-bottom:8px">Δ</th>' +
+          '</tr></thead>' +
+          '<tbody>' + progHtml + '</tbody>' +
+        '</table>' +
+      '</div>' +
+      // MENSAGEM IA
+      '<div style="background:#1a1a18;border-radius:10px;padding:20px 24px;color:#fff;font-size:13px;line-height:1.8">' + textoFimMeso + '</div>' +
+      '<div style="text-align:right;font-size:10px;color:#BEBCB5;margin-top:10px;padding-top:10px;border-top:1px solid #ECEAE4">' + hoje + '</div>' +
+    '</div>';
+}
+
+// ──────────────────────────────────────────────────────────────
+// RELATÓRIO QUINZENAL — comparativo detalhado (Plano Evolução)
+// ──────────────────────────────────────────────────────────────
+async function gerarRelatorioQuinzenalAsync(nomeAluno, data, containerEl) {
+  containerEl.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text3)"><div style="font-size:24px;margin-bottom:12px">📊</div><div style="font-size:14px;font-weight:500">Gerando relatório quinzenal...</div></div>';
+
+  var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+  var abaA = data.abas[0], abaB = data.abas[1] || data.abas[0];
+
+  function calcMetricas(aba) {
+    var treinos = 0, possivel = 0, vl = 0, records = 0;
+    var exs = {};
+    diasOrdem.forEach(function(dia) {
+      var d = aba.dias[dia];
+      if (!d || d.totalExercicios === 0) return;
+      possivel++;
+      if (d.treinou) treinos++;
+      d.exercicios.forEach(function(ex) {
+        if (!ex.realizado) return;
+        vl += ex.volumeLoad || 0;
+        if (ex.recordeCarga || ex.recordeVolumeLoad) records++;
+        var cargaMax = ex.seriesAtual.length > 0 ? Math.max.apply(null, ex.seriesAtual.map(function(s){ return s.carga; })) : 0;
+        exs[ex.nome] = { cargaMax: cargaMax, vl: ex.volumeLoad || 0 };
+      });
+    });
+    return { treinos: treinos, possivel: possivel, vl: vl, records: records, exs: exs };
+  }
+
+  var mA = calcMetricas(abaA), mB = calcMetricas(abaB);
+
+  // Comparação por exercício
+  var comparacoes = [];
+  Object.keys(mA.exs).forEach(function(nome) {
+    if (!mB.exs[nome]) return;
+    var diff = mB.exs[nome].cargaMax - mA.exs[nome].cargaMax;
+    comparacoes.push({ nome: nome, cargaA: mA.exs[nome].cargaMax, cargaB: mB.exs[nome].cargaMax, diff: diff });
+  });
+  comparacoes.sort(function(a, b) { return b.diff - a.diff; });
+  var evoluiram = comparacoes.filter(function(c) { return c.diff > 0; });
+  var atencao   = comparacoes.filter(function(c) { return c.diff <= 0; }).slice(0, 3);
+
+  var hoje = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+  var fmt = function(n) { if (!n) return '0'; if (n >= 1000) return (n / 1000).toFixed(1) + 'k'; return String(Math.round(n)); };
+
+  // IA narrative
+  var ctx = 'Aluno: ' + nomeAluno + '\nQuinzena: ' + abaA.aba + ' → ' + abaB.aba + '\n' +
+    abaA.aba + ': ' + mA.treinos + '/' + mA.possivel + ' treinos, VL ' + fmt(mA.vl) + 'kg\n' +
+    abaB.aba + ': ' + mB.treinos + '/' + mB.possivel + ' treinos, VL ' + fmt(mB.vl) + 'kg\n' +
+    'Exercícios que evoluíram: ' + evoluiram.length + '\n';
+  var textoQ = 'A quinzena mostra ' + (evoluiram.length >= 3 ? 'boa progressão' : 'progressão estável') + ', ' + nomeAluno.split(' ')[0] + '. Os dados de ' + abaA.aba + ' para ' + abaB.aba + ' indicam que o método está funcionando. Continue registrando os dados com atenção para afinarmos as prescrições. — Felipe';
+
+  try {
+    var r = await fetch('https://coach-proxy.coachfiletsep.workers.dev', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 280,
+        system: 'Coach de treino. Análise quinzenal direta, 2-3 frases, sem formatação.',
+        messages: [{ role: 'user', content: ctx + 'Escreva análise quinzenal. Tom direto de coach. Assine "— Felipe".' }] })
+    });
+    var rd = await r.json();
+    if (!rd.error && rd.content && rd.content[0]) textoQ = rd.content[0].text.trim();
+  } catch(e) {}
+
+  // Tabela de progressões
+  var tabelaHtml = evoluiram.length > 0
+    ? evoluiram.slice(0, 10).map(function(c) {
+        return '<tr>' +
+          '<td style="padding:8px 10px 8px 0;font-size:12px;font-weight:500;border-bottom:1px solid #ECEAE4">' + c.nome + '</td>' +
+          '<td style="padding:8px 10px;font-size:11px;color:#9B9B96;border-bottom:1px solid #ECEAE4">' + c.cargaA + 'kg</td>' +
+          '<td style="padding:8px 10px;font-size:11px;color:#1D9E75;font-weight:600;border-bottom:1px solid #ECEAE4">' + c.cargaB + 'kg</td>' +
+          '<td style="padding:8px 0 8px 10px;border-bottom:1px solid #ECEAE4"><span style="font-size:10px;font-weight:700;background:#1D9E75;color:#fff;padding:2px 8px;border-radius:99px">+' + c.diff + 'kg</span></td>' +
+        '</tr>';
+      }).join('')
+    : '<tr><td colspan="4" style="padding:12px 0;font-size:12px;color:#6B6B66">Nenhuma evolução de carga calculada entre as semanas.</td></tr>';
+
+  var atencaoHtml = atencao.map(function(c) {
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#FFFBF0;border:1px solid #FDE68A;border-radius:8px;margin-bottom:7px">' +
+      '<span style="font-size:16px">⚠️</span>' +
+      '<div style="flex:1"><div style="font-size:12px;font-weight:600">' + c.nome + '</div>' +
+      '<div style="font-size:11px;color:#6B6B66">' + c.cargaA + 'kg → ' + c.cargaB + 'kg (' + (c.diff < 0 ? c.diff + 'kg' : 'sem progressão') + ')</div></div>' +
+    '</div>';
+  }).join('');
+
+  containerEl.innerHTML = '<style>' +
+    '@import url(\'https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap\');' +
+    '.rq{font-family:\'DM Sans\',sans-serif;color:#1a1a18;max-width:700px;margin:0 auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+    '.rq-h{background:#2C2C2A;border-radius:12px 12px 0 0;padding:32px 40px}' +
+    '.rq-b{background:#fff;border:1px solid #ECEAE4;border-top:none;border-radius:0 0 12px 12px;padding:28px 36px}' +
+    '.rq-st{font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#1D9E75;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #ECEAE4}' +
+    '.rq-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}' +
+    '.rq-card{border:1px solid #ECEAE4;border-radius:10px;padding:18px 20px;display:flex;justify-content:space-between}' +
+    '.rq-msg{background:#F0FAF5;border-left:4px solid #1D9E75;padding:16px 20px;border-radius:0 8px 8px 0;font-size:13px;line-height:1.8;color:#1a1a18;margin-top:20px}' +
+    '@media print{.rq{max-width:100%}.rq-h,.rq-b{border-radius:0}}' +
+    '</style>' +
+    '<div class="rq">' +
+      '<div class="rq-h">' +
+        '<div style="font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px">Relatório Quinzenal · ' + abaA.aba + ' → ' + abaB.aba + '</div>' +
+        '<div style="font-family:\'DM Serif Display\',serif;font-size:30px;color:#fff;margin-bottom:4px">' + nomeAluno + '</div>' +
+        '<div style="font-size:12px;color:rgba(255,255,255,.45)">Revisão quinzenal de dados · Coach Felipe Luiz</div>' +
+      '</div>' +
+      '<div class="rq-b">' +
+        '<div class="rq-cards">' +
+          '<div class="rq-card">' +
+            '<div><div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9B9B96;margin-bottom:8px">' + abaA.aba + '</div>' +
+            '<div style="font-family:\'DM Serif Display\',serif;font-size:24px;color:#6B6B66">' + mA.treinos + '<span style="font-size:14px">/' + mA.possivel + '</span></div>' +
+            '<div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#9B9B96">treinos</div></div>' +
+            '<div style="text-align:right"><div style="font-size:11px;color:#6B6B66">VL total</div><div style="font-size:15px;font-weight:600">' + fmt(mA.vl) + 'kg</div><div style="font-size:11px;color:#9B9B96;margin-top:4px">' + mA.records + ' rec.</div></div>' +
+          '</div>' +
+          '<div class="rq-card" style="border-color:#1D9E75">' +
+            '<div><div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#1D9E75;margin-bottom:8px">' + abaB.aba + '</div>' +
+            '<div style="font-family:\'DM Serif Display\',serif;font-size:24px;color:#1D9E75">' + mB.treinos + '<span style="font-size:14px;color:#9FDFC8">/' + mB.possivel + '</span></div>' +
+            '<div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#9B9B96">treinos</div></div>' +
+            '<div style="text-align:right"><div style="font-size:11px;color:#6B6B66">VL total</div><div style="font-size:15px;font-weight:600;color:#1D9E75">' + fmt(mB.vl) + 'kg</div><div style="font-size:11px;color:#9B9B96;margin-top:4px">' + mB.records + ' rec.</div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="margin-bottom:22px">' +
+          '<div class="rq-st">📈 Progressão de carga — ' + abaA.aba + ' → ' + abaB.aba + '</div>' +
+          '<table style="width:100%;border-collapse:collapse">' +
+            '<thead><tr style="border-bottom:2px solid #2C2C2A">' +
+              '<th style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B6B66;padding-bottom:8px;text-align:left">Exercício</th>' +
+              '<th style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#9B9B96;padding-bottom:8px;padding-left:10px">' + abaA.aba + '</th>' +
+              '<th style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#1D9E75;padding-bottom:8px;padding-left:10px">' + abaB.aba + '</th>' +
+              '<th style="font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6B6B66;padding-bottom:8px;padding-left:10px">Δ</th>' +
+            '</tr></thead>' +
+            '<tbody>' + tabelaHtml + '</tbody>' +
+          '</table>' +
+        '</div>' +
+        (atencaoHtml ? '<div style="margin-bottom:20px"><div class="rq-st">⚠️ Pontos de atenção</div>' + atencaoHtml + '</div>' : '') +
+        '<div class="rq-msg">' + textoQ + '</div>' +
+        '<div style="text-align:right;font-size:10px;color:#BEBCB5;margin-top:12px;padding-top:10px;border-top:1px solid #ECEAE4">' + hoje + '</div>' +
+      '</div>' +
+    '</div>';
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -6100,7 +6654,19 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
     var cls = !d || d.totalExercicios===0 ? 'off' : d.treinou ? 'ok' : 'no';
     var ic = d && d.treinou ? '✓' : (d && d.totalExercicios>0 ? '✗' : '·');
     var ex = d && d.totalExercicios>0 ? d.totalExercicios+' ex' : '';
-    h += '<div class="db"><div class="dn">' + diasNomes[dia] + '</div><div class="dc ' + cls + '">' + ic + '</div><div class="de">' + ex + '</div></div>';
+
+    // Calorias: soma musculação + aeróbio se disponível (requer Apps Script atualizado)
+    var calLabel = '';
+    if (d && d.totalExercicios > 0) {
+      var calMusc = (d.posTreino && (d.posTreino.cal || d.posTreino.calorias)) || d.cal || d.calorias || 0;
+      var calAero = (d.cardio && d.cardio.calorias) || d.caloriasAerobio || 0;
+      var calTotal = (parseFloat(calMusc)||0) + (parseFloat(calAero)||0);
+      calLabel = calTotal > 0
+        ? '<div class="de" style="color:#9B9B96">' + Math.round(calTotal) + ' kcal</div>'
+        : (d.treinou ? '<div class="de" style="color:#BEBCB5">—</div>' : '');
+    }
+
+    h += '<div class="db"><div class="dn">' + diasNomes[dia] + '</div><div class="dc ' + cls + '">' + ic + '</div><div class="de">' + ex + '</div>' + calLabel + '</div>';
   });
   h += '</div></div>';
 

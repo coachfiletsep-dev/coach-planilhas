@@ -3880,9 +3880,28 @@ async function confirmarNovoMeso() {
   addMsg('msgs', prompt, true); addLoading('msgs');
   isLoading = true; document.getElementById('send-btn').disabled = true;
   try {
-    const reply = await callClaude(msgHistory, getSystemPrompt(), 5500);
+    const reply = await callClaude(msgHistory, getSystemPrompt(), 8000);
     removeLoading('msgs');
-    const parsed = tryParseJSON(reply);
+    var parsed = tryParseJSON(reply);
+    var erroJaMostrado = false;
+    // Recuperação de truncamento: se JSON inválido E parece truncado, tenta completar em segunda chamada
+    if (!parsed && reply && reply.includes('"exercicios"') && reply.lastIndexOf('}') < reply.length - 60) {
+      addMsg('msgs', '⚠️ JSON truncado detectado — tentando completar automaticamente...', false);
+      addLoading('msgs');
+      msgHistory.push({role:'assistant',content:reply});
+      msgHistory.push({role:'user',content:'O JSON foi cortado antes de terminar. Continue EXATAMENTE de onde parou — complete os exercicios e o cardio que faltam e feche todos os arrays e objetos. Retorne APENAS o JSON completo e válido desde o início.'});
+      const replyCompletado = await callClaude(msgHistory, getSystemPrompt(), 8000);
+      removeLoading('msgs');
+      parsed = tryParseJSON(replyCompletado);
+      if (parsed) {
+        msgHistory.push({role:'assistant',content:replyCompletado});
+        addMsg('msgs', '✅ JSON completado com sucesso na segunda tentativa.', false);
+      } else {
+        addMsg('msgs', '⚠️ Não foi possível completar o JSON mesmo na segunda tentativa. ' + diagnosticarRespostaIA(replyCompletado), false);
+        msgHistory.push({role:'assistant',content:replyCompletado});
+        erroJaMostrado = true;
+      }
+    }
     if (parsed && parsed.exercicios && parsed.aba) {
       if (cardioCtx) parsed.cardio = normalizarCardioComContexto(parsed.cardio || [], cardioCtx);
       else if (parsed.cardio && parsed.cardio.length) parsed.cardio = normalizarCardioComContexto(parsed.cardio, null);
@@ -3953,7 +3972,7 @@ async function confirmarNovoMeso() {
       window._previewExercicios = [];
       window._previewAba = parsed.aba;
       mostrarPreviewCardio(parsed.cardio, parsed.aba);
-    } else {
+    } else if (!erroJaMostrado) {
       addMsg('msgs', '⚠️ Resposta da IA sem JSON válido. ' + diagnosticarRespostaIA(reply), false);
       msgHistory.push({role:'assistant',content:reply});
     }

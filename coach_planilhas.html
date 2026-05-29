@@ -2064,7 +2064,7 @@ function getSystemPrompt() {
     'Principios: periodizacao ondulante, volume progressivo, deload 4-6sem, mecanismos de hipertrofia (tensao/metabolico/dano), freq 2x/sem/musculo, RiR 0-3, cadencia excentrica lenta, series proximas a falha, poucos exercicios multiarticulares com progressao.\n\n' +
     'ALUNO: ' + s.name + (s.obs ? ' | ' + s.obs : '') + '\n\n' +
     'EXERCICIOS (use nomes EXATOS):\n' +
-    'EXERCICIO BLOQUEADO PELO COACH: nunca use ELEVACAO LATERAL COM ELASTICO, em nenhum dia, objetivo, grupo muscular ou substituicao.\n' +
+    '⛔ BLOQUEADO PERMANENTEMENTE — NUNCA USE SOB NENHUMA CIRCUNSTANCIA: ELEVACAO LATERAL COM ELASTICO. Este exercicio nao existe na biblioteca e foi banido pelo coach. Qualquer JSON que contenha ELEVACAO LATERAL COM ELASTICO sera automaticamente rejeitado e o meso inteiro descartado. Isso inclui qualquer variacao do nome. Para ombro lateral use ELEVACAO LATERAL NA POLIA UNI ou ELEVACAO LATERAL EM PE COM HALTER.\n' +
     'PEITO: SUPINO RETO BARRA, SUPINO INCLINADO BARRA, SUPINO RETO COM HALTER, SUPINO INCLINADO COM HALTER, SUPINO INCLINADO ARTICULADO, CRUCIFIXO RETO COM HALTER, PEC DECK\n' +
     'COSTAS: PUXADA FRENTE ABERTA, PUXADA UNILATERAL MAQUINA, REMADA ALTERNADA COM HALTERES BANCO, REMADA SERROTE APOIO BAIXO, FACEPULL, DUMBBELL SCAPTION 120\n' +
     'OMBRO: DESENVOLVIMENTO SENTADO COM HALTERES, DESENVOLVIMENTO ARTICULADO ABERTO, ELEVACAO LATERAL EM PE COM HALTER, ELEVACAO LATERAL NA POLIA UNI, MANGUITO ROTACAO EXTERNA CABO, FACEPULL COM ROTACAO EXTERNA, YTW COM HALTERES\n' +
@@ -2076,7 +2076,8 @@ function getSystemPrompt() {
     'GMAX: ELEVACAO PELVICA COM BARRA, ELEVACAO PELVICA NA MAQUINA, ELEVACAO PELVICA UNI COM HALTER\n' +
     'GMEDIO: CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA\n' +
     'ABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n' +
-    'MOBILIDADE: MOBILIZACAO TORACICA COM ROLO, STRETCHING HIP FLEXOR 90-90, MOBILIDADE DE TORNOZELO, DEEP SQUAT COM APOIO, WORLD GREATEST STRETCH, PRYING SQUAT, BRETZEL STRETCH, DEAD HANG, ROTACAO DE QUADRIL DE QUATRO APOIOS, MOBILIDADE DE QUADRIL MESA\n\n' +
+    'MOBILIDADE: MOBILIZACAO TORACICA COM ROLO, STRETCHING HIP FLEXOR 90-90, MOBILIDADE DE TORNOZELO, DEEP SQUAT COM APOIO, WORLD GREATEST STRETCH, PRYING SQUAT, BRETZEL STRETCH, DEAD HANG, ROTACAO DE QUADRIL DE QUATRO APOIOS, MOBILIDADE DE QUADRIL MESA\n' +
+    '⚠️ REGRA ABSOLUTA DE BIBLIOTECA: use SOMENTE os nomes exatos listados acima. Nao invente nomes novos, nao use variacoes nem exercicios fora desta lista. Se precisar de um grupo e nao houver opcao exata, escolha o mais proximo da lista. Nomes inventados causam rejeicao do JSON.\n\n' +
     'PADROES DE MOVIMENTO (use para equilibrar sessoes):\n' +
     '• Empurrar horizontal: SUPINO*, PEC DECK — Empurrar vertical: DESENVOLVIMENTO*\n' +
     '• Puxar horizontal: REMADA*, FACEPULL — Puxar vertical: PUXADA*\n' +
@@ -3894,7 +3895,8 @@ async function confirmarNovoMeso() {
   var tempoMap = {'45min':'15 séries máximo por sessão','1h':'20 séries máximo por sessão','1h15':'24 séries máximo por sessão','1h30':'28 séries máximo por sessão'};
   var prompt = 'Monte o novo mesociclo para ' + window._nomeAluno + '.\nAba para escrever: ' + window._proximaAba + ' (OBRIGATÓRIO)\n';
   if (tempoSessao && tempoMap[tempoSessao]) prompt += 'LIMITE DE VOLUME: ' + tempoSessao + ' por sessão = ' + tempoMap[tempoSessao] + '. Respeite rigorosamente.\n';
-  prompt += 'REGRA FIXA: NUNCA use o exercicio ELEVACAO LATERAL COM ELASTICO. Ele esta bloqueado pelo coach e nao pode aparecer nem como substituicao.\n';
+  prompt += '⛔ BLOQUEIO ABSOLUTO: ELEVACAO LATERAL COM ELASTICO esta permanentemente banido. Nao pode aparecer em nenhum dia, grupo, substituicao ou variacao. JSON com este exercicio sera rejeitado integralmente. Para ombro lateral use ELEVACAO LATERAL NA POLIA UNI ou ELEVACAO LATERAL EM PE COM HALTER.\n';
+  prompt += '⚠️ REGRA DE BIBLIOTECA: use SOMENTE nomes exatos do system prompt. Nao invente exercicios. Qualquer nome fora da lista causa rejeicao do meso.\n';
   if (instrucoes) prompt += 'Briefing do aluno e instrucoes do coach: ' + instrucoes + '\n';
   if (divisaoBriefingMeso) {
     prompt += 'DIVISAO PEDIDA NO BRIEFING: ' + divisaoBriefingMeso.label +
@@ -5635,6 +5637,20 @@ function getSheetId(url) {
 // PREVIEW ANTES/DEPOIS
 // ============================================================
 function mostrarPreview(exercicios, nomeAba) {
+  // Garantia técnica: remover exercícios bloqueados antes de qualquer exibição
+  var bloqueadosRemovidos = [];
+  exercicios = (exercicios || []).filter(function(ex) {
+    if (ex && ex.nome && exercicioBloqueadoApp(ex.nome)) {
+      bloqueadosRemovidos.push(ex.nome);
+      return false;
+    }
+    return true;
+  });
+  if (bloqueadosRemovidos.length > 0) {
+    showToast('⚠️ Exercício bloqueado removido do preview: ' + bloqueadosRemovidos.join(', '), 'err');
+    console.warn('[Coach] Exercícios bloqueados removidos do preview:', bloqueadosRemovidos);
+  }
+
   window._previewExercicios = exercicios;
   window._previewAba = nomeAba;
 

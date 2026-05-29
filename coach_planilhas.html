@@ -105,6 +105,19 @@
   .macro-abas input { width: auto; }
   .macro-mini { font-size: 10px; color: var(--text3); line-height: 1.35; margin-top: 4px; }
   .macro-saved { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: .5px solid var(--border); }
+  /* ─ Sprint 3 #17 — Gantt Macrociclo ─ */
+  .gantt-wrap{margin-top:10px;border:.5px solid var(--border);border-radius:var(--radius-lg);background:var(--bg);padding:12px;display:none;}
+  .gantt-wrap.open{display:block;}
+  .gantt-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .gantt-title{font-size:13px;font-weight:800;color:var(--text);}
+  .gantt-timeline{position:relative;height:48px;background:var(--bg2);border-radius:6px;overflow:hidden;margin-bottom:6px;}
+  .gantt-week-marks{display:flex;margin-bottom:3px;}
+  .gantt-week-mark{flex:1;font-size:8px;color:var(--text3);text-align:center;padding:1px 0;}
+  .gantt-block{position:absolute;top:4px;bottom:4px;border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;transition:filter .1s;white-space:nowrap;overflow:hidden;padding:0 4px;}
+  .gantt-block:hover{filter:brightness(1.1);}
+  .gantt-add-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:6px;align-items:end;margin-top:10px;font-size:11px;}
+  .gantt-add-row select,.gantt-add-row input{padding:5px 7px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:11px;}
+  .gantt-blocks-list{display:flex;flex-direction:column;gap:4px;margin-top:8px;max-height:150px;overflow-y:auto;}
   .macro-output { min-height: 520px; max-height: calc(100vh - 235px); overflow: auto; background: var(--bg); border: .5px solid var(--border); border-radius: var(--radius-lg); padding: 14px; }
   .macro-empty { height: 100%; min-height: 420px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text3); font-size: 12px; line-height: 1.45; }
   .macro-result h2 { font-size: 18px; margin: 0 0 10px; }
@@ -375,6 +388,7 @@
         <div class="ph-actions">
           <button class="icon-btn" onclick="openEditModal()" title="Editar aluno">✏️</button>
           <button class="icon-btn" onclick="openSheet()" title="Abrir planilha">↗️</button>
+          <button class="icon-btn" id="btn-analise-ia" onclick="toggleAnaliseIA()" title="Análise automática por IA">🤖</button>
           <button class="icon-btn" onclick="abrirHistorico()" title="Histórico de edições">📋</button>
           <button class="icon-btn" onclick="abrirRelatorio()" title="Relatório do aluno">📊</button>
           <button class="icon-btn" onclick="abrirComparar()" title="Comparar abas">🔀</button>
@@ -386,10 +400,23 @@
           <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
         </div>
       </div>
+      <!-- Sprint 3 #15 — Painel de Análise Automática por IA -->
+      <div id="analise-ia-panel" style="display:none;border-bottom:.5px solid var(--border);background:var(--bg2);padding:10px 14px;font-size:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-weight:700;color:var(--text);">🤖 Análise IA — <span id="analise-ia-data" style="font-weight:400;color:var(--text3);"></span></span>
+          <div style="display:flex;gap:6px;">
+            <button onclick="gerarAnaliseAutoIA()" style="padding:4px 10px;border-radius:var(--radius);border:.5px solid var(--green);background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;cursor:pointer;">⚡ Gerar nova análise</button>
+            <button onclick="fecharAnaliseIA()" style="border:none;background:transparent;color:var(--text3);font-size:13px;cursor:pointer;">✕</button>
+          </div>
+        </div>
+        <div id="analise-ia-body" style="color:var(--text2);line-height:1.55;white-space:pre-wrap;max-height:200px;overflow-y:auto;padding-right:4px;"></div>
+      </div>
+
       <div class="tabs">
         <button class="tab" onclick="switchTab(&#39;treino&#39;,this)">Ações</button>
         <button class="tab" onclick="switchTab(&#39;ia&#39;,this)">Assistente IA</button>
         <button class="tab active" onclick="switchTab(&#39;macro&#39;,this)">Macrociclo</button>
+        <button class="tab" onclick="switchTab(&#39;volume&#39;,this)">📊 Volume</button>
       </div>
       <div class="tab-body" id="tab-treino" style="display: none;">
         <div class="ag">
@@ -660,6 +687,7 @@
               <button class="btn-ghost" onclick="abrirMacroSalvo()">Abrir salvo</button>
               <button class="btn-ghost" onclick="exportarMacroPdf()">Exportar PDF</button>
               <button class="btn-ghost" onclick="protegerPlanilhaAluno()">Proteger planilha</button>
+              <button class="btn-ghost" onclick="toggleGantt()" title="Abrir Gantt de macrociclo">📅 Gantt</button>
             </div>
 
             <div class="macro-field" style="margin-top:12px;">
@@ -672,8 +700,68 @@
           </div>
 
           <div class="macro-output" id="macro-output" data-tem-resultado=""><div class="macro-empty">Macrociclo pronto para Letícia  Bernardes Souza_2026.<br>Preencha o contexto e escolha criar do zero ou usar historico.</div></div>
+
+          <!-- Sprint 3 #17 — Gantt Macrociclo -->
+          <div class="gantt-wrap" id="gantt-wrap">
+            <div class="gantt-header">
+              <div class="gantt-title">📅 Timeline do Macrociclo</div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <select id="gantt-semanas" onchange="renderGantt()" style="padding:3px 6px;font-size:10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+                  <option value="16">16 semanas</option>
+                  <option value="20">20 semanas</option>
+                  <option value="24" selected>24 semanas</option>
+                  <option value="32">32 semanas</option>
+                </select>
+                <button class="btn-ghost" style="font-size:10px;padding:3px 8px;" onclick="ganttExtrairDoMacro()">✦ Extrair do macro</button>
+              </div>
+            </div>
+            <div id="gantt-week-labels" class="gantt-week-marks"></div>
+            <div id="gantt-timeline" class="gantt-timeline"></div>
+            <div class="gantt-blocks-list" id="gantt-blocks-list"></div>
+            <div class="gantt-add-row" style="margin-top:10px;">
+              <select id="gantt-add-tipo">
+                <option value="Acumulação">Acumulação</option>
+                <option value="Transmutação">Transmutação</option>
+                <option value="Realização">Realização</option>
+                <option value="Deload">Deload</option>
+                <option value="Off / Férias">Off / Férias</option>
+                <option value="Personalizado">Personalizado</option>
+              </select>
+              <input type="number" id="gantt-add-inicio" placeholder="Sem. início" min="1" value="1">
+              <input type="number" id="gantt-add-dur" placeholder="Duração (sem)" min="1" value="4">
+              <button class="btn-green" style="font-size:11px;padding:5px 10px;" onclick="ganttAdicionarBloco()">+ Bloco</button>
+            </div>
+          </div>
         </div>
       </div>
+
+      <!-- TAB VOLUME: MEV/MAV/MRV dashboard -->
+      <div class="tab-body" id="tab-volume" style="display:none;">
+        <div id="vol-dash-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <div style="font-size:14px;font-weight:800;color:var(--text);">Dashboard de Volume</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Séries semanais planejadas vs MEV / MAV / MRV</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="vol-dash-aba" style="padding:5px 8px;font-size:11px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);" onchange="analisarVolumeSemana()">
+              <option value="">Selecionar semana...</option>
+            </select>
+            <button onclick="analisarVolumeSemana()" style="padding:5px 10px;border-radius:var(--radius);border:.5px solid var(--green);background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;cursor:pointer;">Analisar</button>
+          </div>
+        </div>
+        <div id="vol-dash-deload" style="display:none;"></div>
+        <div id="vol-dash-bars" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div id="vol-dash-empty" style="text-align:center;padding:40px 20px;color:var(--text3);font-size:12px;">Selecione uma semana e clique em Analisar.</div>
+        <div id="vol-dash-legenda" style="display:none;margin-top:14px;padding:10px 12px;background:var(--bg2);border-radius:var(--radius);border:.5px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Legenda</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text2);">
+            <span><span style="display:inline-block;width:12px;height:12px;background:#ef4444;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Abaixo do MEV — volume insuficiente</span>
+            <span><span style="display:inline-block;width:12px;height:12px;background:#22c55e;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Janela MAV — zona ideal</span>
+            <span><span style="display:inline-block;width:12px;height:12px;background:#f59e0b;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Próximo ou acima do MRV</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -879,6 +967,31 @@
       <div class="fl"><label>Link da planilha Google Sheets</label><input type="text" id="f-sheet" placeholder="https://docs.google.com/spreadsheets/d/..."></div>
       <div class="fl"><label>Status</label>
         <select id="f-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
+      </div>
+      <div class="fl" id="template-objetivo-box" style="border:.5px solid var(--border2);border-radius:var(--radius);padding:10px;background:var(--bg2);">
+        <label style="font-weight:700;color:var(--green);font-size:12px;margin-bottom:8px;display:block;">🎯 Template de programação (opcional)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div>
+            <label style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700;letter-spacing:.05em;">Objetivo</label>
+            <select id="f-objetivo" style="width:100%;padding:6px 8px;font-size:12px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
+              <option value="">Selecionar...</option>
+              <option value="hipertrofia">Hipertrofia</option>
+              <option value="forca">Força máxima</option>
+              <option value="resistencia">Resistência muscular</option>
+              <option value="recomposicao">Recomposição corporal</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700;letter-spacing:.05em;">Dias/semana</label>
+            <select id="f-disponibilidade" style="width:100%;padding:6px 8px;font-size:12px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
+              <option value="2x">2x por semana</option>
+              <option value="3x">3x por semana</option>
+              <option value="4x" selected>4x por semana</option>
+              <option value="5x">5x por semana</option>
+            </select>
+          </div>
+        </div>
+        <button type="button" onclick="aplicarTemplateObjetivo()" style="width:100%;padding:7px;border-radius:var(--radius);border:.5px solid var(--green);background:var(--green-light);color:var(--green);font-size:12px;font-weight:700;cursor:pointer;">✦ Preencher observações com template</button>
       </div>
       <div class="fl"><label>Observações (lesões, restrições, metas do próximo meso)</label>
         <textarea id="f-obs" rows="3" placeholder="Ex: +20% séries de ombros no próximo meso. Sem leg press."></textarea>
@@ -1583,7 +1696,10 @@ function renderList(filter) {
     const d = document.createElement('div');
     d.className = 'si' + (s.id === selectedId ? ' active' : '');
     d.onclick = function() { selectStudent(s.id); };
-    d.innerHTML = '<div class="si-av' + (s.status==='inativo'?' off':'') + '">' + initials(s.name) + '</div><div style="flex:1;min-width:0;"><div class="si-name">' + s.name + '</div><div class="si-meta">' + (s.status==='ativo'?'Ativo':'Inativo') + '</div></div><div class="si-dot' + (s.status==='inativo'?' off':'') + '"></div>';
+    // Badge 🤖 se houver análise IA não lida
+    var iaBadge='';
+    try{ var iaObj=JSON.parse(localStorage.getItem('analise_ia_'+s.id)||'null'); if(iaObj&&!iaObj.lida) iaBadge='<span title="Análise IA disponível" style="font-size:11px;margin-left:4px;">🤖</span>'; }catch(e){}
+    d.innerHTML = '<div class="si-av' + (s.status==='inativo'?' off':'') + '">' + initials(s.name) + '</div><div style="flex:1;min-width:0;"><div class="si-name">' + s.name + iaBadge + '</div><div class="si-meta">' + (s.status==='ativo'?'Ativo':'Inativo') + '</div></div><div class="si-dot' + (s.status==='inativo'?' off':'') + '"></div>';
     list.appendChild(d);
   });
   const active = students.filter(s=>s.status==='ativo').length;
@@ -1693,6 +1809,7 @@ async function runSheetAction(type) {
       }
     } else {
       addMsg('msgs', 'Erro: ' + (data.erro||'desconhecido'), false);
+      showToast('Erro ao criar semana: ' + (data.erro||'verifique o Apps Script'), 'err');
     }
   } catch(e) {
     removeLoading('msgs');
@@ -1956,7 +2073,14 @@ function getSystemPrompt() {
     'PANTURRILHA: PANTURRILHA EM PE, PANTURRILHA SENTADO, PANTURRILHA NO LEG PRESS\n' +
     'GMAX: ELEVACAO PELVICA COM BARRA, ELEVACAO PELVICA NA MAQUINA, ELEVACAO PELVICA UNI COM HALTER\n' +
     'GMEDIO: CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA\n' +
-    'ABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n\n' +
+    'ABDOME: PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG\n' +
+    'MOBILIDADE: MOBILIZACAO TORACICA COM ROLO, STRETCHING HIP FLEXOR 90-90, MOBILIDADE DE TORNOZELO, DEEP SQUAT COM APOIO, WORLD GREATEST STRETCH, PRYING SQUAT, BRETZEL STRETCH, DEAD HANG, ROTACAO DE QUADRIL DE QUATRO APOIOS, MOBILIDADE DE QUADRIL MESA\n\n' +
+    'PADROES DE MOVIMENTO (use para equilibrar sessoes):\n' +
+    '• Empurrar horizontal: SUPINO*, PEC DECK — Empurrar vertical: DESENVOLVIMENTO*\n' +
+    '• Puxar horizontal: REMADA*, FACEPULL — Puxar vertical: PUXADA*\n' +
+    '• Squat: AGACHAMENTO*, BULGARO, LEG PRESS, HACK — Hip hinge: STIFF, RDL, STIFF, TERRA, ELEVACAO PELVICA\n' +
+    'Recomendado por sessao: Upper = 1 empurrar + 1 puxar + 1 ombro | Lower = 1 squat + 1 hip hinge + 1 isolador.\n' +
+    'Mobilidade: quando solicitado, incluir 1-2 exercicios de mobilidade no inicio da sessao como aquecimento ativo. Series 2-3, duracao 30-60s cada, objetivo "ativacao".\n\n' +
     'VOLUME/TEMPO: 45min=15ser | 1h=20 | 1h15=24 | 1h30=28 (por sessao, rigido)\n\n' +
     'NOVO MESO: antes de gerar JSON, converse com o coach se faltar briefing, objetivo, restricoes ou divisao.\n\n' +
     'SERIES AVANCADAS E COMBINACOES:\n' +
@@ -3093,6 +3217,7 @@ function gruposExercicioFallbackApp(nome) {
   if (/pelvica/.test(n)) grupos.push('GMAX');
   if (/abdutora|abducao/.test(n)) grupos.push('GMEDIO');
   if (/prancha|crunch|dead bug|abdome/.test(n)) grupos.push('ABDOME');
+  if (/mobilizacao|stretching|hip flexor|mobilidade|bretzel|world greatest|prying squat|dead hang|rotacao de quadril|deep squat/.test(n)) grupos.push('MOBILIDADE');
   return grupos;
 }
 
@@ -4462,11 +4587,265 @@ function switchTab(tab, el) {
   document.getElementById('tab-treino').style.display=tab==='treino'?'block':'none';
   document.getElementById('tab-ia').style.display=tab==='ia'?'block':'none';
   document.getElementById('tab-macro').style.display=tab==='macro'?'block':'none';
+  document.getElementById('tab-volume').style.display=tab==='volume'?'block':'none';
   if (tab === 'macro') {
     carregarContextoMacroAluno();
     carregarAbasMacrociclo(false);
   }
+  if (tab === 'volume') popularAbasVolumeDash();
 }
+
+// ─── SPRINT 3 #17 — GANTT DE MACROCICLO ─────────────────────────────────────
+
+var GANTT_CORES = {
+  'Acumulação':    '#3b82f6',
+  'Transmutação':  '#8b5cf6',
+  'Realização':    '#22c55e',
+  'Deload':        '#f59e0b',
+  'Off / Férias':  '#6b7280',
+  'Personalizado': '#ec4899'
+};
+
+function chavGantt() { return 'gantt_v2_'+(selectedId||'x'); }
+
+function ganttCarregar() {
+  try { return JSON.parse(localStorage.getItem(chavGantt())||'[]'); } catch(e){ return []; }
+}
+
+function ganttSalvar(blocos) {
+  try { localStorage.setItem(chavGantt(), JSON.stringify(blocos)); } catch(e){}
+}
+
+function toggleGantt() {
+  var w=document.getElementById('gantt-wrap'); if(!w) return;
+  var aberto = w.classList.toggle('open');
+  if (aberto) renderGantt();
+}
+
+function renderGantt() {
+  var semanas = parseInt(document.getElementById('gantt-semanas').value)||24;
+  var blocos = ganttCarregar();
+  var timeline = document.getElementById('gantt-timeline');
+  var labels = document.getElementById('gantt-week-labels');
+  var lista = document.getElementById('gantt-blocks-list');
+  if(!timeline||!labels||!lista) return;
+
+  // Week labels (every 4 weeks)
+  labels.innerHTML='';
+  for(var w=1;w<=semanas;w++){
+    var lbl=document.createElement('div'); lbl.className='gantt-week-mark';
+    lbl.textContent=(w%4===0)?'S'+w:'';
+    labels.appendChild(lbl);
+  }
+
+  // Timeline blocks
+  timeline.innerHTML='';
+  blocos.forEach(function(b,i){
+    var left=((b.inicio-1)/semanas)*100;
+    var width=(b.duracao/semanas)*100;
+    if(left>=100||left<0) return;
+    width=Math.min(width,100-left);
+    var cor=GANTT_CORES[b.tipo]||GANTT_CORES['Personalizado'];
+    var el=document.createElement('div');
+    el.className='gantt-block';
+    el.style.left=left+'%'; el.style.width=width+'%'; el.style.background=cor;
+    el.title=b.tipo+' — Sem. '+b.inicio+' a '+(b.inicio+b.duracao-1);
+    el.textContent=b.nome||b.tipo;
+    el.onclick=(function(idx){ return function(){ ganttEditarBloco(idx); }; })(i);
+    timeline.appendChild(el);
+  });
+
+  // Blocks list
+  lista.innerHTML='';
+  if(!blocos.length){ lista.innerHTML='<div style="font-size:11px;color:var(--text3);padding:4px;">Nenhum bloco adicionado ainda.</div>'; return; }
+  blocos.forEach(function(b,i){
+    var cor=GANTT_CORES[b.tipo]||GANTT_CORES['Personalizado'];
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;font-size:11px;padding:4px 8px;border-radius:var(--radius);background:var(--bg2);';
+    row.innerHTML='<span style="width:10px;height:10px;background:'+cor+';border-radius:2px;flex-shrink:0;display:inline-block;"></span>'+
+      '<span style="flex:1;font-weight:600;color:var(--text);">'+(b.nome||b.tipo)+'</span>'+
+      '<span style="color:var(--text3);">Sem. '+b.inicio+'–'+(b.inicio+b.duracao-1)+'</span>'+
+      '<button onclick="ganttRemoverBloco('+i+')" style="border:none;background:transparent;color:var(--red);cursor:pointer;font-size:12px;padding:0 3px;">✕</button>';
+    lista.appendChild(row);
+  });
+}
+
+function ganttAdicionarBloco(){
+  var tipo=document.getElementById('gantt-add-tipo').value;
+  var inicio=parseInt(document.getElementById('gantt-add-inicio').value)||1;
+  var dur=parseInt(document.getElementById('gantt-add-dur').value)||4;
+  var blocos=ganttCarregar();
+  blocos.push({tipo:tipo,nome:tipo,inicio:inicio,duracao:dur});
+  blocos.sort(function(a,b){return a.inicio-b.inicio;});
+  ganttSalvar(blocos); renderGantt();
+  document.getElementById('gantt-add-inicio').value=inicio+dur;
+}
+
+function ganttRemoverBloco(idx){
+  var blocos=ganttCarregar(); blocos.splice(idx,1); ganttSalvar(blocos); renderGantt();
+}
+
+function ganttEditarBloco(idx){
+  var blocos=ganttCarregar(); var b=blocos[idx]; if(!b) return;
+  var novo=prompt('Editar bloco\nFormato: nome, semana_inicio, duração_em_semanas\nEx: Acumulação, 1, 4',
+    (b.nome||b.tipo)+', '+b.inicio+', '+b.duracao);
+  if(!novo) return;
+  var parts=novo.split(',').map(function(x){return x.trim();});
+  if(parts.length>=3){ b.nome=parts[0]||b.tipo; b.inicio=parseInt(parts[1])||b.inicio; b.duracao=parseInt(parts[2])||b.duracao; }
+  ganttSalvar(blocos); renderGantt();
+}
+
+function ganttExtrairDoMacro(){
+  var md=window._macroAtual&&window._macroAtual.markdown;
+  if(!md){ showToast('Gere um macrociclo primeiro','err'); return; }
+  var blocos=[];
+  // Tentar extrair de tabelas markdown com padrão "bloco | semanas"
+  var linhas=md.split('\n');
+  var semAtual=1;
+  var nomes={'acumula':['Acumulação','Acumulação'],'transmu':['Transmutação','Transmutação'],'realiz':['Realização','Realização'],'deload':['Deload','Deload'],'off':['Off / Férias','Off / Férias']};
+  linhas.forEach(function(l){
+    // Tentar: | Acumulação | 1-4 | ou | Bloco | Semanas 1-4 |
+    var m=l.match(/\|\s*([^|]+?)\s*\|\s*(?:semanas?\s*)?(\d+)\s*[-–]\s*(\d+)/i);
+    if(m){
+      var tipo='Personalizado';
+      var nL=m[1].toLowerCase();
+      Object.keys(nomes).forEach(function(k){ if(nL.indexOf(k)>-1) tipo=nomes[k][0]; });
+      var inicio=parseInt(m[2]); var fim=parseInt(m[3]);
+      if(inicio&&fim&&fim>=inicio) blocos.push({tipo:tipo,nome:m[1].trim(),inicio:inicio,duracao:fim-inicio+1});
+    }
+    // Tentar: "**Bloco 1: Acumulação** — Semanas 1-4" ou "Semanas 1–4: Acumulação"
+    var m2=l.match(/sem[ae]nas?\s+(\d+)\s*[-–]\s*(\d+)[:\s,]+([^\n.]+)/i);
+    if(m2&&!m){
+      var tipo2='Personalizado';
+      var nL2=m2[3].toLowerCase();
+      Object.keys(nomes).forEach(function(k){ if(nL2.indexOf(k)>-1) tipo2=nomes[k][0]; });
+      var inicio2=parseInt(m2[1]); var fim2=parseInt(m2[2]);
+      if(inicio2&&fim2&&fim2>=inicio2) blocos.push({tipo:tipo2,nome:m2[3].trim().split(/[,.(]/)[0],inicio:inicio2,duracao:fim2-inicio2+1});
+    }
+  });
+  // Deduplicar e ordenar
+  var visto=[];
+  blocos=blocos.filter(function(b){
+    var k=b.inicio+'_'+b.duracao+'_'+b.nome;
+    if(visto.indexOf(k)>-1) return false; visto.push(k); return true;
+  }).sort(function(a,b){return a.inicio-b.inicio;});
+  if(!blocos.length){ showToast('Não foi possível extrair fases do macrociclo. Use o Gantt manual.','err'); return; }
+  ganttSalvar(blocos); renderGantt();
+  showToast(blocos.length+' blocos extraídos do macrociclo!','ok');
+}
+// ────────────────────────────────────────────────────────────────────────────
+
+// ─── SPRINT 3 #16/#23 — DASHBOARD MEV/MAV/MRV ───────────────────────────────
+
+// Benchmarks por grupo (séries semanais diretas) — baseado em Schoenfeld / RP
+var MEV_MAV_MRV = {
+  'PEITO':       { mev:10, mav:16, mrv:22 },
+  'COSTAS':      { mev:10, mav:18, mrv:25 },
+  'OMBRO':       { mev:8,  mav:14, mrv:20 },
+  'TRICEPS':     { mev:6,  mav:12, mrv:20 },
+  'BICEPS':      { mev:6,  mav:12, mrv:20 },
+  'QUADRICEPS':  { mev:8,  mav:14, mrv:20 },
+  'POSTERIOR':   { mev:6,  mav:12, mrv:18 },
+  'PANTURRILHA': { mev:6,  mav:12, mrv:20 },
+  'GMAX':        { mev:4,  mav:10, mrv:16 },
+  'GMEDIO':      { mev:4,  mav:8,  mrv:14 },
+  'ABDOME':      { mev:4,  mav:10, mrv:16 }
+};
+
+async function popularAbasVolumeDash() {
+  var s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
+  var sel = document.getElementById('vol-dash-aba'); if (!sel) return;
+  try {
+    var estado = await atualizarAbasDoAlunoAtual();
+    var abas = (estado.abas||[]).filter(function(a){ return /^S\d+$/i.test(a); });
+    var prev = sel.value;
+    sel.innerHTML='<option value="">Selecionar semana...</option>';
+    abas.slice().reverse().forEach(function(a){
+      var opt=document.createElement('option'); opt.value=a; opt.textContent=a; sel.appendChild(opt);
+    });
+    if (prev && abas.indexOf(prev)>-1) sel.value=prev;
+    else if (estado.abaAtual && abas.indexOf(estado.abaAtual)>-1) sel.value=estado.abaAtual;
+    else if (abas.length) sel.value=abas[abas.length-1];
+  } catch(e) {
+    sel.innerHTML='<option value="">Erro ao buscar abas</option>';
+  }
+}
+
+async function analisarVolumeSemana() {
+  var s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
+  var aba = document.getElementById('vol-dash-aba').value; if (!aba) { showToast('Selecione uma semana','err'); return; }
+  var bars = document.getElementById('vol-dash-bars');
+  var empty = document.getElementById('vol-dash-empty');
+  var leg = document.getElementById('vol-dash-legenda');
+  var deload = document.getElementById('vol-dash-deload');
+  bars.innerHTML=''; empty.textContent='⏳ Buscando dados...'; empty.style.display='block'; leg.style.display='none'; deload.style.display='none';
+  try {
+    var data = await lerPeriodizacaoRobusta(s.sheet, [aba]);
+    var exs = data&&data.abasLidas&&data.abasLidas[0]&&data.abasLidas[0].exercicios||[];
+    if (!exs.length) { empty.textContent='Nenhum exercício encontrado nesta semana.'; return; }
+    // Contar séries por grupo
+    var seriasGrupo = {};
+    exs.forEach(function(ex){
+      var grupos = [];
+      if (ex.grupo) grupos = grupos.concat(gruposDiaParaListaApp(ex.grupo));
+      if (ex.grupoMuscular) grupos = grupos.concat(gruposDiaParaListaApp(ex.grupoMuscular));
+      if (!grupos.length) grupos = gruposExercicioFallbackApp(ex.nome);
+      var series = Number(ex.series||0)||0;
+      grupos.forEach(function(g){
+        seriasGrupo[g]=(seriasGrupo[g]||0)+series;
+      });
+    });
+    // Renderizar barras
+    var grupos = Object.keys(MEV_MAV_MRV).filter(function(g){ return (seriasGrupo[g]||0)>0; });
+    if (!grupos.length) { empty.textContent='Não foi possível mapear grupos musculares desta semana.'; return; }
+    empty.style.display='none'; leg.style.display='block'; bars.innerHTML='';
+    var acimaMrv=[], estagnados=[];
+    grupos.forEach(function(g){
+      var s2=seriasGrupo[g]||0; var ref=MEV_MAV_MRV[g];
+      var max=Math.max(ref.mrv, s2)+2;
+      var pct=Math.min(100,Math.round(s2/max*100));
+      var cor='#22c55e';
+      if(s2<ref.mev) cor='#ef4444';
+      else if(s2>=ref.mrv) { cor='#f59e0b'; acimaMrv.push(g); }
+      var mevPct=Math.round(ref.mev/max*100);
+      var mavPct=Math.round(ref.mav/max*100);
+      var mrvPct=Math.round(ref.mrv/max*100);
+      var label=s2<ref.mev?'Abaixo MEV':s2<=ref.mav?'MAV ✓':s2<ref.mrv?'Próximo MRV':'≥ MRV';
+      var row=document.createElement('div'); row.style.cssText='margin-bottom:2px;';
+      row.innerHTML=
+        '<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">' +
+          '<span style="font-weight:700;color:var(--text);">'+g+'</span>' +
+          '<span style="color:'+cor+';font-weight:600;">'+s2+' séries <span style="color:var(--text3);font-weight:400;">· '+label+'</span></span>' +
+        '</div>' +
+        '<div style="position:relative;height:12px;background:var(--bg2);border-radius:6px;overflow:hidden;">' +
+          '<div style="position:absolute;height:100%;width:'+pct+'%;background:'+cor+';border-radius:6px;transition:width .4s;"></div>' +
+          '<div style="position:absolute;top:0;bottom:0;left:'+mevPct+'%;width:1px;background:rgba(0,0,0,.25);"></div>' +
+          '<div style="position:absolute;top:0;bottom:0;left:'+mavPct+'%;width:1px;background:rgba(0,0,0,.15);"></div>' +
+          '<div style="position:absolute;top:0;bottom:0;left:'+mrvPct+'%;width:2px;background:rgba(239,68,68,.5);"></div>' +
+        '</div>' +
+        '<div style="display:flex;font-size:9px;color:var(--text3);margin-top:2px;gap:8px;">' +
+          '<span>MEV '+ref.mev+'</span><span>MAV '+ref.mav+'</span><span>MRV '+ref.mrv+'</span>' +
+        '</div>';
+      bars.appendChild(row);
+    });
+    // Deload suggestion: se 2+ grupos acima do MRV, sugerir deload
+    var abaNum = parseInt((aba||'').replace(/\D/g,''))||0;
+    var totalAbas = (abasCache[selectedId]||[]).filter(function(a){return /^S\d+$/i.test(a);}).length;
+    var semanasNoMeso = abaNum > 0 ? abaNum - Math.max(0, totalAbas - 4) : 0; // aprox
+    if (acimaMrv.length>=2 || (abaNum>0 && semanasNoMeso>=4 && acimaMrv.length>=1)) {
+      deload.style.display='block';
+      deload.innerHTML='<div style="background:#fef3c7;border:.5px solid #f59e0b;border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;font-size:12px;">' +
+        '<strong style="color:#92400e;">⚠️ Possível necessidade de deload</strong><br>' +
+        '<span style="color:#78350f;">'+acimaMrv.join(', ')+' acima do MRV' +
+        (semanasNoMeso>=4?' · semana '+abaNum+' do mesociclo':'')+
+        '. Considere reduzir volume em 40-50% por 1 semana.</span></div>';
+    }
+  } catch(err) {
+    empty.textContent='Erro ao buscar dados: '+(err.message||err); empty.style.display='block';
+    showToast('Erro ao analisar volume','err');
+  }
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 function showPage(page, el) {
   document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
@@ -4769,6 +5148,11 @@ function openModal() {
   ['f-name','f-birth','f-sheet','f-obs'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('f-status').value='ativo';
   document.getElementById('btn-deletar').style.display='none';
+  // Template de programação: mostrar e resetar
+  var tbox = document.getElementById('template-objetivo-box');
+  if (tbox) tbox.style.display='';
+  var fobj = document.getElementById('f-objetivo'); if(fobj) fobj.value='';
+  var fdis = document.getElementById('f-disponibilidade'); if(fdis) fdis.value='4x';
   document.getElementById('modal').style.display='flex';
 }
 
@@ -4782,10 +5166,150 @@ function openEditModal() {
   document.getElementById('f-status').value=s.status||'ativo';
   document.getElementById('f-obs').value=s.obs||'';
   document.getElementById('btn-deletar').style.display='block';
+  // Esconder template box na edição
+  var tbox=document.getElementById('template-objetivo-box'); if(tbox) tbox.style.display='none';
   document.getElementById('modal').style.display='flex';
 }
 
 function closeModal() { document.getElementById('modal').style.display='none'; editingId=null; }
+
+// ─── SPRINT 3 #18 — TEMPLATES DE PROGRAMAÇÃO ────────────────────────────────
+var TEMPLATES_PROGRAMACAO = {
+  hipertrofia: {
+    '2x': { divisao:'Full Body (2x/semana)', reps:'8-15', rir:'2-3', vol:'10-14 séries/grupo/semana', obs:'Full Body com ênfase em compostos. Cada sessão trabalha todos os grupos musculares principais.' },
+    '3x': { divisao:'Full Body 3x / Push-Pull simplificado', reps:'8-15', rir:'2-3', vol:'12-18 séries/grupo/semana', obs:'Alternância de ênfase: Sessão A (peito+costas+ombro), Sessão B (perna+bíceps+tríceps).' },
+    '4x': { divisao:'Upper/Lower (Seg/Qua/Sex/Sáb)', reps:'8-15', rir:'2-3', vol:'15-20 séries/grupo/semana', obs:'Upper A: peito+costas. Upper B: ombro+braços. Lower A: quadríceps. Lower B: posterior+glúteo.' },
+    '5x': { divisao:'Push/Pull/Legs com repetição (5x)', reps:'8-15', rir:'1-3', vol:'18-22 séries/grupo/semana', obs:'PPL + repetição de upper no 5º dia. Frequência dupla para grupos prioritários.' }
+  },
+  forca: {
+    '2x': { divisao:'Full Body força (2x)', reps:'3-6', rir:'0-2', vol:'8-10 séries/grupo/semana', obs:'Foco nos padrões fundamentais: agachamento, terra, supino, desenvolvimento, remada pesada.' },
+    '3x': { divisao:'Full Body força (3x)', reps:'3-6', rir:'0-2', vol:'10-14 séries/grupo/semana', obs:'Dia A: squat/bench. Dia B: deadlift/press. Dia C: variação dos compostos. Progressão linear.' },
+    '4x': { divisao:'Upper/Lower ênfase força', reps:'3-8', rir:'0-2', vol:'12-16 séries/grupo/semana', obs:'Upper: supino, remada pesada. Lower: agachamento, terra. Ondulação de intensidade A/B.' },
+    '5x': { divisao:'Powerlifting split (5x)', reps:'2-6', rir:'0-2', vol:'14-18 séries/grupo/semana', obs:'Dia dedicado por levantamento + assistência. Periodização linear ou ondulante por semana.' }
+  },
+  resistencia: {
+    '2x': { divisao:'Full Body resistência (2x)', reps:'15-25', rir:'0-1', vol:'12-16 séries/grupo/semana', obs:'Circuitos ou supersets. Poucos descansos entre séries (30-45s). Alto volume por sessão.' },
+    '3x': { divisao:'Full Body resistência (3x)', reps:'15-25', rir:'0-1', vol:'15-20 séries/grupo/semana', obs:'Supersets antagonistas. Foco em resistência de força e hipertrofia funcional.' },
+    '4x': { divisao:'Upper/Lower resistência', reps:'12-20', rir:'0-2', vol:'18-24 séries/grupo/semana', obs:'Alto volume, descanso curto (45-60s). Progressão por densidade (mais reps no mesmo tempo).' },
+    '5x': { divisao:'Push/Pull/Legs resistência', reps:'12-20', rir:'0-1', vol:'20-28 séries/grupo/semana', obs:'Máximo volume sustentável. Dropsets e supersets permitidos. Cardio leve no final de cada sessão.' }
+  },
+  recomposicao: {
+    '2x': { divisao:'Full Body recomp (2x)', reps:'8-15', rir:'1-3', vol:'10-14 séries/grupo/semana', obs:'Déficit calórico moderado. Manter carga para preservar massa. Cardio LISS 2x/semana separado.' },
+    '3x': { divisao:'Full Body recomp (3x)', reps:'8-12', rir:'2-3', vol:'12-16 séries/grupo/semana', obs:'Ênfase em compostos + isolados curtos. Cardio LISS 2-3x/semana adicional.' },
+    '4x': { divisao:'Upper/Lower recomp', reps:'8-15', rir:'2-3', vol:'14-18 séries/grupo/semana', obs:'Mistura força (3-6) e hipertrofia (8-15) na mesma sessão. Déficit controlado, proteína alta.' },
+    '5x': { divisao:'PPL recomp', reps:'8-15', rir:'1-3', vol:'16-20 séries/grupo/semana', obs:'Intensidade alta, volume moderado. HIIT 1x/semana integrado. Cardio LISS nos dias off.' }
+  }
+};
+
+function aplicarTemplateObjetivo(){
+  var obj=document.getElementById('f-objetivo').value;
+  var dias=document.getElementById('f-disponibilidade').value;
+  if(!obj){ showToast('Selecione um objetivo', 'err'); return; }
+  var t=TEMPLATES_PROGRAMACAO[obj]&&TEMPLATES_PROGRAMACAO[obj][dias];
+  if(!t){ showToast('Template não encontrado', 'err'); return; }
+  var objLabel={hipertrofia:'Hipertrofia muscular',forca:'Força máxima',resistencia:'Resistência muscular',recomposicao:'Recomposição corporal'};
+  var linhas=[
+    'Objetivo: '+(objLabel[obj]||obj),
+    'Disponibilidade: '+dias+'/semana',
+    'Divisão sugerida: '+t.divisao,
+    'Faixa de repetições: '+t.reps+' reps',
+    'RiR alvo: '+t.rir,
+    'Volume semanal: '+t.vol,
+    'Observações: '+t.obs
+  ];
+  document.getElementById('f-obs').value=linhas.join('\n');
+  showToast('Template aplicado! Edite as observações conforme necessário.','ok');
+}
+// ────────────────────────────────────────────────────────────────────────────
+
+// ─── SPRINT 3 #15 — ANÁLISE AUTOMÁTICA POR IA ────────────────────────────────
+function toggleAnaliseIA(){
+  var panel=document.getElementById('analise-ia-panel');
+  if(!panel) return;
+  var isOpen=panel.style.display!=='none';
+  if(isOpen){ fecharAnaliseIA(); return; }
+  panel.style.display='block';
+  // Carrega análise salva
+  var s=students.find(function(x){return x.id===selectedId;});
+  if(!s) return;
+  var key='analise_ia_'+s.id;
+  var saved=localStorage.getItem(key);
+  var body=document.getElementById('analise-ia-body');
+  var dataEl=document.getElementById('analise-ia-data');
+  if(saved){
+    try{
+      var obj=JSON.parse(saved);
+      body.textContent=obj.texto||'';
+      dataEl.textContent=obj.data?new Date(obj.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+      // marcar como lida — remove badge
+      obj.lida=true;
+      localStorage.setItem(key,JSON.stringify(obj));
+      renderList();
+    }catch(e){ body.textContent=''; dataEl.textContent=''; }
+  } else {
+    body.textContent='Nenhuma análise salva. Clique em ⚡ Gerar nova análise.';
+    dataEl.textContent='';
+  }
+}
+
+function fecharAnaliseIA(){
+  var panel=document.getElementById('analise-ia-panel');
+  if(panel) panel.style.display='none';
+}
+
+async function gerarAnaliseAutoIA(){
+  var s=students.find(function(x){return x.id===selectedId;});
+  if(!s){ showToast('Selecione um aluno','err'); return; }
+  if(!s.sheetId){ showToast('Aluno sem planilha vinculada','err'); return; }
+  var body=document.getElementById('analise-ia-body');
+  var dataEl=document.getElementById('analise-ia-data');
+  body.textContent='⏳ Buscando dados das últimas semanas…';
+  dataEl.textContent='';
+  try{
+    // Busca abas disponíveis
+    var r=await atualizarAbasDoAlunoAtual();
+    var todasAbas=r&&r.abas?r.abas:[];
+    // Pega até 2 últimas abas (semanas mais recentes)
+    var abas=todasAbas.slice(-2);
+    if(abas.length===0){ body.textContent='Nenhuma aba encontrada na planilha.'; return; }
+    body.textContent='⏳ Carregando periodização ('+abas.join(', ')+')…';
+    var dados=await lerPeriodizacaoRobusta(s.sheetId, abas);
+    if(!dados||!dados.dias||dados.dias.length===0){ body.textContent='Nenhum dado de treino encontrado.'; return; }
+    // Constrói resumo textual para o prompt
+    var resumo='Aluno: '+s.name+'\n';
+    resumo+='Objetivo: '+(s.obs?s.obs.substring(0,120):'não informado')+'\n\n';
+    abas.forEach(function(aba){
+      resumo+='=== '+aba+' ===\n';
+      dados.dias.filter(function(d){return d.aba===aba||!d.aba;}).forEach(function(dia){
+        resumo+=dia.label+': ';
+        var exs=(dia.exercicios||[]).map(function(e){
+          var cargas=(e.series||[]).map(function(s){return s.carga||s.peso||'?';}).filter(Boolean);
+          return e.nome+(cargas.length?' ('+cargas.join('/')+'kg)':'');
+        });
+        resumo+=exs.join(', ')+'\n';
+      });
+    });
+    body.textContent='⏳ Analisando com IA…';
+    var prompt='Faça uma análise semanal concisa do treino do aluno abaixo. Identifique:\n1. Progressão de cargas (positiva, estagnação ou regressão)\n2. Consistência de volume por grupo muscular\n3. Pontos de atenção ou risco de overtraining\n4. 1-2 sugestões práticas para a próxima semana\n\nSeja direto e objetivo, máximo 200 palavras.\n\n'+resumo;
+    var msgs=[{role:'user',content:prompt}];
+    var systemIa='Você é um coach de musculação especialista. Analise dados de treino e dê feedback prático e objetivo.';
+    var resultado=await callClaude(msgs,systemIa,600);
+    if(!resultado){ body.textContent='Erro ao chamar IA. Tente novamente.'; return; }
+    var texto=resultado;
+    body.textContent=texto;
+    var agora=new Date();
+    dataEl.textContent=agora.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    // Salva no localStorage com flag lida=false (nova análise não lida)
+    var key='analise_ia_'+s.id;
+    localStorage.setItem(key,JSON.stringify({texto:texto, data:agora.toISOString(), lida:false}));
+    renderList(); // atualiza badge
+    showToast('Análise gerada com sucesso!','ok');
+  }catch(e){
+    body.textContent='Erro: '+e.message;
+    showToast('Erro ao gerar análise','err');
+  }
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 function deletarAluno() {
   if (!editingId) return;
@@ -6960,6 +7484,8 @@ async function dispararRelatorios() {
   }
   document.getElementById('progress-title').textContent = erros === 0 ? '✅ Relatórios enviados!' : '⚠️ Concluído com ' + erros + ' erro(s)';
   document.getElementById('progress-close-btn').style.display = 'block';
+  if (erros > 0) showToast(erros + ' envio(s) falharam — veja o log', 'err');
+  else showToast('Relatórios enviados!', 'ok');
 }
 
 async function dispararBoaSemana() {
@@ -7000,6 +7526,8 @@ async function dispararBoaSemana() {
   }
   document.getElementById('progress-title').textContent = erros === 0 ? '✅ Boa semana enviado!' : '⚠️ Concluído com ' + erros + ' erro(s)';
   document.getElementById('progress-close-btn').style.display = 'block';
+  if (erros > 0) showToast(erros + ' envio(s) falharam — veja o log', 'err');
+  else showToast('Boa semana enviado!', 'ok');
 }
 
 
@@ -7100,6 +7628,7 @@ async function analisarAjustesPlanilha() {
     removeLoading('msgs');
     if (!data.sucesso) {
       addMsg('msgs', '⚠️ ' + (data.erro || 'Erro ao analisar. Verifique se o code.gs foi atualizado e reimplantado.'), false);
+      showToast('Erro ao analisar ajustes', 'err');
       return;
     }
     if (data.escritos === 0) {

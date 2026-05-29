@@ -6524,20 +6524,27 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   var diasNomes = {SEG:'Seg',TER:'Ter',QUA:'Qua',QUI:'Qui',SEX:'Sex',SAB:'Sáb',DOM:'Dom'};
 
   var totalExs = 0, totalProg = 0, totalRec = 0, totalVL = 0, totalCI = 0;
+  var vlAnt = 0, calAnt = 0, ciAnt = 0, diasRealizadosAnt = 0, diasComTreinoAnt = 0;
   var destaques = [], todosExs = [];
   var diasRealizados = 0, diasComTreino = 0;
+  var vlPorDia = {}, vlAntPorDia = {}, ciPorDia = {}, calPorDia = {};
 
   diasOrdem.forEach(function(dia) {
     var diaData = aba.dias[dia];
     if (!diaData) return;
     if (diaData.totalExercicios > 0) diasComTreino++;
     if (diaData.treinou) diasRealizados++;
-    // Carga Interna: PSE × duração (minutos) — forca + metabolico
+    // CI e calorias por dia
+    var ciDia = 0, calDia = 0;
     if (diaData.posTreino) {
       var pf = diaData.posTreino.forca, pm = diaData.posTreino.metabolico;
-      if (pf && pf.pse && pf.tempo) totalCI += (parseFloat(pf.pse)||0) * (parseFloat(pf.tempo)||0);
-      if (pm && pm.pse && pm.tempo) totalCI += (parseFloat(pm.pse)||0) * (parseFloat(pm.tempo)||0);
+      if (pf && pf.pse && pf.tempo) { var c = (parseFloat(pf.pse)||0)*(parseFloat(pf.tempo)||0); totalCI += c; ciDia += c; }
+      if (pm && pm.pse && pm.tempo) { var c2 = (parseFloat(pm.pse)||0)*(parseFloat(pm.tempo)||0); totalCI += c2; ciDia += c2; }
+      if (pf && pf.calorias) calDia += parseFloat(pf.calorias)||0;
+      if (pm && pm.calorias) calDia += parseFloat(pm.calorias)||0;
     }
+    ciPorDia[dia]  = Math.round(ciDia);
+    calPorDia[dia] = Math.round(calDia);
     diaData.exercicios.forEach(function(ex) {
       if (!ex.realizado) return;
       totalExs++;
@@ -6551,12 +6558,47 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
       var detalhe = cargaMax > 0 ? cargaMax + 'kg × ' + seriesStr + ' reps' : seriesStr + ' reps';
       todosExs.push({ dia:dia, nome:ex.nome, series:detalhe, vl:ex.volumeLoad||0, status:status });
       if (status !== 'manteve') destaques.push({ nome:ex.nome, status:status, detalhe:detalhe });
+      vlPorDia[dia] = (vlPorDia[dia]||0) + (ex.volumeLoad||0);
+      vlAntPorDia[dia] = (vlAntPorDia[dia]||0) + (ex.volumeLoadAnterior||0);
     });
   });
 
   var pctProg = totalExs > 0 ? Math.round((totalProg/totalExs)*100) : 0;
   destaques.sort(function(a,b){ var o={record:0,carga:1,reps:2}; return (o[a.status]||3)-(o[b.status]||3); });
   var topDestaques = destaques.slice(0, 5);
+
+  // Semana anterior — derivado dos dados já disponíveis
+  var rAnt = data && data.abas && data.abas[0] && data.abas[0].resumoSemanaAnterior;
+  if (rAnt) {
+    vlAnt = rAnt.totalVolumeLoad || 0;
+    calAnt = (rAnt.totalCaloriasForca || 0) + (rAnt.totalCaloirasMetabolico || 0);
+    ciAnt  = rAnt.totalCI || 0;
+    diasRealizadosAnt = rAnt.diasRealizados || 0;
+    diasComTreinoAnt  = rAnt.diasComExercicios || 0;
+  } else {
+    // Fallback: calcular VL anterior a partir dos exercícios
+    diasOrdem.forEach(function(dia) {
+      var d = aba.dias[dia]; if (!d) return;
+      var tevAnt = d.exercicios.some(function(e){ return e.seriesAnteriores && e.seriesAnteriores.length > 0; });
+      if (tevAnt) { diasComTreinoAnt++; diasRealizadosAnt++; }
+      d.exercicios.forEach(function(e){ vlAnt += e.volumeLoadAnterior || 0; });
+    });
+    vlAnt = Math.round(vlAnt);
+  }
+
+  // Helper: formatar delta com seta
+  function fmtDelta(atual, anterior, unidade) {
+    if (!anterior) return '';
+    var diff = atual - anterior;
+    var pct = anterior > 0 ? Math.round((diff / anterior) * 100) : 0;
+    var cor = diff > 0 ? '#1D9E75' : diff < 0 ? '#E05050' : '#9B9B96';
+    var seta = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
+    var label = unidade === '%' ? (diff > 0 ? '+' : '') + diff + 'pp'
+              : unidade === 'UA' ? (diff > 0 ? '+' : '') + Math.round(diff) + ' UA'
+              : (diff > 0 ? '+' : '') + fmt(Math.abs(diff)) + (diff < 0 ? ' ↓' : ' ↑');
+    var pctStr = unidade !== '%' && unidade !== 'UA' && anterior > 0 ? ' (' + (pct > 0 ? '+' : '') + pct + '%)' : '';
+    return '<div style="font-size:9px;font-weight:600;color:' + cor + ';margin-top:3px">' + seta + ' ' + label + pctStr + ' vs S-1</div>';
+  }
 
   var icons = {record:'🏆', carga:'↑', reps:'○'};
   var tagLabel = {record:'Recorde!', carga:'↑ Carga', reps:'↑ Reps'};
@@ -6647,11 +6689,20 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
 
   // Cards
   h += '<div class="cg">';
-  h += '<div class="cs"><span class="ci">🏋️</span><div class="cv v">' + diasRealizados + '/' + diasComTreino + '</div><div class="cl">Frequência</div><div class="cs2">treinos realizados</div></div>';
+  var totalCal = 0;
+  diasOrdem.forEach(function(dia) {
+    var d = aba.dias[dia]; if (!d || !d.posTreino) return;
+    var pf = d.posTreino.forca, pm = d.posTreino.metabolico;
+    if (pf && pf.calorias) totalCal += parseFloat(pf.calorias)||0;
+    if (pm && pm.calorias) totalCal += parseFloat(pm.calorias)||0;
+  });
+  totalCal = Math.round(totalCal);
+
+  h += '<div class="cs"><span class="ci">🏋️</span><div class="cv v">' + diasRealizados + '/' + diasComTreino + '</div><div class="cl">Frequência</div><div class="cs2">treinos realizados</div>' + fmtDelta(diasRealizados, diasRealizadosAnt, 'treinos') + '</div>';
   h += '<div class="cs"><span class="ci">📈</span><div class="cv v">' + pctProg + '%</div><div class="cl">Progressão</div><div class="cs2">dos exercícios evoluíram</div></div>';
   h += '<div class="cs"><span class="ci">🏆</span><div class="cv o">' + totalRec + '</div><div class="cl">Recordes</div><div class="cs2">novos máximos pessoais</div></div>';
-  h += '<div class="cs"><span class="ci">⚡</span><div class="cv">' + fmt(totalVL) + '</div><div class="cl">Volume Load</div><div class="cs2">kg totais movidos</div></div>';
-  h += '<div class="cs"><span class="ci">🔥</span><div class="cv">' + (totalCI > 0 ? Math.round(totalCI) : '—') + '</div><div class="cl">Carga Interna</div><div class="cs2">' + (totalCI > 0 ? 'UA (PSE × min)' : 'PSE não registrada') + '</div></div>';
+  h += '<div class="cs"><span class="ci">⚡</span><div class="cv">' + fmt(totalVL) + '</div><div class="cl">Volume Load</div><div class="cs2">kg totais movidos</div>' + fmtDelta(totalVL, vlAnt, 'kg') + '</div>';
+  h += '<div class="cs"><span class="ci">🔥</span><div class="cv">' + (totalCI > 0 ? Math.round(totalCI) : '—') + '</div><div class="cl">Carga Interna</div><div class="cs2">' + (totalCI > 0 ? 'UA (PSE × min)' : 'PSE não registrada') + '</div>' + (totalCI > 0 && ciAnt > 0 ? fmtDelta(totalCI, ciAnt, 'UA') : '') + '</div>';
   h += '</div>';
 
   // Dias
@@ -6662,18 +6713,26 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
     var ic = d && d.treinou ? '✓' : (d && d.totalExercicios>0 ? '✗' : '·');
     var ex = d && d.totalExercicios>0 ? d.totalExercicios+' ex' : '';
 
-    // Calorias: soma musculação (forca) + aeróbio (metabolico) do posTreino
-    var calLabel = '';
+    // Calorias + CI por dia
+    var calLabel = '', ciLabel = '';
     if (d && d.totalExercicios > 0) {
-      var calMusc = (d.posTreino && d.posTreino.forca && d.posTreino.forca.calorias) || 0;
-      var calAero = (d.posTreino && d.posTreino.metabolico && d.posTreino.metabolico.calorias) || 0;
+      var pf = d.posTreino && d.posTreino.forca, pm = d.posTreino && d.posTreino.metabolico;
+      var calMusc = (pf && pf.calorias) || 0;
+      var calAero = (pm && pm.calorias) || 0;
       var calTotal = (parseFloat(calMusc)||0) + (parseFloat(calAero)||0);
       calLabel = calTotal > 0
         ? '<div class="de" style="color:#9B9B96">' + Math.round(calTotal) + ' kcal</div>'
         : (d.treinou ? '<div class="de" style="color:#BEBCB5">—</div>' : '');
+
+      var ciF = (pf && pf.pse && pf.tempo) ? (parseFloat(pf.pse)||0) * (parseFloat(pf.tempo)||0) : 0;
+      var ciM = (pm && pm.pse && pm.tempo) ? (parseFloat(pm.pse)||0) * (parseFloat(pm.tempo)||0) : 0;
+      var ciDia = ciF + ciM;
+      ciLabel = ciDia > 0
+        ? '<div class="de" style="color:#E57B2B;font-weight:500">' + Math.round(ciDia) + ' UA</div>'
+        : (d.treinou ? '<div class="de" style="color:#BEBCB5">—</div>' : '');
     }
 
-    h += '<div class="db"><div class="dn">' + diasNomes[dia] + '</div><div class="dc ' + cls + '">' + ic + '</div><div class="de">' + ex + '</div>' + calLabel + '</div>';
+    h += '<div class="db"><div class="dn">' + diasNomes[dia] + '</div><div class="dc ' + cls + '">' + ic + '</div><div class="de">' + ex + '</div>' + calLabel + ciLabel + '</div>';
   });
   h += '</div></div>';
 
@@ -6688,17 +6747,70 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   h += '</div></div>';
   h += '<div class="pft"></div></div>';
 
-  // PÁGINA 2
+  // PÁGINA 2 — Análise comparativa
   h += '<div class="page">';
-  h += '<div class="p2h"><div><div class="p2t">Detalhamento completo</div><div class="p2s">Todos os exercícios · ' + aba.aba + '</div></div></div>';
-  h += '<div class="sec"><div class="st">Todos os exercícios</div>';
-  h += '<table class="xt"><thead><tr><th>Exercício</th><th>Resultado</th><th>Vol. Load</th><th>Status</th></tr></thead><tbody>';
-  todosExs.forEach(function(ex) {
-    var ic = '<span style="font-size:13px;font-weight:700;color:' + (stColor[ex.status]||'#BEBCB5') + '">' + (stIcon[ex.status]||'→') + '</span>';
-    h += '<tr><td><span class="dtag">' + ex.dia + '</span><span style="font-weight:500">' + ex.nome + '</span></td>';
-    h += '<td style="color:#6B6B66;font-size:10px">' + ex.series + '</td>';
-    h += '<td style="font-weight:500">' + fmt(ex.vl) + ' kg</td><td>' + ic + '</td></tr>';
+  h += '<div class="p2h"><div><div class="p2t">Análise comparativa</div><div class="p2s">' + aba.aba + ' vs semana anterior</div></div></div>';
+
+  // ── Tabela dia a dia ──
+  h += '<div class="sec"><div class="st">Volume por dia</div>';
+  h += '<table class="xt"><thead><tr>' +
+    '<th>Dia</th>' +
+    '<th style="text-align:right">VL ' + aba.aba + '</th>' +
+    '<th style="text-align:right;color:#9B9B96">VL S-1</th>' +
+    '<th style="text-align:right">Δ VL</th>' +
+    '<th style="text-align:right">Kcal</th>' +
+    '<th style="text-align:right;color:#E57B2B">CI (UA)</th>' +
+  '</tr></thead><tbody>';
+
+  var diasNomesLong = {SEG:'Segunda',TER:'Terça',QUA:'Quarta',QUI:'Quinta',SEX:'Sexta',SAB:'Sábado',DOM:'Domingo'};
+  diasOrdem.forEach(function(dia) {
+    var d = aba.dias[dia];
+    if (!d || d.totalExercicios === 0) return;
+    var vlD  = vlPorDia[dia]    || 0;
+    var vlDA = vlAntPorDia[dia] || 0;
+    var ci   = ciPorDia[dia]    || 0;
+    var cal  = calPorDia[dia]   || 0;
+    var diff = vlD - vlDA;
+    var diffStr = vlDA > 0
+      ? '<span style="font-weight:700;color:' + (diff>0?'#1D9E75':diff<0?'#E05050':'#9B9B96') + '">' + (diff>0?'+':'') + fmt(diff) + '</span>'
+      : '<span style="color:#BEBCB5">—</span>';
+    var vlDAStr = vlDA > 0 ? fmt(vlDA) : '<span style="color:#BEBCB5">—</span>';
+    var calStr  = cal  > 0 ? cal + ' kcal' : '<span style="color:#BEBCB5">—</span>';
+    var ciStr   = ci   > 0 ? '<span style="font-weight:600;color:#E57B2B">' + ci + '</span>' : '<span style="color:#BEBCB5">—</span>';
+    var status  = d.treinou ? '✓' : '✗';
+    var statusCor = d.treinou ? '#1D9E75' : '#BEBCB5';
+    h += '<tr>' +
+      '<td><span style="font-weight:600;color:' + statusCor + ';margin-right:6px">' + status + '</span>' + diasNomesLong[dia] + '</td>' +
+      '<td style="text-align:right;font-weight:600">' + fmt(vlD) + '</td>' +
+      '<td style="text-align:right;color:#9B9B96">' + vlDAStr + '</td>' +
+      '<td style="text-align:right">' + diffStr + '</td>' +
+      '<td style="text-align:right;color:#6B6B66">' + calStr + '</td>' +
+      '<td style="text-align:right">' + ciStr + '</td>' +
+    '</tr>';
   });
+  h += '</tbody></table></div>';
+
+  // ── Comparativo resumo semanal ──
+  var abaAntNome = 'S' + (parseInt(aba.aba.replace('S',''))-1);
+  h += '<div class="sec" style="margin-top:8px"><div class="st">Resumo ' + aba.aba + ' vs ' + abaAntNome + '</div>';
+  h += '<table class="xt"><thead><tr><th>Métrica</th><th style="text-align:right;color:#1D9E75">' + aba.aba + '</th><th style="text-align:right;color:#9B9B96">' + abaAntNome + '</th><th style="text-align:right">Δ</th></tr></thead><tbody>';
+
+  function compRow(label, atual, ant, unidade) {
+    var antDisp = ant > 0 ? (unidade==='%'?ant+'%':unidade==='kcal'?ant+' kcal':unidade==='UA'?ant+' UA':fmt(ant)) : '—';
+    var atualDisp = unidade==='%'?atual+'%':unidade==='kcal'?atual+' kcal':unidade==='UA'?atual+' UA':fmt(atual);
+    var diff = atual - ant;
+    var diffDisp = ant > 0
+      ? '<span style="font-weight:700;color:' + (diff>0?'#1D9E75':diff<0?'#E05050':'#9B9B96') + '">' + (diff>0?'+':'') + (unidade==='%'?diff+'pp':unidade==='kcal'?diff+' kcal':unidade==='UA'?diff+' UA':fmt(diff)) + '</span>'
+      : '—';
+    return '<tr><td style="font-weight:500">' + label + '</td><td style="text-align:right;font-weight:600;color:#1D9E75">' + atualDisp + '</td><td style="text-align:right;color:#9B9B96">' + antDisp + '</td><td style="text-align:right">' + diffDisp + '</td></tr>';
+  }
+
+  var freqPct    = diasComTreino    > 0 ? Math.round((diasRealizados    / diasComTreino)    * 100) : 0;
+  var freqPctAnt = diasComTreinoAnt > 0 ? Math.round((diasRealizadosAnt / diasComTreinoAnt) * 100) : 0;
+  h += compRow('Volume Load (kg)',  totalVL, vlAnt, 'kg');
+  h += compRow('Frequência', freqPct, freqPctAnt, '%');
+  h += compRow('Carga Interna', totalCI, ciAnt, 'UA');
+  if (totalCal > 0 || calAnt > 0) h += compRow('Calorias', totalCal, calAnt, 'kcal');
   h += '</tbody></table></div>';
 
   h += '<div class="cm"><div class="cmt">' + msg + '</div><div class="cma">— Coach Felipe Luiz</div></div>';

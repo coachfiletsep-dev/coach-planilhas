@@ -7102,6 +7102,18 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
   var diasNomes = {SEG:'Seg',TER:'Ter',QUA:'Qua',QUI:'Qui',SEX:'Sex',SAB:'Sáb',DOM:'Dom'};
 
+  // Helper: normaliza posTreino para { forca, metabolico } independentemente da estrutura salva pelo app
+  // O index.html salva como flat { pse, tempo, calorias } — sem o nível .forca
+  // O Apps Script pode retornar como nested { forca:{...}, metabolico:{...} } ou flat
+  function normPT(pt) {
+    if (!pt) return { forca: null, metabolico: null };
+    if (pt.forca !== undefined || pt.metabolico !== undefined) {
+      return { forca: pt.forca || null, metabolico: pt.metabolico || null };
+    }
+    // Estrutura flat → tudo vai para "forca", metabolico fica null
+    return { forca: pt, metabolico: null };
+  }
+
   var totalExs = 0, totalProg = 0, totalRec = 0, totalVL = 0, totalCI = 0;
   var vlAnt = 0, calAnt = 0, ciAnt = 0, diasRealizadosAnt = 0, diasComTreinoAnt = 0;
   var destaques = [], todosExs = [];
@@ -7113,14 +7125,23 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
     if (!diaData) return;
     if (diaData.totalExercicios > 0) diasComTreino++;
     if (diaData.treinou) diasRealizados++;
-    // CI e calorias por dia
+    // CI e calorias por dia — suporta estrutura flat e nested
     var ciDia = 0, calDia = 0;
     if (diaData.posTreino) {
-      var pf = diaData.posTreino.forca, pm = diaData.posTreino.metabolico;
-      if (pf && pf.pse && pf.tempo) { var c = (parseFloat(pf.pse)||0)*(parseFloat(pf.tempo)||0); totalCI += c; ciDia += c; }
-      if (pm && pm.pse && pm.tempo) { var c2 = (parseFloat(pm.pse)||0)*(parseFloat(pm.tempo)||0); totalCI += c2; ciDia += c2; }
-      if (pf && pf.calorias) calDia += parseFloat(pf.calorias)||0;
-      if (pm && pm.calorias) calDia += parseFloat(pm.calorias)||0;
+      var ptN = normPT(diaData.posTreino);
+      var pf = ptN.forca, pm = ptN.metabolico;
+      if (pf && pf.pse && (pf.tempo || pf.duracao)) {
+        var tempo = parseFloat(pf.tempo || pf.duracao) || 0;
+        var c = (parseFloat(pf.pse)||0) * tempo;
+        totalCI += c; ciDia += c;
+      }
+      if (pm && pm.pse && (pm.tempo || pm.duracao)) {
+        var tempo2 = parseFloat(pm.tempo || pm.duracao) || 0;
+        var c2 = (parseFloat(pm.pse)||0) * tempo2;
+        totalCI += c2; ciDia += c2;
+      }
+      if (pf && (pf.calorias || pf.cal)) calDia += parseFloat(pf.calorias || pf.cal)||0;
+      if (pm && (pm.calorias || pm.cal)) calDia += parseFloat(pm.calorias || pm.cal)||0;
     }
     ciPorDia[dia]  = Math.round(ciDia);
     calPorDia[dia] = Math.round(calDia);
@@ -7128,22 +7149,32 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
       if (!ex.realizado) return;
       totalExs++;
       totalVL += ex.volumeLoad || 0;
+      var vlAtual = ex.volumeLoad || 0;
+      var vlPrev  = ex.volumeLoadAnterior || 0;
+      var vlDelta = vlAtual - vlPrev;
       var status = 'manteve';
-      if (ex.recordeCarga || ex.recordeVolumeLoad) { status = 'record'; totalRec++; totalProg++; }
-      else if (ex.progressaoCarga) { status = 'carga'; totalProg++; }
+      // Apenas recordeCarga (PR de peso) conta como "recorde" — recordeVolumeLoad é tratado como progressão de carga
+      if (ex.recordeCarga) { status = 'record'; totalRec++; totalProg++; }
+      else if (ex.recordeVolumeLoad || ex.progressaoCarga) { status = 'carga'; totalProg++; }
       else if (ex.progressaoReps)  { status = 'reps';  totalProg++; }
       var seriesStr = ex.seriesAtual.map(function(s){ return s.reps; }).join('/');
       var cargaMax = ex.seriesAtual.length > 0 ? Math.max.apply(null, ex.seriesAtual.map(function(s){return s.carga;})) : 0;
       var detalhe = cargaMax > 0 ? cargaMax + 'kg × ' + seriesStr + ' reps' : seriesStr + ' reps';
-      todosExs.push({ dia:dia, nome:ex.nome, series:detalhe, vl:ex.volumeLoad||0, status:status });
-      if (status !== 'manteve') destaques.push({ nome:ex.nome, status:status, detalhe:detalhe });
-      vlPorDia[dia] = (vlPorDia[dia]||0) + (ex.volumeLoad||0);
+      todosExs.push({ dia:dia, nome:ex.nome, series:detalhe, vl:vlAtual, status:status });
+      if (status !== 'manteve') destaques.push({ nome:ex.nome, status:status, detalhe:detalhe, vlDelta:vlDelta, vl:vlAtual });
+      vlPorDia[dia] = (vlPorDia[dia]||0) + vlAtual;
       vlAntPorDia[dia] = (vlAntPorDia[dia]||0) + (ex.volumeLoadAnterior||0);
     });
   });
 
   var pctProg = totalExs > 0 ? Math.round((totalProg/totalExs)*100) : 0;
-  destaques.sort(function(a,b){ var o={record:0,carga:1,reps:2}; return (o[a.status]||3)-(o[b.status]||3); });
+  // Ordenar destaques: primeiro recordes (por vlDelta desc), depois carga (por vlDelta desc), depois reps
+  destaques.sort(function(a,b){
+    var o = {record:0, carga:1, reps:2};
+    var diff = (o[a.status]||3) - (o[b.status]||3);
+    if (diff !== 0) return diff;
+    return (b.vlDelta||0) - (a.vlDelta||0); // maior delta primeiro dentro do mesmo tipo
+  });
   var topDestaques = destaques.slice(0, 5);
 
   // Semana anterior — derivado dos dados já disponíveis
@@ -7176,7 +7207,7 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
               : unidade === 'UA' ? (diff > 0 ? '+' : '') + Math.round(diff) + ' UA'
               : (diff > 0 ? '+' : '') + fmt(Math.abs(diff)) + (diff < 0 ? ' ↓' : ' ↑');
     var pctStr = unidade !== '%' && unidade !== 'UA' && anterior > 0 ? ' (' + (pct > 0 ? '+' : '') + pct + '%)' : '';
-    return '<div style="font-size:9px;font-weight:600;color:' + cor + ';margin-top:3px">' + seta + ' ' + label + pctStr + ' vs S-1</div>';
+    return '<div style="font-size:9px;font-weight:600;color:' + cor + ';margin-top:3px">' + seta + ' ' + label + pctStr + ' vs sem. ant.</div>';
   }
 
   var icons = {record:'🏆', carga:'↑', reps:'○'};
@@ -7185,11 +7216,12 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   var stIcon  = {record:'★', carga:'↑', reps:'↑', manteve:'→'};
 
   var primeiroNome = nomeAluno.split(' ')[0];
+  var recStr = totalRec > 0 ? ' Bateu ' + totalRec + (totalRec === 1 ? ' PR de peso' : ' PRs de peso') + '.' : '';
   var msg = pctProg >= 80
-    ? 'Semana excepcional, ' + primeiroNome + '! Você progrediu em ' + pctProg + '% dos exercícios e completou ' + diasRealizados + ' de ' + diasComTreino + ' treinos. Essa consistência é o que constrói resultados duradouros.'
+    ? 'Semana excepcional, ' + primeiroNome + '! ' + totalProg + ' de ' + totalExs + ' exercícios em evolução (' + pctProg + '%) e ' + diasRealizados + ' de ' + diasComTreino + ' treinos concluídos.' + recStr + ' Essa consistência é o que constrói resultados duradouros.'
     : pctProg >= 50
-    ? 'Boa semana, ' + primeiroNome + '! ' + diasRealizados + ' de ' + diasComTreino + ' treinos realizados e ' + pctProg + '% dos exercícios em evolução. Foque nos exercícios em que ainda não atingiu o limite de repetições.'
-    : 'Semana desafiadora, ' + primeiroNome + ', mas você apareceu — e isso é o que importa. ' + diasRealizados + ' treinos realizados. Vamos retomar o ritmo na próxima semana.';
+    ? 'Boa semana, ' + primeiroNome + '! ' + diasRealizados + ' de ' + diasComTreino + ' treinos realizados e ' + totalProg + ' de ' + totalExs + ' exercícios em evolução (' + pctProg + '%).' + recStr + ' Foque nos exercícios em que ainda não atingiu o limite de repetições.'
+    : 'Semana desafiadora, ' + primeiroNome + ', mas você apareceu — e isso é o que importa. ' + diasRealizados + ' treinos realizados, ' + totalProg + ' exercícios evoluíram. Vamos retomar o ritmo na próxima semana.';
 
   var hoje = new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
 
@@ -7271,17 +7303,32 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   var totalCal = 0;
   diasOrdem.forEach(function(dia) {
     var d = aba.dias[dia]; if (!d || !d.posTreino) return;
-    var pf = d.posTreino.forca, pm = d.posTreino.metabolico;
-    if (pf && pf.calorias) totalCal += parseFloat(pf.calorias)||0;
-    if (pm && pm.calorias) totalCal += parseFloat(pm.calorias)||0;
+    var ptN2 = normPT(d.posTreino);
+    var pf2 = ptN2.forca, pm2 = ptN2.metabolico;
+    if (pf2 && (pf2.calorias || pf2.cal)) totalCal += parseFloat(pf2.calorias || pf2.cal)||0;
+    if (pm2 && (pm2.calorias || pm2.cal)) totalCal += parseFloat(pm2.calorias || pm2.cal)||0;
   });
   totalCal = Math.round(totalCal);
 
   h += '<div class="cs"><span class="ci">🏋️</span><div class="cv v">' + diasRealizados + '/' + diasComTreino + '</div><div class="cl">Frequência</div><div class="cs2">treinos realizados</div>' + fmtDelta(diasRealizados, diasRealizadosAnt, 'treinos') + '</div>';
-  h += '<div class="cs"><span class="ci">📈</span><div class="cv v">' + pctProg + '%</div><div class="cl">Progressão</div><div class="cs2">dos exercícios evoluíram</div></div>';
-  h += '<div class="cs"><span class="ci">🏆</span><div class="cv o">' + totalRec + '</div><div class="cl">Recordes</div><div class="cs2">novos máximos pessoais</div></div>';
+  // Calcular PSE média para exibir mesmo quando CI não pode ser calculado (sem tempo)
+  var pses = [], diasComPse = 0;
+  diasOrdem.forEach(function(dia) {
+    var d = aba.dias[dia]; if (!d || !d.posTreino || !d.treinou) return;
+    var ptNp = normPT(d.posTreino);
+    var pfp = ptNp.forca;
+    if (pfp && pfp.pse) { pses.push(parseFloat(pfp.pse)||0); diasComPse++; }
+    var pmp = ptNp.metabolico;
+    if (pmp && pmp.pse) { pses.push(parseFloat(pmp.pse)||0); }
+  });
+  var pseMedio = pses.length > 0 ? (pses.reduce(function(a,b){return a+b;},0)/pses.length).toFixed(1) : null;
+  var progLabel = totalProg + '/' + totalExs + ' exercícios';
+  var ciSubLabel = totalCI > 0 ? 'UA (PSE × min)' : (pseMedio ? 'PSE média: ' + pseMedio : 'PSE não registrada');
+
+  h += '<div class="cs"><span class="ci">📈</span><div class="cv v">' + pctProg + '%</div><div class="cl">Progressão</div><div class="cs2">' + progLabel + '</div></div>';
+  h += '<div class="cs"><span class="ci">🏆</span><div class="cv o">' + totalRec + '</div><div class="cl">Recordes</div><div class="cs2">PR de peso (carga)</div></div>';
   h += '<div class="cs"><span class="ci">⚡</span><div class="cv">' + fmt(totalVL) + '</div><div class="cl">Volume Load</div><div class="cs2">kg totais movidos</div>' + fmtDelta(totalVL, vlAnt, 'kg') + '</div>';
-  h += '<div class="cs"><span class="ci">🔥</span><div class="cv">' + (totalCI > 0 ? Math.round(totalCI) : '—') + '</div><div class="cl">Carga Interna</div><div class="cs2">' + (totalCI > 0 ? 'UA (PSE × min)' : 'PSE não registrada') + '</div>' + (totalCI > 0 && ciAnt > 0 ? fmtDelta(totalCI, ciAnt, 'UA') : '') + '</div>';
+  h += '<div class="cs"><span class="ci">🔥</span><div class="cv">' + (totalCI > 0 ? Math.round(totalCI) : '—') + '</div><div class="cl">Carga Interna</div><div class="cs2">' + ciSubLabel + '</div>' + (totalCI > 0 && ciAnt > 0 ? fmtDelta(totalCI, ciAnt, 'UA') : '') + '</div>';
   h += '</div>';
 
   // Dias
@@ -7295,16 +7342,19 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
     // Calorias + CI por dia
     var calLabel = '', ciLabel = '';
     if (d && d.totalExercicios > 0) {
-      var pf = d.posTreino && d.posTreino.forca, pm = d.posTreino && d.posTreino.metabolico;
-      var calMusc = (pf && pf.calorias) || 0;
-      var calAero = (pm && pm.calorias) || 0;
-      var calTotal = (parseFloat(calMusc)||0) + (parseFloat(calAero)||0);
+      var ptND = normPT(d.posTreino);
+      var pf = ptND.forca, pm = ptND.metabolico;
+      var calMusc = (pf && (pf.calorias || pf.cal)) ? parseFloat(pf.calorias || pf.cal)||0 : 0;
+      var calAero = (pm && (pm.calorias || pm.cal)) ? parseFloat(pm.calorias || pm.cal)||0 : 0;
+      var calTotal = calMusc + calAero;
       calLabel = calTotal > 0
         ? '<div class="de" style="color:#9B9B96">' + Math.round(calTotal) + ' kcal</div>'
         : (d.treinou ? '<div class="de" style="color:#BEBCB5">—</div>' : '');
 
-      var ciF = (pf && pf.pse && pf.tempo) ? (parseFloat(pf.pse)||0) * (parseFloat(pf.tempo)||0) : 0;
-      var ciM = (pm && pm.pse && pm.tempo) ? (parseFloat(pm.pse)||0) * (parseFloat(pm.tempo)||0) : 0;
+      var tempoF = parseFloat((pf && (pf.tempo || pf.duracao)) || 0);
+      var tempoM = parseFloat((pm && (pm.tempo || pm.duracao)) || 0);
+      var ciF = (pf && pf.pse && tempoF) ? (parseFloat(pf.pse)||0) * tempoF : 0;
+      var ciM = (pm && pm.pse && tempoM) ? (parseFloat(pm.pse)||0) * tempoM : 0;
       var ciDia = ciF + ciM;
       ciLabel = ciDia > 0
         ? '<div class="de" style="color:#E57B2B;font-weight:500">' + Math.round(ciDia) + ' UA</div>'
@@ -7335,7 +7385,7 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   h += '<table class="xt"><thead><tr>' +
     '<th>Dia</th>' +
     '<th style="text-align:right">VL ' + aba.aba + '</th>' +
-    '<th style="text-align:right;color:#9B9B96">VL S-1</th>' +
+    '<th style="text-align:right;color:#9B9B96">Sem. ant.</th>' +
     '<th style="text-align:right">Δ VL</th>' +
     '<th style="text-align:right">Kcal</th>' +
     '<th style="text-align:right;color:#E57B2B">CI (UA)</th>' +

@@ -1416,6 +1416,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
 const APP_VERSION = 'v48';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM3xuEYX3XLmhPRdSNTZ4r6x94yqME9yC9JekFZlxs0CgMVV890woiMcGUKiVfPIsXrw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
+const APP_ALUNO_URL = 'https://coachfiletsep-dev.github.io/app-aluno/';
 
 let students = [], selectedId = null, msgHistory = [], msgHistory2 = [], isLoading = false, editingId = null;
 let accessToken = null;
@@ -1944,7 +1945,7 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
   }
 
   try {
-    await verificarAppsScriptAtualizado(48);
+    await verificarAppsScriptAtualizado(42);
   } catch(e) {
     if (erroAppsScriptVersaoAntiga(e)) {
       addMsg('msgs', 'BLOQUEADO: ' + e.message, false);
@@ -5778,7 +5779,7 @@ function gerarLinkAluno() {
   if (!secret) { showToast('APP_SECRET não definido — configure nas opções', 'warn'); }
   var payload = { n: s.name, id: s.id, s: sheetId, k: secret };
   var token = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-  var url = APPS_SCRIPT_URL + '?aluno=' + encodeURIComponent(token);
+  var url = APP_ALUNO_URL + '?aluno=' + encodeURIComponent(token);
 
   document.getElementById('link-aluno-nome').textContent = s.name;
   document.getElementById('link-aluno-token').value = url;

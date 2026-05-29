@@ -345,7 +345,8 @@
 <div id="deload-banner" style="display:none;" class="deload-banner">
   <div class="deload-icon">⚠️</div>
   <div class="deload-text" id="deload-text"></div>
-  <button class="deload-btn" onclick="document.getElementById(&#39;deload-banner&#39;).style.display=&#39;none&#39;">OK</button>
+  <button class="deload-btn" style="margin-right:4px;background:var(--green);" onclick="marcarDeloadFeito()">Deload feito ✓</button>
+  <button class="deload-btn" style="background:var(--text3);" onclick="document.getElementById('deload-banner').style.display='none'">OK</button>
 </div>
 <div id="page-alunos" class="main">
   <div class="sidebar">
@@ -6024,8 +6025,26 @@ async function executarComparacao() {
 // ============================================================
 // ALERTAS DE DELOAD (automático ao selecionar aluno)
 // ============================================================
+function marcarDeloadFeito() {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) return;
+  var key = 'deload_feito_' + s.id;
+  var expiry = Date.now() + 28 * 24 * 60 * 60 * 1000; // 4 semanas
+  localStorage.setItem(key, expiry);
+  document.getElementById('deload-banner').style.display = 'none';
+  showToast('Deload registrado — alerta suprimido por 4 semanas', 'ok');
+}
+
 async function verificarDeload(sheetId, nomeAluno) {
   if (!sheetId) return;
+  // Verificar dismiss de 4 semanas
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (s) {
+    var key = 'deload_feito_' + s.id;
+    var expiry = parseInt(localStorage.getItem(key) || '0', 10);
+    if (expiry && Date.now() < expiry) return; // ainda dentro do período de silêncio
+    if (expiry && Date.now() >= expiry) localStorage.removeItem(key); // expirou — limpa
+  }
   try {
     var data = await buscarAbasSpreadsheet(sheetId);
     var abas = data.abas || [];

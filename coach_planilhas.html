@@ -3922,6 +3922,11 @@ async function confirmarNovoMeso() {
       prompt += 'CHECKLIST OBRIGATORIO antes de responder: valide dia por dia se todos os grupos da divisao base aparecem e se nenhum grupo fora da divisao foi incluido. Se um exercicio for de PANTURRILHA, so pode entrar em dia que tenha PANTURRILHA na divisao. Se um exercicio for de BICEPS, so pode entrar em dia que tenha BICEPS na divisao.\n';
     }
   }
+  // Regra estrutural de separação upper/lower — independe da divisão
+  prompt += 'REGRA ESTRUTURAL DE SEPARACAO UPPER/LOWER (nao negociavel):\n';
+  prompt += '- Dia LOWER (tem COXA, POSTERIOR, GMEDIO, GMAX ou PANTURRILHA): PROIBIDO incluir exercicios de OMBRO (DESENVOLVIMENTO, ELEVACAO LATERAL qualquer variacao, MANGUITO, YTW, SCAPTION), PEITO ou COSTAS/PUXADA/REMADA. Unica excecao: core/abdome (PRANCHA, DEAD BUG, CRUNCH) pode aparecer em qualquer dia.\n';
+  prompt += '- Dia UPPER (tem PEITO, COSTAS, OMBRO, BICEPS ou TRICEPS): PROIBIDO incluir exercicios de COXA, POSTERIOR, GMEDIO, GMAX, PANTURRILHA ou ELEVACAO PELVICA.\n';
+  prompt += '- Antes de finalizar o JSON, percorra cada dia e confirme que nenhum exercicio viola essa separacao.\n';
   prompt += 'Series avancadas neste meso: ' + (seriesAvancadasMeso || 'macro') + '.\n';
   prompt += 'Use "ultimaSerie" em todos os exercicios: escreva a tecnica da ultima serie quando houver ou "sem tecnica avancada". Use "observacoes" para bi-set, tri-set, super-set ou combinacoes; deixe vazio quando nao houver.\n';
   prompt += 'Regra por experiencia: iniciante evita tecnicas avancadas; intermediario usa pontualmente em isoladores; avancado pode usar drop-set, rest-pause, cluster, parciais ou GVT de forma dosada e coerente com o bloco.\n';

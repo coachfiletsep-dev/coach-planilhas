@@ -6523,7 +6523,7 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
   var diasNomes = {SEG:'Seg',TER:'Ter',QUA:'Qua',QUI:'Qui',SEX:'Sex',SAB:'Sáb',DOM:'Dom'};
 
-  var totalExs = 0, totalProg = 0, totalRec = 0, totalVL = 0;
+  var totalExs = 0, totalProg = 0, totalRec = 0, totalVL = 0, totalCI = 0;
   var destaques = [], todosExs = [];
   var diasRealizados = 0, diasComTreino = 0;
 
@@ -6532,6 +6532,12 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
     if (!diaData) return;
     if (diaData.totalExercicios > 0) diasComTreino++;
     if (diaData.treinou) diasRealizados++;
+    // Carga Interna: PSE × duração (minutos) — forca + metabolico
+    if (diaData.posTreino) {
+      var pf = diaData.posTreino.forca, pm = diaData.posTreino.metabolico;
+      if (pf && pf.pse && pf.tempo) totalCI += (parseFloat(pf.pse)||0) * (parseFloat(pf.tempo)||0);
+      if (pm && pm.pse && pm.tempo) totalCI += (parseFloat(pm.pse)||0) * (parseFloat(pm.tempo)||0);
+    }
     diaData.exercicios.forEach(function(ex) {
       if (!ex.realizado) return;
       totalExs++;
@@ -6580,7 +6586,7 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
     .hr{position:absolute;top:40px;right:48px;text-align:right}
     .hr .dt{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px}
     .hr .cn{font-size:13px;color:rgba(255,255,255,.7);font-weight:500}
-    .cg{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #ECEAE4}
+    .cg{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid #ECEAE4}
     .cs{padding:22px 18px;border-right:1px solid #ECEAE4}
     .cs:last-child{border-right:none}
     .ci{font-size:18px;margin-bottom:8px;display:block}
@@ -6645,6 +6651,7 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   h += '<div class="cs"><span class="ci">📈</span><div class="cv v">' + pctProg + '%</div><div class="cl">Progressão</div><div class="cs2">dos exercícios evoluíram</div></div>';
   h += '<div class="cs"><span class="ci">🏆</span><div class="cv o">' + totalRec + '</div><div class="cl">Recordes</div><div class="cs2">novos máximos pessoais</div></div>';
   h += '<div class="cs"><span class="ci">⚡</span><div class="cv">' + fmt(totalVL) + '</div><div class="cl">Volume Load</div><div class="cs2">kg totais movidos</div></div>';
+  h += '<div class="cs"><span class="ci">🔥</span><div class="cv">' + (totalCI > 0 ? Math.round(totalCI) : '—') + '</div><div class="cl">Carga Interna</div><div class="cs2">' + (totalCI > 0 ? 'UA (PSE × min)' : 'PSE não registrada') + '</div></div>';
   h += '</div>';
 
   // Dias
@@ -6655,11 +6662,11 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
     var ic = d && d.treinou ? '✓' : (d && d.totalExercicios>0 ? '✗' : '·');
     var ex = d && d.totalExercicios>0 ? d.totalExercicios+' ex' : '';
 
-    // Calorias: soma musculação + aeróbio se disponível (requer Apps Script atualizado)
+    // Calorias: soma musculação (forca) + aeróbio (metabolico) do posTreino
     var calLabel = '';
     if (d && d.totalExercicios > 0) {
-      var calMusc = (d.posTreino && (d.posTreino.cal || d.posTreino.calorias)) || d.cal || d.calorias || 0;
-      var calAero = (d.cardio && d.cardio.calorias) || d.caloriasAerobio || 0;
+      var calMusc = (d.posTreino && d.posTreino.forca && d.posTreino.forca.calorias) || 0;
+      var calAero = (d.posTreino && d.posTreino.metabolico && d.posTreino.metabolico.calorias) || 0;
       var calTotal = (parseFloat(calMusc)||0) + (parseFloat(calAero)||0);
       calLabel = calTotal > 0
         ? '<div class="de" style="color:#9B9B96">' + Math.round(calTotal) + ' kcal</div>'

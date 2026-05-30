@@ -317,6 +317,16 @@
   }
   * { scrollbar-width: auto; scrollbar-color: var(--border2) var(--bg2); }
   ::-webkit-scrollbar { width: 12px; height: 12px; } ::-webkit-scrollbar-track { background: var(--bg2); } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; border: 2px solid var(--bg2); }
+  /* ─ Split selector ─ */
+  .split-modo-btn { padding:5px 10px; font-size:11px; font-weight:600; border:.5px solid var(--border2); border-radius:99px; background:var(--bg2); color:var(--text2); cursor:pointer; transition:all .15s; }
+  .split-modo-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
+  .split-chip { display:flex; flex-direction:column; gap:2px; padding:7px 10px; border:.5px solid var(--border2); border-radius:var(--radius); background:var(--bg2); cursor:pointer; text-align:left; transition:all .15s; min-width:140px; max-width:200px; }
+  .split-chip:hover { border-color:var(--green); background:var(--green-light); }
+  .split-chip.selected { border-color:var(--green); background:var(--green-light); box-shadow:0 0 0 1.5px var(--green); }
+  .split-chip strong { font-size:12px; color:var(--text); }
+  .split-chip span { font-size:10px; color:var(--text3); line-height:1.35; }
+  .split-dias-btn { padding:3px 9px; font-size:11px; border:.5px solid var(--border2); border-radius:99px; background:var(--bg2); color:var(--text2); cursor:pointer; transition:all .15s; }
+  .split-dias-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
 </style>
 </head>
 <body>
@@ -1075,14 +1085,23 @@
         </select>
         <div style="font-size:11px;color:var(--text3);line-height:1.4;">A IA usa "Ultima Serie" para drop-set, rest-pause, cluster, parciais ou GVT, e "Observacoes" para bi-set, tri-set e super-set.</div>
       </div>
-      <div class="fl">
-        <label style="font-weight:600;">Divisao do treino</label>
-        <select id="meso-divisao-modo" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-          <option value="manter divisao atual">Manter divisao atual</option>
-          <option value="manter dias ajustar grupos">Manter dias, ajustar grupos se fizer sentido</option>
-          <option value="ia pode propor nova divisao">IA pode propor nova divisao</option>
-        </select>
-        <div id="meso-divisao-resumo" style="font-size:11px;color:var(--text3);line-height:1.4;">A divisao sera detectada pelas abas selecionadas.</div>
+      <div class="fl" id="split-selector-wrap">
+        <label style="font-weight:600;">Divisão do treino</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+          <button class="split-modo-btn active" id="split-modo-manter" onclick="setSplitModo('manter')">↩ Manter anterior</button>
+          <button class="split-modo-btn" id="split-modo-chips" onclick="setSplitModo('chips')">📋 Selecionar divisão</button>
+          <button class="split-modo-btn" id="split-modo-ia" onclick="setSplitModo('ia')">✨ IA sugere</button>
+        </div>
+        <div id="split-manter-info" style="font-size:11px;color:var(--text3);line-height:1.4;">Mantém a divisão detectada nas semanas selecionadas (dias e grupos musculares por dia).</div>
+        <div id="split-chips-wrap" style="display:none;flex-direction:column;gap:8px;">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--text3);font-weight:600;">Dias/semana:</span>
+            <div style="display:flex;gap:4px;" id="split-dias-btns"></div>
+          </div>
+          <div id="split-chips-lista" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+          <div id="split-chip-detalhe" style="font-size:10.5px;color:var(--text3);line-height:1.45;padding:6px 8px;background:var(--bg2);border-radius:var(--radius);display:none;"></div>
+        </div>
+        <div id="split-ia-info" style="display:none;font-size:11px;color:var(--text3);line-height:1.4;">A IA vai analisar histórico, nível e objetivo do aluno e propor a divisão mais adequada antes de montar os exercícios.</div>
       </div>
       <div class="fl">
         <label>Briefing do aluno e instruções do novo meso</label>
@@ -2238,8 +2257,8 @@ function removeLoading(id) { const el=document.getElementById('ld-'+id); if(el) 
 // Sistema mínimo para chamadas de correção (mais rápido — sem o prompt cheio)
 var SYSTEM_CORRECAO = 'Você é um corretor de JSON de treino. Corrija o JSON conforme a instrução anterior. Retorne SOMENTE o JSON completo e válido, sem markdown, sem blocos de código, sem explicações.';
 
-async function callClaude(history, system, maxTok, model) {
-  var economical = modoEconomicoTokensAtivo();
+async function callClaude(history, system, maxTok, model, skipEconomy) {
+  var economical = !skipEconomy && modoEconomicoTokensAtivo();
   var finalMax = maxTok || 2500;
   if (economical) {
     finalMax = Math.min(finalMax, 1800);
@@ -3026,6 +3045,7 @@ async function runAction(type) {
   document.getElementById('meso-modal').style.display = 'flex';
   renderMesoMacroOptions();
 
+  inicializarSplitSelector();
   try {
     var estado = await atualizarAbasDoAlunoAtual();
     renderMesoAbas(estado.abas || []);
@@ -3501,30 +3521,70 @@ function validarDiasNovoMeso(exercicios, silencioso) {
   return false;
 }
 
+// Extrai quais dias especificos tem erro (para correcao parcial)
+function extrairDiasComErro(erros) {
+  var diasArr = [];
+  function addDia(d) {
+    var norm = String(d||'').toUpperCase().trim();
+    if (norm && diasArr.indexOf(norm) === -1) diasArr.push(norm);
+  }
+  if (erros.faltandoDias) erros.faltandoDias.forEach(function(d){ addDia(d); });
+  if (erros.grupos) erros.grupos.forEach(function(g){
+    var m = String(g).match(/^([A-Z]{3,6}):/);
+    if (m) addDia(m[1]);
+  });
+  if (erros.divisaoBriefing) erros.divisaoBriefing.forEach(function(g){
+    var m = String(g).match(/^([A-Z]{3,6}):/);
+    if (m) addDia(m[1]);
+  });
+  return diasArr;
+}
+
+// Aplica correcao parcial (apenas dias corrigidos) sobre o JSON original
+function aplicarCorrecaoParcial(original, correcao) {
+  if (!correcao || !correcao.exercicios) return original;
+  var diasCorrigidos = {};
+  correcao.exercicios.forEach(function(ex) {
+    var dia = String(ex.dia||'').toUpperCase();
+    if (!diasCorrigidos[dia]) diasCorrigidos[dia] = [];
+    diasCorrigidos[dia].push(ex);
+  });
+  // Manter exercicios originais dos dias NAO corrigidos
+  var mergedExs = original.exercicios.filter(function(ex) {
+    return !diasCorrigidos[String(ex.dia||'').toUpperCase()];
+  });
+  // Adicionar exercicios dos dias corrigidos
+  correcao.exercicios.forEach(function(ex){ mergedExs.push(ex); });
+  return Object.assign({}, original, { exercicios: mergedExs });
+}
+
 function montarPromptCorrecaoNovoMeso(erros) {
+  var diasErro = extrairDiasComErro(erros);
+  var diasStr = diasErro.length > 0 ? diasErro.join(', ') : 'dias com erro';
   var divisaoBriefing = window._divisaoBriefingNovoMeso || null;
   if (divisaoBriefing) {
-    return 'O JSON anterior foi bloqueado porque violou a divisao que o coach escreveu no briefing. Corrija e retorne APENAS JSON valido completo, sem explicacao.\n' +
+    return 'O JSON anterior violou a divisao do briefing. Retorne APENAS os exercicios dos dias: ' + diasStr + '.\n' +
+      'Formato: {"aba":"<nome_aba>","exercicios":[<so exercicios de ' + diasStr + '>]}\n' +
+      'Nao inclua outros dias.\n' +
       'Divisao obrigatoria do briefing: ' + divisaoBriefing.label + (divisaoBriefing.diasEsperados ? ' em ' + divisaoBriefing.diasEsperados + ' treino(s)' : '') + '.\n' +
       'Erros a corrigir:\n- ' + textoErrosNovoMeso(erros).join('\n- ') + '\n\n' +
-      'Regras obrigatorias:\n' +
-      '- A divisao escrita no briefing prevalece sobre a divisao da aba base.\n' +
-      '- Use a aba base apenas para historico, volume, preferencias e referencias de exercicios.\n' +
-      '- Nao transforme a divisao pedida em upper/lower, push/pull/legs ou full-body se isso nao foi pedido.\n';
+      'Regras:\n' +
+      '- A divisao do briefing prevalece sobre a aba base.\n' +
+      '- Nao transforme a divisao pedida em outro tipo sem autorizacao.\n';
   }
   var gruposBase = window._gruposPorDiaBaseNovoMeso || {};
   var diasObrigatorios = window._diasPermitidosNovoMeso || Object.keys(gruposBase);
   var distribuicao = Object.keys(gruposBase).map(function(dia) {
     return dia + '=' + gruposBase[dia].join('+');
   }).join('; ');
-  return 'O JSON anterior foi bloqueado porque violou a divisao fixa da aba base. Corrija e retorne APENAS JSON valido completo, sem explicacao.\n' +
+  return 'O JSON anterior violou a divisao da aba base. Retorne APENAS os exercicios dos dias: ' + diasStr + '.\n' +
+    'Formato: {"aba":"<nome_aba>","exercicios":[<so exercicios de ' + diasStr + '>]}\n' +
+    'Nao inclua outros dias.\n' +
     'Erros a corrigir:\n- ' + textoErrosNovoMeso(erros).join('\n- ') + '\n\n' +
-    'Regras obrigatorias:\n' +
-    '- O JSON deve conter exercicios em TODOS estes dias, sem remover nenhum: ' + diasObrigatorios.join(', ') + '.\n' +
-    '- Se faltou um dia, recrie esse dia usando somente os grupos permitidos para ele.\n' +
-    '- Nao use grupos fora da distribuicao permitida por dia.\n' +
-    '- Cada dia deve conter pelo menos 1 exercicio para cada grupo listado nele, mesmo em deload.\n' +
-    '- Nao aplique regras fixas de upper/lower, PPL ou full-body se elas contradisserem a distribuicao abaixo.\n' +
+    'Regras:\n' +
+    '- Use somente os grupos permitidos para cada dia na distribuicao abaixo.\n' +
+    '- Cada dia corrigido deve ter pelo menos 1 exercicio por grupo listado.\n' +
+    '- Nao aplique upper/lower, PPL ou full-body se contradisserem a distribuicao.\n' +
     'Distribuicao obrigatoria: ' + distribuicao + '.';
 }
 
@@ -3771,6 +3831,175 @@ function getCardioContext() {
   };
 }
 
+// ============================================================
+// BIBLIOTECA DE DIVISÕES — por número de dias
+// ============================================================
+var SPLITS_BIBLIOTECA = {
+  1: [
+    { id:'fb1', nome:'Full Body', subtipo:'full_body',
+      descDias:'1 dia · corpo inteiro',
+      instrucao:'Um único treino full body por semana. Priorizar multiarticulares pesados com máxima eficiência. Incluir pelo menos um exercício para cada grande grupo (peito, costas, ombro, quadríceps, posterior). Volume conservador: 2-3 séries por grupo, RiR 2-3.' }
+  ],
+  2: [
+    { id:'fb2', nome:'Full Body A/B', subtipo:'full_body',
+      descDias:'Dia A (Força) · Dia B (Volume)',
+      instrucao:'Dois treinos full body com variação de estímulo. Dia A: ênfase em força nos multiarticulares (4-5x4-6 reps, RiR 0-1, exercícios principais com barra). Dia B: volume moderado, mix de multiarticulares e isoladores (3x8-12 reps, RiR 2). Todos os grandes grupos em cada sessão.' }
+  ],
+  3: [
+    { id:'fb3', nome:'Full Body A/B/C', subtipo:'full_body',
+      descDias:'A: Força · B: Hipertrofia · C: Volume',
+      instrucao:'Três treinos full body com ondulação diária de estímulo. Dia A: força (5x4-6 reps, RiR 0-1, multiarticulares pesados). Dia B: hipertrofia (4x8-12 reps, RiR 1-2, mix multi+isolador). Dia C: volume/pump (3x12-15 reps, RiR 2-3, mais isoladores). Todos os grupos em cada sessão com ênfase variada.' },
+    { id:'upper_lower_fb3', nome:'Upper / Lower / FB',
+      descDias:'Upper · Lower · Full Body',
+      instrucao:'Divisão de 3 dias: Dia 1 = Upper (peito, costas, ombros, braços, 4-5 exercícios); Dia 2 = Lower (quadríceps, posterior, glúteo, panturrilha, 4-5 exercícios); Dia 3 = Full Body (ênfase nos grupos mais atrasados, volume moderado, sem repetir exatamente os exercícios dos dias 1 e 2).' },
+    { id:'ppl3', nome:'Push / Pull / Legs',
+      descDias:'Push · Pull · Legs',
+      instrucao:'Divisão PPL clássica: Dia Push = empurrar horizontal+vertical (peito, ombros, tríceps); Dia Pull = puxar horizontal+vertical (costas, bíceps, manguito rotador); Dia Legs = quadríceps, posterior de coxa, glúteo máximo, glúteo médio, panturrilha, abdome.' }
+  ],
+  4: [
+    { id:'upper_lower4', nome:'Upper / Lower',
+      descDias:'Upper A · Lower A · Upper B · Lower B',
+      instrucao:'Divisão Upper/Lower de 4 dias com frequência 2x por grupo. Upper A: empurrar horizontal pesado + puxar horizontal + braços. Upper B: empurrar vertical + puxar vertical + ombros. Lower A: quadríceps dominante (agachamento/leg press) + posterior + glúteo. Lower B: posterior dominante (stiff/rdl) + quadríceps acessório + glúteo médio + panturrilha + abdome.' },
+    { id:'ppl_upper4', nome:'PPL + Upper',
+      descDias:'Push · Pull · Legs · Upper',
+      instrucao:'PPL com sessão Upper extra para maior frequência de treino de membros superiores. Dia Push = peito+ombros+tríceps; Dia Pull = costas+bíceps; Dia Legs = pernas completo; Dia Upper = upper com ênfase nos grupos atrasados do aluno (lagging), volume moderado.' },
+    { id:'abcd', nome:'ABCD',
+      descDias:'A: Peito+Tríceps · B: Costas+Bíceps · C: Pernas · D: Ombro+Core',
+      instrucao:'Divisão ABCD clássica: Dia A = peito (todos ângulos) + tríceps; Dia B = costas (horizontal+vertical) + bíceps; Dia C = quadríceps + posterior de coxa + glúteo máximo + glúteo médio + panturrilha; Dia D = deltóide anterior+médio+posterior + manguito rotador + abdome/core.' },
+    { id:'fb4', nome:'Full Body Ondulante ×4', subtipo:'full_body',
+      descDias:'A: Força · B: Hipertrofia · C: Volume · D: Metabólico',
+      instrucao:'Full body ondulante de 4 dias, estímulo diferente a cada sessão. Dia A: força (5x4-6, RiR 0-1, multiarticulares pesados). Dia B: hipertrofia (4x8-12, RiR 1-2, mix multi+isolador). Dia C: volume (3x12-15, RiR 2-3, mais isoladores). Dia D: metabólico/pump (3x15-20, descanso curto 45-60s, foco em isoladores e queima). Todos os grupos em cada sessão.' }
+  ],
+  5: [
+    { id:'abcde', nome:'ABCDE',
+      descDias:'A: Peito · B: Costas · C: Pernas Ant · D: Pernas Post+Glúteo · E: Ombro+Braço',
+      instrucao:'Divisão ABCDE de alta frequência por grupo: Dia A = peito (todos ângulos) + tríceps; Dia B = costas (horizontal+vertical) + bíceps; Dia C = quadríceps (agachamento, leg press, extensora, hack) + panturrilha; Dia D = posterior de coxa (stiff, rdl, flexora) + glúteo máximo + glúteo médio + abdome; Dia E = deltóide (anterior, médio, posterior) + bíceps + tríceps (isoladores pesados).' },
+    { id:'ppl_ul5', nome:'PPL + Upper/Lower',
+      descDias:'Push · Pull · Legs · Upper · Lower',
+      instrucao:'PPL base com Upper e Lower extras para maior frequência dos grandes grupos. Dia Push = peito+ombro+tríceps; Dia Pull = costas+bíceps; Dia Legs = pernas completo; Dia Upper = upper ênfase em grupos atrasados, volume moderado; Dia Lower = lower ênfase em grupos atrasados, volume moderado.' },
+    { id:'upper_lower5', nome:'Upper/Lower ×2 + FB',
+      descDias:'Upper A · Lower A · Upper B · Lower B · Full Body',
+      instrucao:'Upper/Lower de 5 dias com Full Body no quinto. Upper A: horizontal pesado. Upper B: vertical pesado + ombros. Lower A: quadríceps dominante. Lower B: posterior dominante. Full Body: volume moderado, ênfase em grupos atrasados e core.' },
+    { id:'fb5', nome:'Full Body Ondulante ×5', subtipo:'full_body',
+      descDias:'A: Força · B: Hipertrofia · C: Volume · D: Metabólico · E: Técnica/Reload',
+      instrucao:'Full body ondulante de 5 dias. Dias A-D como no ×4 (força, hipertrofia, volume, metabólico). Dia E = técnica/reload: cargas leves (60-70% do habitual), foco total em execução, RiR 3+, sem técnicas avançadas, ideal para consolidar padrões motores.' }
+  ],
+  6: [
+    { id:'ppl_ppl', nome:'PPL PPL',
+      descDias:'Push · Pull · Legs · Push · Pull · Legs',
+      instrucao:'PPL duas vezes por semana, frequência 2x por grupo muscular. Push1 e Push2 devem variar exercícios (ex: Push1 usa barra/supino, Push2 usa halteres/inclinado). Mesma lógica para Pull e Legs. Alta frequência e volume total semanal elevado.' },
+    { id:'abcdef', nome:'ABCDEF',
+      descDias:'A: Peito · B: Costas · C: Pernas Ant · D: Pernas Post+Glúteo · E: Ombro · F: Braço',
+      instrucao:'Divisão ABCDEF de 6 dias: Dia A = peito + tríceps acessório; Dia B = costas + bíceps acessório; Dia C = quadríceps + panturrilha; Dia D = posterior de coxa + glúteo + abdome; Dia E = deltóide (todas as cabeças) + manguito + scaption/YTW; Dia F = bíceps + tríceps (sessão dedicada, alta frequência em braços).' },
+    { id:'upper_lower6', nome:'Upper/Lower ×3',
+      descDias:'Upper A · Lower A · Upper B · Lower B · Upper C · Lower C',
+      instrucao:'Upper/Lower três vezes por semana, frequência 3x por grupo. Upper A: horizontal pesado (peito+costas horizontal+braços). Upper B: vertical pesado (desenvolvimento+puxada vertical+ombros). Upper C: volume/isoladores (ênfase em grupos atrasados, mais isoladores). Lower A: quadríceps dominante. Lower B: posterior dominante. Lower C: glúteo médio+máximo dominante + abdome.' },
+    { id:'fb6', nome:'Full Body Ondulante ×6', subtipo:'full_body',
+      descDias:'A: Força · B: Hipertrofia · C: Volume · D: Metabólico · E: Força-Hiper · F: Técnica',
+      instrucao:'Full body ondulante de 6 dias. Dias A-D como padrão (força, hipertrofia, volume, metabólico). Dia E = híbrido força/hipertrofia (5x5-8 reps, RiR 1-2, exercícios compostos pesados). Dia F = técnica/mobilidade: cargas leves, foco em execução perfeita, mobilidade articular, sem técnicas avançadas.' },
+    { id:'arnold6', nome:'Arnold Split',
+      descDias:'Chest+Back · Shoulders+Arms · Legs · Chest+Back · Shoulders+Arms · Legs',
+      instrucao:'Arnold Split clássico: frequência 2x por grupo muscular em 6 dias. Dia A (Chest+Back) = peito (todos ângulos) + costas (horizontal+vertical) — padrão de agonista/antagonista, alta densidade. Dia B (Shoulders+Arms) = deltóide (anterior+médio+posterior) + bíceps + tríceps + manguito. Dia C (Legs) = quadríceps + posterior de coxa + glúteo + panturrilha + abdome. Repetir A, B, C nos dias 4, 5 e 6 com variação de exercícios (ex: dia 1 usa barra, dia 4 usa halteres nos mesmos padrões de movimento). Volume total alto — indicado para intermediários e avançados.' }
+  ]
+};
+
+var splitModoAtual = 'manter';
+var splitSelecionadoId = null;
+var splitNumDiasAtual = 4;
+
+function setSplitModo(modo) {
+  splitModoAtual = modo;
+  ['manter','chips','ia'].forEach(function(m) {
+    var btn = document.getElementById('split-modo-' + m);
+    if (btn) btn.classList.toggle('active', m === modo);
+  });
+  var manterInfo = document.getElementById('split-manter-info');
+  var chipsWrap = document.getElementById('split-chips-wrap');
+  var iaInfo = document.getElementById('split-ia-info');
+  if (manterInfo) manterInfo.style.display = modo === 'manter' ? 'block' : 'none';
+  if (chipsWrap) chipsWrap.style.display = modo === 'chips' ? 'flex' : 'none';
+  if (iaInfo) iaInfo.style.display = modo === 'ia' ? 'block' : 'none';
+}
+
+function renderizarSplitDiaBtns(numAtual) {
+  var container = document.getElementById('split-dias-btns');
+  if (!container) return;
+  container.innerHTML = '';
+  for (var d = 1; d <= 6; d++) {
+    var btn = document.createElement('button');
+    btn.textContent = d + 'x';
+    btn.className = 'split-dias-btn' + (d === numAtual ? ' active' : '');
+    btn.setAttribute('data-dias', d);
+    (function(dias) {
+      btn.onclick = function() {
+        splitNumDiasAtual = dias;
+        document.querySelectorAll('.split-dias-btn').forEach(function(b){ b.classList.toggle('active', parseInt(b.getAttribute('data-dias')) === dias); });
+        renderizarSplitChips(dias);
+      };
+    })(d);
+    container.appendChild(btn);
+  }
+}
+
+function renderizarSplitChips(numDias) {
+  splitNumDiasAtual = numDias || splitNumDiasAtual;
+  splitSelecionadoId = null;
+  var container = document.getElementById('split-chips-lista');
+  var detalhe = document.getElementById('split-chip-detalhe');
+  if (!container) return;
+  container.innerHTML = '';
+  if (detalhe) { detalhe.textContent = ''; detalhe.style.display = 'none'; }
+  var splits = SPLITS_BIBLIOTECA[splitNumDiasAtual] || [];
+  splits.forEach(function(split) {
+    var btn = document.createElement('button');
+    btn.className = 'split-chip';
+    btn.setAttribute('data-split-id', split.id);
+    btn.innerHTML = '<strong>' + split.nome + '</strong><span>' + split.descDias + '</span>';
+    btn.onclick = function() { selecionarSplit(split.id); };
+    container.appendChild(btn);
+  });
+  if (splits.length) selecionarSplit(splits[0].id);
+}
+
+function selecionarSplit(splitId) {
+  splitSelecionadoId = splitId;
+  document.querySelectorAll('.split-chip').forEach(function(b) {
+    b.classList.toggle('selected', b.getAttribute('data-split-id') === splitId);
+  });
+  var split = obterSplitPorId(splitId);
+  var detalhe = document.getElementById('split-chip-detalhe');
+  if (detalhe && split) {
+    detalhe.textContent = split.instrucao;
+    detalhe.style.display = 'block';
+  }
+}
+
+function obterSplitPorId(splitId) {
+  var todos = [];
+  Object.keys(SPLITS_BIBLIOTECA).forEach(function(k) { todos = todos.concat(SPLITS_BIBLIOTECA[k]); });
+  return todos.find(function(s) { return s.id === splitId; }) || null;
+}
+
+function obterSplitSelecionado() {
+  if (splitModoAtual !== 'chips' || !splitSelecionadoId) return null;
+  return obterSplitPorId(splitSelecionadoId);
+}
+
+function detectarNumDiasParaSplits() {
+  var memoria = carregarMemoriaTecnicaAluno();
+  if (memoria && memoria.diasMusculacao && memoria.diasMusculacao.length) return memoria.diasMusculacao.length;
+  if (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length) return window._diasPermitidosNovoMeso.length;
+  return 4;
+}
+
+function inicializarSplitSelector() {
+  var numDias = detectarNumDiasParaSplits();
+  splitNumDiasAtual = numDias;
+  renderizarSplitDiaBtns(numDias);
+  renderizarSplitChips(numDias);
+  setSplitModo('manter');
+}
+
 async function confirmarNovoMeso() {
   if (isLoading) { showToast('Aguarde a operação atual terminar', 'warn'); return; }
   window._modoEdicao = false; // novo meso sempre usa escreverNaPlanilha
@@ -3783,7 +4012,10 @@ async function confirmarNovoMeso() {
   const blocoSemana = (document.getElementById('meso-bloco-semana') && document.getElementById('meso-bloco-semana').value.trim()) || '';
   const tempoSessao = document.getElementById('meso-tempo').value;
   const seriesAvancadasMeso = macroCampo('meso-series-avancadas');
-  const divisaoModoMeso = macroCampo('meso-divisao-modo') || 'manter divisao atual';
+  const splitSelecionadoMeso = obterSplitSelecionado(); // null se modo for 'manter' ou 'ia'
+  const divisaoModoMeso = splitModoAtual === 'chips' && splitSelecionadoMeso ? 'manter divisao atual'
+    : splitModoAtual === 'ia' ? 'ia pode propor nova divisao'
+    : 'manter divisao atual';
   const usarHistoricoCompletoMeso = document.getElementById('meso-historico-completo') && document.getElementById('meso-historico-completo').checked;
   const cardioCtx = getCardioContext();
   const macroMesoCtx = obterContextoMacroParaMeso();
@@ -3866,10 +4098,17 @@ async function confirmarNovoMeso() {
         }
         window._diasPermitidosNovoMeso = usandoMemoriaAnterior ? diasMemoriaTecnicaApp(memoriaTecnicaMeso) : diasDaAbaBase(data, abasSelecionadas);
         if (!window._diasPermitidosNovoMeso.length && memoriaTecnicaMeso.diasMusculacao) window._diasPermitidosNovoMeso = memoriaTecnicaMeso.diasMusculacao;
+        // Atualizar chips se o número de dias mudou após leitura real das abas
+        var numDiasDetectado = window._diasPermitidosNovoMeso.length || detectarNumDiasParaSplits();
+        if (numDiasDetectado && numDiasDetectado !== splitNumDiasAtual) {
+          splitNumDiasAtual = numDiasDetectado;
+          renderizarSplitDiaBtns(numDiasDetectado);
+          if (splitModoAtual === 'chips') renderizarSplitChips(numDiasDetectado);
+        }
         if (window._diasPermitidosNovoMeso.length) {
           contextoAbas += '\nDIAS DA ABA BASE (OBRIGATORIO MANTER): ' + window._diasPermitidosNovoMeso.join(', ') + '. Nao crie exercicios em outros dias.\n';
         }
-        if (!divisaoBriefingMeso && divisaoModoMeso === 'manter divisao atual' && Object.keys(window._gruposPorDiaBaseNovoMeso).length) {
+        if (!divisaoBriefingMeso && !splitSelecionadoMeso && divisaoModoMeso === 'manter divisao atual' && Object.keys(window._gruposPorDiaBaseNovoMeso).length) {
           contextoAbas += 'DISTRIBUICAO MUSCULAR DA ABA BASE (OBRIGATORIO MANTER): ' +
             Object.keys(window._gruposPorDiaBaseNovoMeso).map(function(dia) {
               return dia + '=' + window._gruposPorDiaBaseNovoMeso[dia].join('+');
@@ -3898,6 +4137,15 @@ async function confirmarNovoMeso() {
   prompt += '⛔ BLOQUEIO ABSOLUTO: ELEVACAO LATERAL COM ELASTICO esta permanentemente banido. Nao pode aparecer em nenhum dia, grupo, substituicao ou variacao. JSON com este exercicio sera rejeitado integralmente. Para ombro lateral use ELEVACAO LATERAL NA POLIA UNI ou ELEVACAO LATERAL EM PE COM HALTER.\n';
   prompt += '⚠️ REGRA DE BIBLIOTECA: use SOMENTE nomes exatos do system prompt. Nao invente exercicios. Qualquer nome fora da lista causa rejeicao do meso.\n';
   if (instrucoes) prompt += 'Briefing do aluno e instrucoes do coach: ' + instrucoes + '\n';
+  if (splitSelecionadoMeso) {
+    prompt += '\n=== DIVISÃO SELECIONADA PELO COACH (REGRA OBRIGATÓRIA) ===\n';
+    prompt += 'Divisão: ' + splitSelecionadoMeso.nome + '\n';
+    prompt += 'Distribuição dos dias: ' + splitSelecionadoMeso.descDias + '\n';
+    prompt += 'Instrução de montagem: ' + splitSelecionadoMeso.instrucao + '\n';
+    prompt += 'REGRA: respeite exatamente esta divisão. Cada dia deve conter APENAS os grupos musculares definidos para ele. Esta regra prevalece sobre o histórico de divisão da aba base.\n';
+  } else if (splitModoAtual === 'ia') {
+    prompt += '\nMODO DE DIVISÃO: IA propõe. Com base no histórico, nível do aluno, número de dias disponíveis e objetivo, escolha a divisão mais adequada. Justifique brevemente a escolha no campo "raciocinio" do JSON.\n';
+  }
   if (divisaoBriefingMeso) {
     prompt += 'DIVISAO PEDIDA NO BRIEFING: ' + divisaoBriefingMeso.label +
       (divisaoBriefingMeso.diasEsperados ? ' em exatamente ' + divisaoBriefingMeso.diasEsperados + ' treino(s)' : '') + '.\n';
@@ -4045,9 +4293,10 @@ async function confirmarNovoMeso() {
         addMsg('msgs', '🔄 Tentativa 1 de 3 — ' + (window._divisaoBriefingNovoMeso ? 'ajustando para respeitar a divisão do briefing...' : 'ajustando divisão de dias conforme a aba base...'), false);
         addLoading('msgs');
         msgHistory.push({role:'user',content:montarPromptCorrecaoNovoMeso(errosPrimeiraTentativa)});
-        const replyCorrigido = await callClaude(msgHistory, SYSTEM_CORRECAO, 3000, 'claude-haiku-4-5-20251001');
+        const replyCorrigido = await callClaude(msgHistory, SYSTEM_CORRECAO, 2500, 'claude-haiku-4-5-20251001', true);
         removeLoading('msgs');
-        let parsedCorrigido = tryParseJSON(replyCorrigido);
+        let parsedCorrigidoParcial = tryParseJSON(replyCorrigido);
+        let parsedCorrigido = parsedCorrigidoParcial ? aplicarCorrecaoParcial(parsed, parsedCorrigidoParcial) : null;
         if (parsedCorrigido && parsedCorrigido.exercicios && parsedCorrigido.aba) {
           if (cardioCtx) parsedCorrigido.cardio = normalizarCardioComContexto(parsedCorrigido.cardio || [], cardioCtx);
           else if (parsedCorrigido.cardio && parsedCorrigido.cardio.length) parsedCorrigido.cardio = normalizarCardioComContexto(parsedCorrigido.cardio, null);
@@ -4062,10 +4311,11 @@ async function confirmarNovoMeso() {
             var errosSegundaTentativa = obterErrosNovoMeso(parsedCorrigido.exercicios);
             addMsg('msgs', '🔄 Tentativa 2 de 3 — ainda faltam dias/grupos. Aplicando última correção...', false);
             addLoading('msgs');
-            msgHistory.push({role:'user',content:montarPromptCorrecaoNovoMeso(errosSegundaTentativa) + '\n\nATENCAO: mantenha TODOS os dias obrigatorios. Nao remova dias que ja estavam corretos. Retorne o JSON completo, nao apenas os dias corrigidos.'});
-            const replyCorrigido2 = await callClaude(msgHistory, SYSTEM_CORRECAO, 3000, 'claude-haiku-4-5-20251001');
+            msgHistory.push({role:'user',content:montarPromptCorrecaoNovoMeso(errosSegundaTentativa)});
+            const replyCorrigido2 = await callClaude(msgHistory, SYSTEM_CORRECAO, 2500, 'claude-haiku-4-5-20251001', true);
             removeLoading('msgs');
-            let parsedCorrigido2 = tryParseJSON(replyCorrigido2);
+            let parsedCorrigido2Parcial = tryParseJSON(replyCorrigido2);
+            let parsedCorrigido2 = parsedCorrigido2Parcial ? aplicarCorrecaoParcial(parsedCorrigido, parsedCorrigido2Parcial) : null;
             if (parsedCorrigido2 && parsedCorrigido2.exercicios && parsedCorrigido2.aba) {
               if (cardioCtx) parsedCorrigido2.cardio = normalizarCardioComContexto(parsedCorrigido2.cardio || [], cardioCtx);
               else if (parsedCorrigido2.cardio && parsedCorrigido2.cardio.length) parsedCorrigido2.cardio = normalizarCardioComContexto(parsedCorrigido2.cardio, null);
@@ -4518,17 +4768,22 @@ function montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCom
     prompt += 'Sem historico de treino. Trate como aluno novo ou como reinicio estrategico.\n\n';
   }
 
-  prompt += 'Entregue em markdown, sem bloco de codigo, com estas secoes:\n' +
+  prompt += 'Entregue em markdown limpo, sem blocos de codigo. SEJA DENSO E DIRETO — cada secao tem formato obrigatorio.\n\n' +
+
     '## Diagnostico estrategico\n' +
-    'Liste objetivo, riscos, prioridades e criterio de sucesso.\n\n' +
+    'Exatamente 4 bullets de 1 linha: objetivo central | risco principal | prioridade muscular | criterio de sucesso.\n\n' +
+
     '## Mapa do macrociclo\n' +
-    'Use uma tabela com colunas: Bloco, Semanas/Meses, Fase, Modelo aplicado no bloco, Justificativa do modelo, Objetivo, Estrategia forca, Cardio, Series avancadas, Deload/Reavaliacao.\n\n' +
+    'Tabela com 6 colunas: | Bloco | Periodo | Modelo/Fase | Objetivo do bloco | Forca + Cardio | Deload |\n' +
+    'Cada celula: maximo 8 palavras. Cada linha = 1 bloco. Inclua todos os blocos do periodo.\n\n' +
+
     '## Logica de progressao\n' +
-    'Explique volume, intensidade, RIR/falha, troca de exercicios, cardio, series avancadas e variacao de 30% para reduzir monotonia sem perder progressao.\n\n' +
+    'Exatamente 5 bullets de 2 linhas: (1) volume entre blocos (2) intensidade/RiR (3) troca de exercicios (4) cardio periodizado (5) tecnicas avancadas — quando e por que usar.\n\n' +
+
     '## Proximo mesociclo sugerido\n' +
-    'Descreva o primeiro bloco pratico: foco, divisao semanal, prioridades, cuidados e o que medir ao final.\n\n' +
-    'Regras: distribua os modelos de periodizacao ao longo do macrociclo por bloco/fase. Nao escreva "macro inteiro = linear/ondulatorio/blocos/ATR". Cada bloco deve ter modelo aplicado, motivo da escolha e conexao com o bloco anterior e o proximo. Conecte cada modelo ao nivel do aluno. Preserve a divisao atual quando a diretriz pedir; se sugerir mudanca de divisao, explique por que e deixe claro que precisa de confirmacao do coach. Iniciante usa modelos simples e poucas variacoes; intermediario pode usar ondulatoria parcial/blocos; avancado pode usar ATR, ondulatoria mais complexa e tecnicas avancadas. Inclua cardio periodizado junto da forca. Nao engesse 52 semanas; pense como mapa anual adaptativo; inclua deloads; use os meses reais do periodo estimado para situar o coach no ano; use tom profissional e direto do Coach Felipe.\n\n' +
-    'Base teorica: use como pano de fundo os principios de periodizacao, progressao, variacao, especificidade, fadiga e recuperacao associados a autores como Tudor Bompa, Vladimir Issurin, Yuri Verkhoshansky, Michael Stone, William Kraemer, Steven Fleck, Brad Schoenfeld, Eric Helms, Mike Israetel, Greg Nuckols, Antonio Carlos Gomes, Paulo Gentil, Roberto Simao e outros autores relevantes da musculacao e treinamento de forca. Nao transforme a resposta em aula teorica; cite autores apenas quando isso justificar uma decisao pratica do macro.';
+    'Exatamente 5 bullets de 1-2 linhas: foco do bloco | divisao semanal | prioridades | o que medir ao final | cuidados.\n\n' +
+
+    'REGRAS GERAIS: cada bloco tem modelo proprio (nao use um modelo para o macro inteiro) com conexao logica ao anterior e ao proximo. Preserve a divisao atual quando solicitado; se propor mudanca, justifique em 1 linha e deixe claro que precisa de confirmacao do coach. Inclua deloads. Use os meses reais do periodo para situar. Tom direto do Coach Felipe. Periodizacao baseada em Bompa, Issurin, Israetel, Helms, Schoenfeld — aplique por contexto, sem aula teorica.';
   return prompt;
 }
 
@@ -4577,7 +4832,7 @@ async function gerarMacrociclo(modo) {
 
     var system = getSystemPrompt() + '\n\nVoce tambem e especialista em periodizacao anual, macrociclo adaptativo, deloads, reavaliacao e tomada de decisao baseada em historico.';
     if (avisoHistorico) system += '\nAviso operacional: ' + avisoHistorico;
-    var reply = await callClaude([{ role: 'user', content: montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCompleto) }], system, 4500);
+    var reply = await callClaude([{ role: 'user', content: montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCompleto) }], system, 4500, null, true);
     var meta = { duracao: ctx.periodoEstimado || ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: modo === 'historico' ? 'Historico' : 'Zero' };
     window._macroAtual = { markdown: reply, ctx: ctx, meta: meta, historico: historico ? { abasAnalisadas: historico.abasAnalisadas, totalSeries: historico.totalSeries } : null, criadoEm: new Date().toISOString() };
     renderMacroMarkdown(reply, meta);
@@ -5548,7 +5803,8 @@ async function confirmarEdicao() {
     '4. NUNCA use ELEVACAO LATERAL COM ELASTICO; este exercicio esta bloqueado pelo coach.\n' +
     '5. Se o pedido for ambiguo, pergunte antes de aplicar.\n' +
     '6. Quando confirmado, retorne JSON APENAS com exercicios alterados.\n' +
-    '   FORMATO OBRIGATORIO: {"aba":"' + window._abaAtual + '","exercicios":[...apenas alterados...]}\n' +
+    '   FORMATO OBRIGATORIO: {"aba":"' + window._abaAtual + '","exercicios":[{"dia":"SEG","posicao":2,"nome":"Agachamento","series":4,"reps":"8-10","rir":2,"tipo":"Forca"}]}\n' +
+    '   INCLUA "posicao" (numero ordinal do exercicio no dia, ex: posicao:2 = 2o exercicio) em TODOS os exercicios alterados.\n' +
     '   O campo "aba" DEVE ser "' + window._abaAtual + '". Nao inclua exercicios nao alterados.\n';
 
   msgHistory.push({role:'user', content: prompt});
@@ -7158,12 +7414,13 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
       var vlPrev  = ex.volumeLoadAnterior || 0;
       var vlDelta = vlAtual - vlPrev;
       var status = 'manteve';
-      // recordeCarga = PR de peso (carga maior que qualquer semana anterior) → Recorde
-      // progressaoCarga = carga maior que semana passada → ↑ Carga
-      // recordeVolumeLoad / progressaoReps = mais volume ou reps sem aumento de carga → ↑ Reps
+      // recordeCarga    = PR de peso (carga > melhor histórico)          → Recorde
+      // progressaoCarga = carga maior que semana passada                 → ↑ Carga
+      // progressaoReps  = carga igual ou maior E mais reps que sem. ant. → ↑ Reps
+      // recordeVolumeLoad NÃO conta: volume pode crescer com carga menor (deload + reps altas)
       if (ex.recordeCarga) { status = 'record'; totalRec++; totalProg++; }
       else if (ex.progressaoCarga) { status = 'carga'; totalProg++; }
-      else if (ex.progressaoReps || ex.recordeVolumeLoad) { status = 'reps'; totalProg++; }
+      else if (ex.progressaoReps) { status = 'reps'; totalProg++; }
       var seriesStr = ex.seriesAtual.map(function(s){ return s.reps; }).join('/');
       var cargaMax = ex.seriesAtual.length > 0 ? Math.max.apply(null, ex.seriesAtual.map(function(s){return s.carga;})) : 0;
       var detalhe = cargaMax > 0 ? cargaMax + 'kg × ' + seriesStr + ' reps' : seriesStr + ' reps';

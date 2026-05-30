@@ -7158,10 +7158,12 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
       var vlPrev  = ex.volumeLoadAnterior || 0;
       var vlDelta = vlAtual - vlPrev;
       var status = 'manteve';
-      // Apenas recordeCarga (PR de peso) conta como "recorde" — recordeVolumeLoad é tratado como progressão de carga
+      // recordeCarga = PR de peso (carga maior que qualquer semana anterior) → Recorde
+      // progressaoCarga = carga maior que semana passada → ↑ Carga
+      // recordeVolumeLoad / progressaoReps = mais volume ou reps sem aumento de carga → ↑ Reps
       if (ex.recordeCarga) { status = 'record'; totalRec++; totalProg++; }
-      else if (ex.recordeVolumeLoad || ex.progressaoCarga) { status = 'carga'; totalProg++; }
-      else if (ex.progressaoReps)  { status = 'reps';  totalProg++; }
+      else if (ex.progressaoCarga) { status = 'carga'; totalProg++; }
+      else if (ex.progressaoReps || ex.recordeVolumeLoad) { status = 'reps'; totalProg++; }
       var seriesStr = ex.seriesAtual.map(function(s){ return s.reps; }).join('/');
       var cargaMax = ex.seriesAtual.length > 0 ? Math.max.apply(null, ex.seriesAtual.map(function(s){return s.carga;})) : 0;
       var detalhe = cargaMax > 0 ? cargaMax + 'kg × ' + seriesStr + ' reps' : seriesStr + ' reps';
@@ -7210,7 +7212,7 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
     var seta = diff > 0 ? '↑' : diff < 0 ? '↓' : '→';
     var label = unidade === '%' ? (diff > 0 ? '+' : '') + diff + 'pp'
               : unidade === 'UA' ? (diff > 0 ? '+' : '') + Math.round(diff) + ' UA'
-              : (diff > 0 ? '+' : '') + fmt(Math.abs(diff)) + (diff < 0 ? ' ↓' : ' ↑');
+              : (diff > 0 ? '+' : '') + fmt(Math.abs(diff));
     var pctStr = unidade !== '%' && unidade !== 'UA' && anterior > 0 ? ' (' + (pct > 0 ? '+' : '') + pct + '%)' : '';
     return '<div style="font-size:9px;font-weight:600;color:' + cor + ';margin-top:3px">' + seta + ' ' + label + pctStr + ' vs sem. ant.</div>';
   }

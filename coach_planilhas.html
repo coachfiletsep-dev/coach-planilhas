@@ -327,6 +327,15 @@
   .split-chip span { font-size:10px; color:var(--text3); line-height:1.35; }
   .split-dias-btn { padding:3px 9px; font-size:11px; border:.5px solid var(--border2); border-radius:99px; background:var(--bg2); color:var(--text2); cursor:pointer; transition:all .15s; }
   .split-dias-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
+  /* ─ Preview edit inline ─ */
+  .preview-edit-form { display:none; flex-direction:column; gap:6px; background:var(--bg2); border:.5px solid var(--green); border-radius:var(--radius); padding:8px 10px; margin-bottom:6px; }
+  .preview-edit-form label { font-size:10.5px; color:var(--text3); margin-bottom:1px; }
+  .preview-edit-form input, .preview-edit-form select { padding:4px 7px; font-size:12px; border:.5px solid var(--border2); border-radius:var(--radius); background:var(--bg); color:var(--text); width:100%; box-sizing:border-box; font-family:inherit; }
+  .preview-edit-btn { font-size:10px; padding:2px 7px; border:.5px solid var(--border2); border-radius:99px; background:transparent; color:var(--text3); cursor:pointer; margin-left:6px; }
+  .preview-edit-btn:hover { border-color:var(--green); color:var(--green); }
+  /* ─ Split custom days ─ */
+  .split-custom-dia-btn { padding:4px 9px; font-size:12px; font-weight:600; border:.5px solid var(--border2); border-radius:99px; background:var(--bg2); color:var(--text2); cursor:pointer; transition:all .15s; }
+  .split-custom-dia-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
 </style>
 </head>
 <body>
@@ -1091,6 +1100,7 @@
           <button class="split-modo-btn active" id="split-modo-manter" onclick="setSplitModo('manter')">↩ Manter anterior</button>
           <button class="split-modo-btn" id="split-modo-chips" onclick="setSplitModo('chips')">📋 Selecionar divisão</button>
           <button class="split-modo-btn" id="split-modo-ia" onclick="setSplitModo('ia')">✨ IA sugere</button>
+          <button class="split-modo-btn" id="split-modo-custom" onclick="setSplitModo('custom')">📅 Personalizar dias</button>
         </div>
         <div id="split-manter-info" style="font-size:11px;color:var(--text3);line-height:1.4;">Mantém a divisão detectada nas semanas selecionadas (dias e grupos musculares por dia).</div>
         <div id="split-chips-wrap" style="display:none;flex-direction:column;gap:8px;">
@@ -1102,6 +1112,15 @@
           <div id="split-chip-detalhe" style="font-size:10.5px;color:var(--text3);line-height:1.45;padding:6px 8px;background:var(--bg2);border-radius:var(--radius);display:none;"></div>
         </div>
         <div id="split-ia-info" style="display:none;font-size:11px;color:var(--text3);line-height:1.4;">A IA vai analisar histórico, nível e objetivo do aluno e propor a divisão mais adequada antes de montar os exercícios.</div>
+        <div id="split-custom-wrap" style="display:none;flex-direction:column;gap:8px;">
+          <div style="font-size:11px;color:var(--text3);line-height:1.4;">Selecione os dias que o aluno irá treinar neste meso:</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;" id="split-custom-dias-check"></div>
+          <div style="display:flex;gap:8px;" id="split-custom-modo-wrap">
+            <button class="split-modo-btn active" id="split-custom-btn-define" onclick="setSplitCustomGruposModo('define')">📝 Eu defino grupos</button>
+            <button class="split-modo-btn" id="split-custom-btn-ia" onclick="setSplitCustomGruposModo('ia')">✨ IA distribui grupos</button>
+          </div>
+          <div id="split-custom-grupos" style="display:flex;flex-direction:column;gap:5px;"></div>
+        </div>
       </div>
       <div class="fl">
         <label>Briefing do aluno e instruções do novo meso</label>
@@ -3909,16 +3928,19 @@ var splitNumDiasAtual = 4;
 
 function setSplitModo(modo) {
   splitModoAtual = modo;
-  ['manter','chips','ia'].forEach(function(m) {
+  ['manter','chips','ia','custom'].forEach(function(m) {
     var btn = document.getElementById('split-modo-' + m);
     if (btn) btn.classList.toggle('active', m === modo);
   });
   var manterInfo = document.getElementById('split-manter-info');
   var chipsWrap = document.getElementById('split-chips-wrap');
   var iaInfo = document.getElementById('split-ia-info');
+  var customWrap = document.getElementById('split-custom-wrap');
   if (manterInfo) manterInfo.style.display = modo === 'manter' ? 'block' : 'none';
   if (chipsWrap) chipsWrap.style.display = modo === 'chips' ? 'flex' : 'none';
   if (iaInfo) iaInfo.style.display = modo === 'ia' ? 'block' : 'none';
+  if (customWrap) customWrap.style.display = modo === 'custom' ? 'flex' : 'none';
+  if (modo === 'custom') renderizarSplitCustomDias();
 }
 
 function renderizarSplitDiaBtns(numAtual) {
@@ -3998,6 +4020,88 @@ function inicializarSplitSelector() {
   renderizarSplitDiaBtns(numDias);
   renderizarSplitChips(numDias);
   setSplitModo('manter');
+}
+
+// ─ Split: dias customizados ─────────────────────────────────
+var splitCustomGruposModo = 'define'; // 'define' | 'ia'
+var DIAS_SEMANA_CUSTOM = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+var GRUPOS_CUSTOM_SUGESTOES = ['Upper','Lower','Full Body','Push','Pull','Legs','Peito/Tríceps','Costas/Bíceps','Ombro/Braços','Glúteo/Posterior','Core/Funcional'];
+
+function renderizarSplitCustomDias() {
+  var container = document.getElementById('split-custom-dias-check');
+  if (!container) return;
+  container.innerHTML = '';
+  var diasAtivos = (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length)
+    ? window._diasPermitidosNovoMeso
+    : [];
+  DIAS_SEMANA_CUSTOM.forEach(function(dia) {
+    var ativo = diasAtivos.indexOf(dia) !== -1;
+    var btn = document.createElement('button');
+    btn.className = 'split-custom-dia-btn' + (ativo ? ' active' : '');
+    btn.setAttribute('data-dia', dia);
+    btn.textContent = dia;
+    btn.type = 'button';
+    btn.onclick = function() {
+      this.classList.toggle('active');
+      atualizarSplitCustomGrupos();
+    };
+    container.appendChild(btn);
+  });
+  atualizarSplitCustomGrupos();
+}
+
+function setSplitCustomGruposModo(modo) {
+  splitCustomGruposModo = modo;
+  var btnD = document.getElementById('split-custom-btn-define');
+  var btnI = document.getElementById('split-custom-btn-ia');
+  if (btnD) btnD.classList.toggle('active', modo === 'define');
+  if (btnI) btnI.classList.toggle('active', modo === 'ia');
+  atualizarSplitCustomGrupos();
+}
+
+function atualizarSplitCustomGrupos() {
+  var gruposContainer = document.getElementById('split-custom-grupos');
+  if (!gruposContainer) return;
+  gruposContainer.innerHTML = '';
+  if (splitCustomGruposModo !== 'define') {
+    gruposContainer.innerHTML = '<div style="font-size:11px;color:var(--text3);">A IA vai distribuir os grupos musculares nos dias selecionados com base no histórico e objetivo do aluno.</div>';
+    return;
+  }
+  var dias = obterDiasCustomizadosSelecionados().map(function(d) { return d.dia; });
+  if (!dias.length) {
+    gruposContainer.innerHTML = '<div style="font-size:11px;color:var(--text3);">Selecione ao menos um dia acima.</div>';
+    return;
+  }
+  var grupoOpts = '<option value="">IA decide</option>' + GRUPOS_CUSTOM_SUGESTOES.map(function(g) {
+    return '<option value="' + g + '">' + g + '</option>';
+  }).join('');
+  dias.forEach(function(dia) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:52px 1fr;gap:6px;align-items:center;';
+    row.innerHTML = '<span style="font-size:12px;font-weight:700;color:var(--text);">' + dia + '</span>' +
+      '<select id="split-cg-' + dia + '" style="padding:5px 7px;font-size:12px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">' + grupoOpts + '</select>';
+    gruposContainer.appendChild(row);
+  });
+}
+
+function obterDiasCustomizadosSelecionados() {
+  var result = [];
+  document.querySelectorAll('#split-custom-dias-check .split-custom-dia-btn.active').forEach(function(btn) {
+    var dia = btn.getAttribute('data-dia');
+    if (dia) result.push({ dia: dia, grupo: '' });
+  });
+  return result;
+}
+
+function obterDiasCustomizados() {
+  var result = obterDiasCustomizadosSelecionados();
+  if (splitCustomGruposModo === 'define') {
+    result.forEach(function(item) {
+      var sel = document.getElementById('split-cg-' + item.dia);
+      item.grupo = sel ? sel.value : '';
+    });
+  }
+  return result;
 }
 
 async function confirmarNovoMeso() {
@@ -4098,6 +4202,11 @@ async function confirmarNovoMeso() {
         }
         window._diasPermitidosNovoMeso = usandoMemoriaAnterior ? diasMemoriaTecnicaApp(memoriaTecnicaMeso) : diasDaAbaBase(data, abasSelecionadas);
         if (!window._diasPermitidosNovoMeso.length && memoriaTecnicaMeso.diasMusculacao) window._diasPermitidosNovoMeso = memoriaTecnicaMeso.diasMusculacao;
+        // Override com dias customizados se o coach selecionou manualmente
+        if (splitModoAtual === 'custom') {
+          var _diasCust = obterDiasCustomizados();
+          if (_diasCust.length > 0) window._diasPermitidosNovoMeso = _diasCust.map(function(d) { return d.dia; });
+        }
         // Atualizar chips se o número de dias mudou após leitura real das abas
         var numDiasDetectado = window._diasPermitidosNovoMeso.length || detectarNumDiasParaSplits();
         if (numDiasDetectado && numDiasDetectado !== splitNumDiasAtual) {
@@ -4145,6 +4254,22 @@ async function confirmarNovoMeso() {
     prompt += 'REGRA: respeite exatamente esta divisão. Cada dia deve conter APENAS os grupos musculares definidos para ele. Esta regra prevalece sobre o histórico de divisão da aba base.\n';
   } else if (splitModoAtual === 'ia') {
     prompt += '\nMODO DE DIVISÃO: IA propõe. Com base no histórico, nível do aluno, número de dias disponíveis e objetivo, escolha a divisão mais adequada. Justifique brevemente a escolha no campo "raciocinio" do JSON.\n';
+  } else if (splitModoAtual === 'custom') {
+    var diasCustPrompt = obterDiasCustomizados();
+    if (diasCustPrompt.length > 0) {
+      prompt += '\n=== DIAS CUSTOMIZADOS DEFINIDOS PELO COACH ===\n';
+      if (splitCustomGruposModo === 'define') {
+        var linhasDias = diasCustPrompt.map(function(d) {
+          return d.dia + ': ' + (d.grupo || 'IA decide grupos');
+        }).join(' | ');
+        prompt += linhasDias + '\n';
+        prompt += 'Monte exercícios estritamente conforme os grupos definidos por dia. Para dias com "IA decide grupos", distribua de forma coerente com os demais dias.\n';
+      } else {
+        prompt += 'Dias selecionados: ' + diasCustPrompt.map(function(d){return d.dia;}).join(', ') + '\n';
+        prompt += 'Distribua os grupos musculares de forma coerente para ' + diasCustPrompt.length + ' dias/semana com base no histórico e objetivo do aluno.\n';
+      }
+      prompt += 'Esta configuração PREVALECE sobre a divisão da aba base. NÃO crie exercícios em outros dias.\n';
+    }
   }
   if (divisaoBriefingMeso) {
     prompt += 'DIVISAO PEDIDA NO BRIEFING: ' + divisaoBriefingMeso.label +
@@ -5918,7 +6043,7 @@ function mostrarPreview(exercicios, nomeAba) {
   var lista = document.getElementById('preview-lista');
   lista.innerHTML = '';
 
-  exercicios.forEach(function(ex) {
+  exercicios.forEach(function(ex, previewIdx) {
     // Encontrar o exercício original na aba atual pelo campo dia + linha
     var original = null;
     if (window._dadosAbaAtual) {
@@ -5961,8 +6086,11 @@ function mostrarPreview(exercicios, nomeAba) {
     depoisEl.className = 'preview-depois';
     var ultimaSerie = ex.ultimaSerie || ex.ultima_serie || ex.serieAvancada || ex.tecnicaAvancada || '';
     var observacoes = ex.observacoes || ex.observacao || ex.combinacao || '';
+    var editBtnHtml = window._previewModo === 'novo'
+      ? '<button class="preview-edit-btn" onclick="toggleEdicaoPreview(' + previewIdx + ')">✏️ editar</button>'
+      : '';
     depoisEl.innerHTML =
-      '<strong>' + ex.nome + '</strong><br>' +
+      '<strong>' + ex.nome + '</strong>' + editBtnHtml + '<br>' +
       (ex.series || (original && original.series) || '?') + 'x' +
       (ex.repeticoes || (original && original.repeticoes) || '?') +
       ' | ' + (ex.cadencia || (original && original.cadencia) || '?') +
@@ -5975,6 +6103,41 @@ function mostrarPreview(exercicios, nomeAba) {
     row.appendChild(arrow);
     row.appendChild(depoisEl);
     lista.appendChild(row);
+
+    // Form de edição inline (apenas no modo 'novo')
+    if (window._previewModo === 'novo') {
+      var editForm = document.createElement('div');
+      editForm.className = 'preview-edit-form';
+      editForm.id = 'preview-edit-' + previewIdx;
+      var exOpts = coletarExerciciosPreview().map(function(n) {
+        var sel = n.toUpperCase() === (ex.nome||'').toUpperCase() ? ' selected' : '';
+        return '<option value="' + n.replace(/"/g,'&quot;') + '"' + sel + '>' + n + '</option>';
+      }).join('');
+      var tipoOpts = ['Forca','Metabolico','Misto','Mobilidade'].map(function(t) {
+        return '<option value="' + t + '"' + (ex.tipo === t ? ' selected' : '') + '>' + t + '</option>';
+      }).join('');
+      editForm.innerHTML =
+        '<div style="font-size:11px;font-weight:700;color:var(--green);">✏️ ' + ex.dia + ' — exercício ' + (previewIdx+1) + '</div>' +
+        '<div>' +
+          '<label>Trocar por:</label>' +
+          '<select id="pe-nome-' + previewIdx + '">' + exOpts + '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label>Ou digitar nome (deixe vazio para usar lista):</label>' +
+          '<input id="pe-custom-' + previewIdx + '" type="text" placeholder="Ex: Supino Inclinado com Halteres">' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;">' +
+          '<div><label>Séries</label><input id="pe-ser-' + previewIdx + '" type="number" min="1" max="10" value="' + (ex.series||'') + '" placeholder="Séries"></div>' +
+          '<div><label>Reps</label><input id="pe-reps-' + previewIdx + '" type="text" value="' + (ex.reps||ex.repeticoes||'') + '" placeholder="Ex: 8-12"></div>' +
+          '<div><label>RiR</label><input id="pe-rir-' + previewIdx + '" type="number" min="0" max="5" value="' + (ex.rir||'') + '" placeholder="RiR"></div>' +
+          '<div><label>Tipo</label><select id="pe-tipo-' + previewIdx + '">' + tipoOpts + '</select></div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;">' +
+          '<button onclick="aplicarEdicaoPreview(' + previewIdx + ')" style="padding:4px 12px;font-size:12px;background:var(--green);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;">✅ Aplicar</button>' +
+          '<button onclick="toggleEdicaoPreview(' + previewIdx + ')" style="padding:4px 10px;font-size:12px;background:none;border:.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;color:var(--text2);">✕ Cancelar</button>' +
+        '</div>';
+      lista.appendChild(editForm);
+    }
   });
 
   // Mostrar cardio no preview se houver
@@ -5994,6 +6157,54 @@ function mostrarPreview(exercicios, nomeAba) {
   }
 
   document.getElementById('preview-modal').style.display = 'flex';
+}
+
+// ─ Preview: coleta exercícios conhecidos para o select ──────
+function coletarExerciciosPreview() {
+  var nomes = {};
+  if (window._dadosAbaAtual) {
+    window._dadosAbaAtual.forEach(function(ex) { if (ex && ex.nome) nomes[ex.nome.toUpperCase()] = ex.nome; });
+  }
+  if (window._previewExercicios) {
+    window._previewExercicios.forEach(function(ex) { if (ex && ex.nome) nomes[ex.nome.toUpperCase()] = ex.nome; });
+  }
+  return Object.values(nomes).sort();
+}
+
+function toggleEdicaoPreview(idx) {
+  var editForm = document.getElementById('preview-edit-' + idx);
+  if (!editForm) return;
+  var isVisible = editForm.style.display !== 'none';
+  // Fecha todos os outros
+  document.querySelectorAll('[id^="preview-edit-"]').forEach(function(el) { el.style.display = 'none'; });
+  if (!isVisible) editForm.style.display = 'flex';
+}
+
+function aplicarEdicaoPreview(idx) {
+  if (!window._previewExercicios || !window._previewExercicios[idx]) return;
+  var ex = window._previewExercicios[idx];
+  var customNome = (document.getElementById('pe-custom-' + idx) || {}).value || '';
+  customNome = customNome.trim();
+  var selectNome = (document.getElementById('pe-nome-' + idx) || {}).value || '';
+  var nome = customNome || selectNome;
+  if (!nome) { showToast('Informe o nome do exercício', 'warn'); return; }
+  var seriesEl = document.getElementById('pe-ser-' + idx);
+  var repsEl = document.getElementById('pe-reps-' + idx);
+  var rirEl = document.getElementById('pe-rir-' + idx);
+  var tipoEl = document.getElementById('pe-tipo-' + idx);
+  var series = parseInt((seriesEl||{}).value) || ex.series;
+  var reps = ((repsEl||{}).value || '').trim() || ex.reps || ex.repeticoes;
+  var rir = ((rirEl||{}).value || '').trim();
+  var tipo = ((tipoEl||{}).value) || ex.tipo;
+  window._previewExercicios[idx] = Object.assign({}, ex, {
+    nome: nome.toUpperCase(),
+    series: series,
+    reps: reps,
+    repeticoes: reps,
+    rir: rir !== '' ? rir : ex.rir,
+    tipo: tipo
+  });
+  mostrarPreview(window._previewExercicios, window._previewAba);
 }
 
 function fecharPreview() {

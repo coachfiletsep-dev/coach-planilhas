@@ -3108,13 +3108,19 @@ function renderMesoMacroOptions() {
   window._macroMesoDisponivel = macro;
   window._macroBlocosDisponiveis = macro ? extrairBlocosDoMacro(macro.markdown) : [];
   sel.innerHTML = '';
+  box.style.display = 'flex';
   if (!macro || !macro.markdown) {
-    box.style.display = 'none';
     window._macroMesoDisponivel = null;
     window._macroBlocosDisponiveis = [];
+    sel.disabled = true;
+    var optVazio = document.createElement('option');
+    optVazio.value = '';
+    optVazio.textContent = 'Nenhum macrociclo salvo';
+    sel.appendChild(optVazio);
+    resumo.textContent = 'Salve um macrociclo na aba "Macro" para vincular este meso a um bloco específico.';
     return;
   }
-  box.style.display = 'flex';
+  sel.disabled = false;
   var optLivre = document.createElement('option');
   optLivre.value = '';
   optLivre.textContent = 'Usar macro geral, sem bloco especifico';

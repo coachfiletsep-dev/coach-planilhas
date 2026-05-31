@@ -476,6 +476,11 @@
             <div class="ac-label">Planilha do zero</div>
             <div class="ac-desc">Cria nova aba zerada para novo mesociclo</div>
           </button>
+          <button class="ac" onclick="recriarAbaAluno()">
+            <div class="ac-icon">🔧</div>
+            <div class="ac-label">Recriar aba</div>
+            <div class="ac-desc">Recria a aba com layout correto, mantendo os exercícios gerados</div>
+          </button>
           <button class="ac" onclick="restaurarDropdownsAluno()">
             <div class="ac-icon">🔄</div>
             <div class="ac-label">Restaurar dropdowns</div>
@@ -813,6 +818,7 @@
               <option value="">Selecionar semana...</option>
             </select>
             <button onclick="analisarVolumeSemana()" style="padding:5px 10px;border-radius:var(--radius);border:.5px solid var(--green);background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;cursor:pointer;">Analisar</button>
+            <button onclick="copiarVolumeComoTexto()" id="btn-copiar-volume" style="padding:5px 10px;border-radius:var(--radius);border:.5px solid var(--border2);background:var(--bg2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;display:none;">📋 Copiar</button>
           </div>
         </div>
         <div id="vol-dash-deload" style="display:none;"></div>
@@ -2002,6 +2008,38 @@ async function runSheetAction(type) {
       showToast('Aba criada!', 'ok');
       return;
     }
+    addMsg('msgs', 'Erro: ' + e.message, false);
+  }
+}
+
+async function recriarAbaAluno() {
+  const s = students.find(function(x){return x.id===selectedId;});
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  const sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
+  // Descobrir aba atual
+  let abaAtual = '';
+  try {
+    const r = await gsPost({ acao: 'getAbaAtual', spreadsheetId: sheetId });
+    const d = await r.json(); abaAtual = d.aba || '';
+  } catch(e) {}
+  if (!abaAtual) { showToast('Não foi possível identificar a aba atual', 'err'); return; }
+  if (!confirm('Recriar aba ' + abaAtual + ' com layout correto, mantendo os exercícios?\n\nA aba atual será salva como ' + abaAtual + '_bkp por segurança.')) return;
+  addMsg('msgs', 'Recriando aba ' + abaAtual + ' com layout correto...', true);
+  addLoading('msgs');
+  try {
+    const res = await gsPost({ acao: 'recriar_aba:' + abaAtual, spreadsheetId: sheetId });
+    const data = await res.json();
+    removeLoading('msgs');
+    if (data.sucesso) {
+      addMsg('msgs', '✅ Aba ' + data.aba + ' recriada com ' + data.escritos + ' exercícios! ' + (data.aviso || ''), false);
+      showToast('Aba recriada!', 'ok');
+      atualizarAbasDoAlunoAtual().catch(function(){});
+    } else {
+      addMsg('msgs', 'Erro: ' + (data.erro || 'desconhecido'), false);
+    }
+  } catch(e) {
+    removeLoading('msgs');
     addMsg('msgs', 'Erro: ' + e.message, false);
   }
 }
@@ -5586,6 +5624,8 @@ async function analisarVolumeSemana() {
     var grupos = Object.keys(MEV_MAV_MRV).filter(function(g){ return (seriasGrupo[g]||0)>0; });
     if (!grupos.length) { empty.textContent='Não foi possível mapear grupos musculares desta semana.'; return; }
     empty.style.display='none'; leg.style.display='block'; bars.innerHTML='';
+    var btnCopiar = document.getElementById('btn-copiar-volume');
+    if (btnCopiar) btnCopiar.style.display='';
     var acimaMrv=[], estagnados=[];
     grupos.forEach(function(g){
       var s2=seriasGrupo[g]||0; var ref=MEV_MAV_MRV[g];
@@ -5634,6 +5674,41 @@ async function analisarVolumeSemana() {
     showToast('Erro ao analisar volume','err');
   }
 }
+function copiarVolumeComoTexto() {
+  var s = students.find(function(x){return x.id===selectedId;});
+  var aba = document.getElementById('vol-dash-aba').value;
+  var bars = document.getElementById('vol-dash-bars');
+  if (!bars || !bars.children.length) { showToast('Analise primeiro','err'); return; }
+  var linhas = [];
+  var nomeAluno = s ? (s.nome||s.name||'Aluno') : 'Aluno';
+  linhas.push('📊 Volume Semanal — ' + nomeAluno + ' (' + aba + ')');
+  linhas.push('');
+  Array.from(bars.children).forEach(function(row) {
+    var spans = row.querySelectorAll('span');
+    if (spans.length >= 2) {
+      var grupo = spans[0] ? spans[0].textContent.trim() : '';
+      var series = spans[1] ? spans[1].textContent.trim() : '';
+      if (grupo) linhas.push(grupo + ': ' + series);
+    }
+  });
+  var deload = document.getElementById('vol-dash-deload');
+  if (deload && deload.style.display !== 'none' && deload.textContent.trim()) {
+    linhas.push('');
+    linhas.push('⚠️ ' + deload.textContent.replace(/\s+/g,' ').trim());
+  }
+  var texto = linhas.join('\n');
+  navigator.clipboard.writeText(texto).then(function() {
+    showToast('Copiado!', 'ok');
+  }).catch(function() {
+    // fallback
+    var ta = document.createElement('textarea');
+    ta.value = texto; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Copiado!', 'ok');
+  });
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 
 function showPage(page, el) {

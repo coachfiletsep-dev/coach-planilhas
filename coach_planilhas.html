@@ -476,6 +476,11 @@
             <div class="ac-label">Planilha do zero</div>
             <div class="ac-desc">Cria nova aba zerada para novo mesociclo</div>
           </button>
+          <button class="ac" onclick="restaurarDropdownsAluno()">
+            <div class="ac-icon">🔄</div>
+            <div class="ac-label">Restaurar dropdowns</div>
+            <div class="ac-desc">Reconecta o ▼ de exercícios na semana atual</div>
+          </button>
           <button class="ac" onclick="analisarAjustesPlanilha()">
             <div class="ac-icon">📊</div>
             <div class="ac-label">Analisar ajustes</div>
@@ -1993,6 +1998,29 @@ async function runSheetAction(type) {
       return;
     }
     addMsg('msgs', 'Erro: ' + e.message, false);
+  }
+}
+
+async function restaurarDropdownsAluno() {
+  const s = students.find(function(x){return x.id===selectedId;});
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  const sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
+  addMsg('msgs', 'Restaurando dropdowns da semana atual...', true);
+  addLoading('msgs');
+  try {
+    const res = await gsPost({ acao: 'restaurar_dropdowns', spreadsheetId: sheetId });
+    const data = await res.json();
+    removeLoading('msgs');
+    if (data.sucesso) {
+      addMsg('msgs', 'Dropdowns restaurados na aba ' + data.aba + '! (' + data.restaurados + ' células). Abra a planilha — o ▼ voltou.', false);
+      showToast('Dropdowns restaurados!', 'ok');
+    } else {
+      addMsg('msgs', 'Erro: ' + (data.erro || 'desconhecido'), false);
+    }
+  } catch(e) {
+    removeLoading('msgs');
+    addMsg('msgs', 'Erro ao restaurar: ' + e.message, false);
   }
 }
 

@@ -1169,6 +1169,21 @@
           <option value="1h30">1h30 (até 28 séries/sessão)</option>
         </select>
       </div>
+      <!-- DENSIDADE DO TREINO -->
+      <div class="fl" id="meso-densidade-box">
+        <label style="font-weight:600;">Exercícios por dia <span style="font-weight:400;color:var(--text3);">(instrução obrigatória à IA)</span></label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="number" id="meso-ex-global" min="1" max="15" value="8" oninput="_onGlobalExChange()"
+            style="width:58px;padding:6px 8px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);text-align:center;">
+          <span style="font-size:12px;color:var(--text2);">exercícios em todos os dias</span>
+          <button type="button" onclick="toggleDensidadePorDia()" id="meso-densidade-toggle"
+            style="margin-left:auto;font-size:11px;color:var(--green);background:none;border:none;cursor:pointer;padding:0;white-space:nowrap;text-decoration:underline;">
+            Personalizar por dia ↓
+          </button>
+        </div>
+        <div id="meso-densidade-por-dia" style="display:none;flex-direction:column;gap:6px;padding:8px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border2);margin-top:2px;"></div>
+      </div>
+
       <div class="fl" id="meso-macro-box" style="display:none;">
         <label style="font-weight:600;">Bloco do macrociclo</label>
         <select id="meso-macro-bloco" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"></select>
@@ -3193,6 +3208,11 @@ async function runAction(type) {
   document.getElementById('meso-abas-loading').style.display = 'block';
   document.getElementById('meso-abas-lista').style.display = 'none';
   document.getElementById('meso-modal').style.display = 'flex';
+  // Resetar painel de densidade ao abrir modal
+  var _densBox = document.getElementById('meso-densidade-por-dia');
+  var _densBtn = document.getElementById('meso-densidade-toggle');
+  if (_densBox) { _densBox.style.display = 'none'; _densBox.innerHTML = ''; }
+  if (_densBtn) _densBtn.textContent = 'Personalizar por dia ↓';
   renderMesoMacroOptions();
 
   inicializarSplitSelector();
@@ -4138,6 +4158,91 @@ function obterSplitSelecionado() {
   return obterSplitPorId(splitSelecionadoId);
 }
 
+// ─── DENSIDADE DO TREINO (exercícios por dia) ───────────────────────────
+function toggleDensidadePorDia() {
+  var box = document.getElementById('meso-densidade-por-dia');
+  var btn = document.getElementById('meso-densidade-toggle');
+  if (!box) return;
+  if (box.style.display === 'none') {
+    _popularDensidadePorDia();
+    box.style.display = 'flex';
+    btn.textContent = 'Colapsar ↑';
+  } else {
+    box.style.display = 'none';
+    btn.textContent = 'Personalizar por dia ↓';
+  }
+}
+
+function _diasAtivosParaDensidade() {
+  if (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length)
+    return window._diasPermitidosNovoMeso.slice();
+  var custDias = [];
+  document.querySelectorAll('#split-custom-dias-check .split-custom-dia-btn.active').forEach(function(btn) {
+    var d = btn.getAttribute('data-dia'); if (d) custDias.push(d);
+  });
+  if (custDias.length) return custDias;
+  return ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+}
+
+function _popularDensidadePorDia() {
+  var box = document.getElementById('meso-densidade-por-dia');
+  if (!box) return;
+  var dias = _diasAtivosParaDensidade();
+  var globalVal = parseInt((document.getElementById('meso-ex-global') || {}).value) || 8;
+  // Preservar valores já digitados
+  var anteriores = {};
+  box.querySelectorAll('input[id^="meso-ex-dia-"]').forEach(function(inp) {
+    var d = inp.id.replace('meso-ex-dia-', '');
+    anteriores[d] = inp.value;
+  });
+  box.innerHTML = '';
+  var grid = document.createElement('div');
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;';
+  dias.forEach(function(dia) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;gap:3px;';
+    var lbl = document.createElement('label');
+    lbl.style.cssText = 'font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.04em;';
+    lbl.textContent = dia;
+    var inp = document.createElement('input');
+    inp.type = 'number'; inp.min = 1; inp.max = 15;
+    inp.value = anteriores[dia] || globalVal;
+    inp.id = 'meso-ex-dia-' + dia;
+    inp.style.cssText = 'padding:5px 7px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);text-align:center;';
+    wrap.appendChild(lbl); wrap.appendChild(inp);
+    grid.appendChild(wrap);
+  });
+  box.appendChild(grid);
+  var hint = document.createElement('div');
+  hint.style.cssText = 'font-size:10px;color:var(--text3);margin-top:2px;';
+  hint.textContent = 'Deixe igual ao global para o mesmo valor em todos os dias.';
+  box.appendChild(hint);
+}
+
+// Quando o valor global muda, atualiza automaticamente os campos expandidos
+function _onGlobalExChange() {
+  var box = document.getElementById('meso-densidade-por-dia');
+  if (!box || box.style.display === 'none') return;
+  _popularDensidadePorDia();
+}
+
+function obterDensidadeMeso() {
+  var globalEl = document.getElementById('meso-ex-global');
+  var globalVal = parseInt((globalEl || {}).value) || 8;
+  var box = document.getElementById('meso-densidade-por-dia');
+  var expandido = box && box.style.display !== 'none';
+  var porDia = {};
+  if (expandido) {
+    _diasAtivosParaDensidade().forEach(function(dia) {
+      var inp = document.getElementById('meso-ex-dia-' + dia);
+      var v = inp ? (parseInt(inp.value) || globalVal) : globalVal;
+      porDia[dia] = v;
+    });
+  }
+  return { global: globalVal, porDia: porDia, expandido: expandido };
+}
+// ─────────────────────────────────────────────────────────────────────────
+
 function detectarNumDiasParaSplits() {
   var memoria = carregarMemoriaTecnicaAluno();
   if (memoria && memoria.diasMusculacao && memoria.diasMusculacao.length) return memoria.diasMusculacao.length;
@@ -4346,6 +4451,9 @@ async function confirmarNovoMeso() {
           renderizarSplitDiaBtns(numDiasDetectado);
           if (splitModoAtual === 'chips') renderizarSplitChips(numDiasDetectado);
         }
+        // Atualizar painel de densidade se estiver expandido
+        var _db = document.getElementById('meso-densidade-por-dia');
+        if (_db && _db.style.display !== 'none') _popularDensidadePorDia();
         if (window._diasPermitidosNovoMeso.length) {
           if (splitModoAtual === 'custom') {
             contextoAbas += '\nDIAS DEFINIDOS PELO COACH (OBRIGATORIO): ' + window._diasPermitidosNovoMeso.join(', ') + '. Crie exercicios SOMENTE nestes dias. Ignore a distribuicao de dias da aba base.\n';
@@ -4379,6 +4487,13 @@ async function confirmarNovoMeso() {
   var tempoMap = {'45min':'15 séries máximo por sessão','1h':'20 séries máximo por sessão','1h15':'24 séries máximo por sessão','1h30':'28 séries máximo por sessão'};
   var prompt = 'Monte o novo mesociclo para ' + window._nomeAluno + '.\nAba para escrever: ' + window._proximaAba + ' (OBRIGATÓRIO)\n';
   if (tempoSessao && tempoMap[tempoSessao]) prompt += 'LIMITE DE VOLUME: ' + tempoSessao + ' por sessão = ' + tempoMap[tempoSessao] + '. Respeite rigorosamente.\n';
+  var _dens = obterDensidadeMeso();
+  if (_dens.expandido && Object.keys(_dens.porDia).length > 0) {
+    var _linhasDens = Object.keys(_dens.porDia).map(function(d){ return d + '=' + _dens.porDia[d]; }).join(', ');
+    prompt += '⛔ QUANTIDADE DE EXERCÍCIOS (OBRIGATÓRIO): ' + _linhasDens + '. Gere EXATAMENTE esse número por dia. Nem mais, nem menos.\n';
+  } else {
+    prompt += '⛔ QUANTIDADE DE EXERCÍCIOS (OBRIGATÓRIO): exatamente ' + _dens.global + ' exercícios por dia de treino. Nem mais, nem menos.\n';
+  }
   prompt += '⛔ BLOQUEIO ABSOLUTO: ELEVACAO LATERAL COM ELASTICO esta permanentemente banido. Nao pode aparecer em nenhum dia, grupo, substituicao ou variacao. JSON com este exercicio sera rejeitado integralmente. Para ombro lateral use ELEVACAO LATERAL NA POLIA UNI ou ELEVACAO LATERAL EM PE COM HALTER.\n';
   prompt += '⚠️ REGRA DE BIBLIOTECA: use SOMENTE nomes exatos do system prompt. Nao invente exercicios. Qualquer nome fora da lista causa rejeicao do meso.\n';
   if (instrucoes) prompt += 'Briefing do aluno e instrucoes do coach: ' + instrucoes + '\n';

@@ -5617,7 +5617,9 @@ async function analisarVolumeSemana() {
     });
     // Deload suggestion: se 2+ grupos acima do MRV, sugerir deload
     var abaNum = parseInt((aba||'').replace(/\D/g,''))||0;
-    var totalAbas = (abasCache[selectedId]||[]).filter(function(a){return /^S\d+$/i.test(a);}).length;
+    var _abasList = (typeof abasCache !== 'undefined' && abasCache[selectedId]) ? abasCache[selectedId]
+      : Array.from(document.getElementById('vol-dash-aba').options).map(function(o){return o.value;});
+    var totalAbas = _abasList.filter(function(a){return /^S\d+$/i.test(a);}).length;
     var semanasNoMeso = abaNum > 0 ? abaNum - Math.max(0, totalAbas - 4) : 0; // aprox
     if (acimaMrv.length>=2 || (abaNum>0 && semanasNoMeso>=4 && acimaMrv.length>=1)) {
       deload.style.display='block';

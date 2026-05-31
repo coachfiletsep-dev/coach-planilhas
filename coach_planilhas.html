@@ -2032,7 +2032,8 @@ async function recriarAbaAluno() {
     const data = await res.json();
     removeLoading('msgs');
     if (data.sucesso) {
-      addMsg('msgs', '✅ Aba ' + data.aba + ' recriada com ' + data.escritos + ' exercícios! ' + (data.aviso || ''), false);
+      var msgCardio = data.cardioEscritos > 0 ? ' + ' + data.cardioEscritos + ' sessões de aeróbio' : '';
+      addMsg('msgs', '✅ Aba ' + data.aba + ' recriada com ' + data.escritos + ' exercícios' + msgCardio + '! ' + (data.aviso || ''), false);
       showToast('Aba recriada!', 'ok');
       atualizarAbasDoAlunoAtual().catch(function(){});
     } else {

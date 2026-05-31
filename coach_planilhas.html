@@ -4283,6 +4283,11 @@ async function confirmarNovoMeso() {
   }
   if (blocoSemana) prompt += 'POSICAO NO BLOCO (periodizacao): ' + blocoSemana + '. Use este tag para determinar exatamente onde o aluno esta no ciclo: ajuste reps, RiR, series e intensidade conforme a semana dentro do bloco e o modelo de periodizacao do macrociclo. bloco1-sem1=inicio da fase (volume alto, intensidade moderada, RiR 3); sem2=progressao; sem3=pico do bloco (intensidade alta, RiR 0-1); sem4 ou deload=reducao 40-50% volume, RiR 3-4, exercicios base.\n';
   if (window._obsAluno) prompt += 'Observações do aluno: ' + window._obsAluno + '\n';
+  // Fallback: se custom mode e _diasPermitidosNovoMeso estiver vazio (fetch falhou), ler do DOM agora
+  if (splitModoAtual === 'custom' && (!window._diasPermitidosNovoMeso || !window._diasPermitidosNovoMeso.length)) {
+    var _fallbackCust = obterDiasCustomizados();
+    if (_fallbackCust.length > 0) window._diasPermitidosNovoMeso = _fallbackCust.map(function(d){return d.dia;});
+  }
   if (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length) {
     if (divisaoBriefingMeso) prompt += 'Dias da aba base para referencia: ' + window._diasPermitidosNovoMeso.join(', ') + '. Se a divisao escrita no briefing pedir outra quantidade/estrutura, priorize o briefing.\n';
     else prompt += 'Use SOMENTE estes dias de musculacao: ' + window._diasPermitidosNovoMeso.join(', ') + '.\n';
@@ -4290,9 +4295,19 @@ async function confirmarNovoMeso() {
   if (memoriaTecnicaMeso) {
     prompt += '\n=== REGRAS DE DIVISAO E MEMORIA TECNICA ===\n';
     prompt += 'Modo da divisao: ' + divisaoModoMeso + '.\n';
-    prompt += 'Memoria tecnica compacta: ' + formatarMemoriaTecnicaParaPrompt(memoriaTecnicaMeso) + '\n';
+    // Para custom mode: remover divisaoAtual e gruposPorDia da memória (evita que IA siga divisão antiga)
+    var memoriaParaPrompt = memoriaTecnicaMeso;
+    if (divisaoModoMeso === 'dias customizados pelo coach') {
+      memoriaParaPrompt = Object.assign({}, memoriaTecnicaMeso);
+      delete memoriaParaPrompt.divisaoAtual;
+      delete memoriaParaPrompt.gruposPorDia;
+      delete memoriaParaPrompt.diasMusculacao; // IA não deve usar qtd de dias da memória
+    }
+    prompt += 'Memoria tecnica compacta: ' + formatarMemoriaTecnicaParaPrompt(memoriaParaPrompt) + '\n';
     if (divisaoBriefingMeso) {
       prompt += 'Como o briefing trouxe uma divisao explicita, nao preserve a divisao antiga se ela contradisser o briefing. Preserve somente preferencias, historico, exercicios bem tolerados e volume adequado.\n';
+    } else if (divisaoModoMeso === 'dias customizados pelo coach') {
+      prompt += '⚠️ MODO CUSTOMIZADO: IGNORE diasMusculacao, divisaoAtual e gruposPorDia da memoria tecnica acima. Esses dados sao do meso anterior e NAO devem ser usados para montar este meso. Use a memoria SOMENTE para historico de exercicios tolerados, volume de referencia e preferencias do aluno. Os dias e grupos OBRIGATORIOS estao na secao "DIAS CUSTOMIZADOS DEFINIDOS PELO COACH" acima.\n';
     } else {
       prompt += 'Se o modo for "manter divisao atual", preserve dias, tipo do dia e grupos por dia da memoria. Se for "manter dias, ajustar grupos", nao crie dias novos. Se for "IA pode propor nova divisao", ainda retorne a proposta no JSON final para preview.\n';
     }
@@ -4300,11 +4315,20 @@ async function confirmarNovoMeso() {
       prompt += 'CHECKLIST OBRIGATORIO antes de responder: valide dia por dia se todos os grupos da divisao base aparecem e se nenhum grupo fora da divisao foi incluido. Se um exercicio for de PANTURRILHA, so pode entrar em dia que tenha PANTURRILHA na divisao. Se um exercicio for de BICEPS, so pode entrar em dia que tenha BICEPS na divisao.\n';
     }
   }
-  // Regra estrutural de separação upper/lower — independe da divisão
-  prompt += 'REGRA ESTRUTURAL DE SEPARACAO UPPER/LOWER (nao negociavel):\n';
-  prompt += '- Dia LOWER (tem COXA, POSTERIOR, GMEDIO, GMAX ou PANTURRILHA): PROIBIDO incluir exercicios de OMBRO (DESENVOLVIMENTO, ELEVACAO LATERAL qualquer variacao, MANGUITO, YTW, SCAPTION), PEITO ou COSTAS/PUXADA/REMADA. Unica excecao: core/abdome (PRANCHA, DEAD BUG, CRUNCH) pode aparecer em qualquer dia.\n';
-  prompt += '- Dia UPPER (tem PEITO, COSTAS, OMBRO, BICEPS ou TRICEPS): PROIBIDO incluir exercicios de COXA, POSTERIOR, GMEDIO, GMAX, PANTURRILHA ou ELEVACAO PELVICA.\n';
-  prompt += '- Antes de finalizar o JSON, percorra cada dia e confirme que nenhum exercicio viola essa separacao.\n';
+  // Regra estrutural de separação upper/lower — com exemption para Full Body/Misto
+  var diasFullBodyCustom = [];
+  if (splitModoAtual === 'custom') {
+    obterDiasCustomizados().forEach(function(d) {
+      if (d.grupo && /full.?body|misto|fbody/i.test(d.grupo.toLowerCase())) diasFullBodyCustom.push(d.dia);
+    });
+  }
+  prompt += 'REGRA ESTRUTURAL DE SEPARACAO UPPER/LOWER:\n';
+  if (diasFullBodyCustom.length > 0) {
+    prompt += '- EXCECAO FULL BODY: os dias ' + diasFullBodyCustom.join(', ') + ' sao Full Body — todos os grupos musculares (upper E lower) sao OBRIGATORIOS e permitidos nesses dias. A regra de separacao NAO se aplica a esses dias.\n';
+  }
+  prompt += '- Dia LOWER PURO (tem COXA, POSTERIOR, GMEDIO, GMAX ou PANTURRILHA, SEM grupos upper): PROIBIDO incluir exercicios de OMBRO (DESENVOLVIMENTO, ELEVACAO LATERAL qualquer variacao, MANGUITO, YTW, SCAPTION), PEITO ou COSTAS/PUXADA/REMADA. Unica excecao: core/abdome (PRANCHA, DEAD BUG, CRUNCH) pode aparecer em qualquer dia.\n';
+  prompt += '- Dia UPPER PURO (tem PEITO, COSTAS, OMBRO, BICEPS ou TRICEPS, SEM grupos lower): PROIBIDO incluir exercicios de COXA, POSTERIOR, GMEDIO, GMAX, PANTURRILHA ou ELEVACAO PELVICA.\n';
+  prompt += '- Antes de finalizar o JSON, percorra cada dia e confirme que nenhum exercicio puro (lower-only ou upper-only) viola essa separacao.\n';
   prompt += 'Series avancadas neste meso: ' + (seriesAvancadasMeso || 'macro') + '.\n';
   prompt += 'Use "ultimaSerie" em todos os exercicios: escreva a tecnica da ultima serie quando houver ou "sem tecnica avancada". Use "observacoes" para bi-set, tri-set, super-set ou combinacoes; deixe vazio quando nao houver.\n';
   prompt += 'Regra por experiencia: iniciante evita tecnicas avancadas; intermediario usa pontualmente em isoladores; avancado pode usar drop-set, rest-pause, cluster, parciais ou GVT de forma dosada e coerente com o bloco.\n';
@@ -4381,6 +4405,17 @@ async function confirmarNovoMeso() {
       '\n[contexto truncado para caber no limite de tokens — histórico mais antigo omitido]\n';
   }
   prompt += contextoAbas;
+
+  // Lembrete final para custom mode: dias obrigatórios são reforçados no final do prompt
+  if (splitModoAtual === 'custom' && window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length) {
+    prompt += '\n\n=== CONFIRMACAO FINAL ANTES DE RESPONDER ===\n';
+    prompt += 'Dias obrigatorios neste meso: ' + window._diasPermitidosNovoMeso.join(', ') + ' SOMENTE.\n';
+    prompt += 'PROIBIDO criar exercicios para qualquer outro dia (SAB, DOM, SEX, etc. fora da lista acima).\n';
+    if (diasFullBodyCustom && diasFullBodyCustom.length > 0) {
+      prompt += 'Dias Full Body (' + diasFullBodyCustom.join(', ') + '): OBRIGATORIO incluir exercicios de membros superiores E inferiores no mesmo dia.\n';
+    }
+    prompt += 'Revise cada "dia" do JSON antes de finalizar. Remova qualquer exercicio fora dos dias permitidos.\n';
+  }
 
   // Gera preview; a escrita so acontece apos confirmacao.
   // Limpar histórico antigo antes de empurrar o prompt grande (evita crescimento ilimitado)

@@ -1626,6 +1626,8 @@ function diagnosticarRespostaIA(reply) {
   return 'JSON inválido após limpeza (possível encoding). Fragmento: ' + reply.slice(0, 400);
 }
 
+// [TRAVADO] gsPost / gsPostNoCors / gsPostViaForm — injetam secret em TODOS os POSTs.
+// Nunca remover payload.secret = APP_SECRET. Sem isso, backend rejeita com "Nao autorizado".
 // Wrapper que injeta o secret em todos os POSTs ao Apps Script
 async function gsPost(payload) {
   if (APP_SECRET) payload.secret = APP_SECRET;
@@ -2089,6 +2091,8 @@ function mostrarPreviewCardio(sessoes, nomeAba) {
   document.getElementById('preview-modal').style.display = 'flex';
 }
 
+// [TRAVADO] escreverNaPlanilha — fluxo completo de confirmação e escrita.
+// Inclui fallback gsPostViaForm + verificarEscritaViaSheetsApi. Não simplificar o fallback.
 async function escreverNaPlanilha(exercicios, nomeAba) {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
@@ -2210,6 +2214,9 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
 }
 
 
+// [TRAVADO] getSystemPrompt — prompt do sistema para geração de meso pela IA.
+// Qualquer alteração muda comportamento para TODOS os alunos. Avisar Felipe antes de editar.
+// Inclui: princípios de treino, schema JSON, instruções de mobilidade, dias válidos.
 function getSystemPrompt() {
   const s = students.find(function(x){return x.id===selectedId;}); if (!s) return '';
   var prefs = localStorage.getItem('coach_prefs') || '';
@@ -3099,6 +3106,8 @@ function extrairBlocosDoMacro(markdown) {
   return blocos;
 }
 
+// [TRAVADO] renderMesoMacroOptions — sempre exibe card de Bloco do Macrociclo no modal Novo Meso.
+// Se sem macro salvo: select desabilitado com mensagem explicativa. Não esconder o box.
 function renderMesoMacroOptions() {
   var box = document.getElementById('meso-macro-box');
   var sel = document.getElementById('meso-macro-bloco');
@@ -6431,7 +6440,32 @@ function getSheetId(url) {
 // PREVIEW ANTES/DEPOIS
 // ============================================================
 var _dragSrcIdx = -1; // drag-and-drop source index
+var _dragScrollRAF = null;
+var _dragScrollSpeed = 0;
+var _dragScrollEl = null;
 
+function _initDragAutoScroll(el) {
+  _dragScrollEl = el;
+  _dragScrollSpeed = 0;
+  if (_dragScrollRAF) cancelAnimationFrame(_dragScrollRAF);
+  function step() {
+    if (_dragScrollSpeed !== 0 && _dragScrollEl) {
+      _dragScrollEl.scrollTop += _dragScrollSpeed;
+    }
+    _dragScrollRAF = requestAnimationFrame(step);
+  }
+  _dragScrollRAF = requestAnimationFrame(step);
+}
+
+function _stopDragAutoScroll() {
+  if (_dragScrollRAF) { cancelAnimationFrame(_dragScrollRAF); _dragScrollRAF = null; }
+  _dragScrollSpeed = 0;
+  _dragScrollEl = null;
+}
+
+// [TRAVADO] mostrarPreview — renderiza preview antes/depois com drag-and-drop + auto-scroll + edição inline.
+// Contém: _dragSrcIdx, _initDragAutoScroll, detecção exIsMobi, editBtnHtml, toggleEdicaoPreview.
+// Não refatorar sem testar drag-and-drop, edição de exercício e card mobilidade.
 function mostrarPreview(exercicios, nomeAba) {
   // Garantia técnica: remover exercícios bloqueados antes de qualquer exibição
   var bloqueadosRemovidos = [];
@@ -6478,12 +6512,15 @@ function mostrarPreview(exercicios, nomeAba) {
         _dragSrcIdx = previewIdx;
         row.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
+        var modalEl = document.querySelector('#preview-modal .modal');
+        if (modalEl) _initDragAutoScroll(modalEl);
       });
       row.addEventListener('dragend', function() {
         row.classList.remove('dragging');
         lista.querySelectorAll('.preview-row').forEach(function(r){
           r.classList.remove('drag-over-top','drag-over-bot');
         });
+        _stopDragAutoScroll();
       });
       row.addEventListener('dragover', function(e) {
         e.preventDefault();
@@ -6494,6 +6531,19 @@ function mostrarPreview(exercicios, nomeAba) {
           r.classList.remove('drag-over-top','drag-over-bot');
         });
         row.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bot');
+        // Auto-scroll: detectar proximidade às bordas do modal
+        if (_dragScrollEl) {
+          var mRect = _dragScrollEl.getBoundingClientRect();
+          var zone = 60; // px da borda para ativar scroll
+          var maxSpeed = 12;
+          if (e.clientY < mRect.top + zone) {
+            _dragScrollSpeed = -maxSpeed * (1 - (e.clientY - mRect.top) / zone);
+          } else if (e.clientY > mRect.bottom - zone) {
+            _dragScrollSpeed = maxSpeed * (1 - (mRect.bottom - e.clientY) / zone);
+          } else {
+            _dragScrollSpeed = 0;
+          }
+        }
       });
       row.addEventListener('dragleave', function() {
         row.classList.remove('drag-over-top','drag-over-bot');

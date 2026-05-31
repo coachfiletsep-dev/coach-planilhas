@@ -4119,6 +4119,7 @@ async function confirmarNovoMeso() {
   const splitSelecionadoMeso = obterSplitSelecionado(); // null se modo for 'manter' ou 'ia'
   const divisaoModoMeso = splitModoAtual === 'chips' && splitSelecionadoMeso ? 'manter divisao atual'
     : splitModoAtual === 'ia' ? 'ia pode propor nova divisao'
+    : splitModoAtual === 'custom' ? 'dias customizados pelo coach'
     : 'manter divisao atual';
   const usarHistoricoCompletoMeso = document.getElementById('meso-historico-completo') && document.getElementById('meso-historico-completo').checked;
   const cardioCtx = getCardioContext();
@@ -4215,7 +4216,11 @@ async function confirmarNovoMeso() {
           if (splitModoAtual === 'chips') renderizarSplitChips(numDiasDetectado);
         }
         if (window._diasPermitidosNovoMeso.length) {
-          contextoAbas += '\nDIAS DA ABA BASE (OBRIGATORIO MANTER): ' + window._diasPermitidosNovoMeso.join(', ') + '. Nao crie exercicios em outros dias.\n';
+          if (splitModoAtual === 'custom') {
+            contextoAbas += '\nDIAS DEFINIDOS PELO COACH (OBRIGATORIO): ' + window._diasPermitidosNovoMeso.join(', ') + '. Crie exercicios SOMENTE nestes dias. Ignore a distribuicao de dias da aba base.\n';
+          } else {
+            contextoAbas += '\nDIAS DA ABA BASE (OBRIGATORIO MANTER): ' + window._diasPermitidosNovoMeso.join(', ') + '. Nao crie exercicios em outros dias.\n';
+          }
         }
         if (!divisaoBriefingMeso && !splitSelecionadoMeso && divisaoModoMeso === 'manter divisao atual' && Object.keys(window._gruposPorDiaBaseNovoMeso).length) {
           contextoAbas += 'DISTRIBUICAO MUSCULAR DA ABA BASE (OBRIGATORIO MANTER): ' +
@@ -6109,22 +6114,19 @@ function mostrarPreview(exercicios, nomeAba) {
       var editForm = document.createElement('div');
       editForm.className = 'preview-edit-form';
       editForm.id = 'preview-edit-' + previewIdx;
-      var exOpts = coletarExerciciosPreview().map(function(n) {
-        var sel = n.toUpperCase() === (ex.nome||'').toUpperCase() ? ' selected' : '';
-        return '<option value="' + n.replace(/"/g,'&quot;') + '"' + sel + '>' + n + '</option>';
+      var dlId = 'pe-dl-' + previewIdx;
+      var exSugestoes = coletarExerciciosPreview().map(function(n) {
+        return '<option value="' + n.replace(/"/g,'&quot;') + '">';
       }).join('');
       var tipoOpts = ['Forca','Metabolico','Misto','Mobilidade'].map(function(t) {
         return '<option value="' + t + '"' + (ex.tipo === t ? ' selected' : '') + '>' + t + '</option>';
       }).join('');
       editForm.innerHTML =
+        '<datalist id="' + dlId + '">' + exSugestoes + '</datalist>' +
         '<div style="font-size:11px;font-weight:700;color:var(--green);">✏️ ' + ex.dia + ' — exercício ' + (previewIdx+1) + '</div>' +
         '<div>' +
-          '<label>Trocar por:</label>' +
-          '<select id="pe-nome-' + previewIdx + '">' + exOpts + '</select>' +
-        '</div>' +
-        '<div>' +
-          '<label>Ou digitar nome (deixe vazio para usar lista):</label>' +
-          '<input id="pe-custom-' + previewIdx + '" type="text" placeholder="Ex: Supino Inclinado com Halteres">' +
+          '<label>Nome do exercício (digite livremente):</label>' +
+          '<input id="pe-nome-' + previewIdx + '" type="text" list="' + dlId + '" value="' + (ex.nome||'').replace(/"/g,'&quot;') + '" placeholder="Digite qualquer nome...">' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;">' +
           '<div><label>Séries</label><input id="pe-ser-' + previewIdx + '" type="number" min="1" max="10" value="' + (ex.series||'') + '" placeholder="Séries"></div>' +
@@ -6183,15 +6185,12 @@ function toggleEdicaoPreview(idx) {
 function aplicarEdicaoPreview(idx) {
   if (!window._previewExercicios || !window._previewExercicios[idx]) return;
   var ex = window._previewExercicios[idx];
-  var customNome = (document.getElementById('pe-custom-' + idx) || {}).value || '';
-  customNome = customNome.trim();
-  var selectNome = (document.getElementById('pe-nome-' + idx) || {}).value || '';
-  var nome = customNome || selectNome;
+  var nome = ((document.getElementById('pe-nome-' + idx) || {}).value || '').trim();
   if (!nome) { showToast('Informe o nome do exercício', 'warn'); return; }
   var seriesEl = document.getElementById('pe-ser-' + idx);
-  var repsEl = document.getElementById('pe-reps-' + idx);
-  var rirEl = document.getElementById('pe-rir-' + idx);
-  var tipoEl = document.getElementById('pe-tipo-' + idx);
+  var repsEl   = document.getElementById('pe-reps-' + idx);
+  var rirEl    = document.getElementById('pe-rir-' + idx);
+  var tipoEl   = document.getElementById('pe-tipo-' + idx);
   var series = parseInt((seriesEl||{}).value) || ex.series;
   var reps = ((repsEl||{}).value || '').trim() || ex.reps || ex.repeticoes;
   var rir = ((rirEl||{}).value || '').trim();

@@ -78,6 +78,12 @@
   /* Badge "Novo" no botão de análise IA */
   .icon-btn.ia-nova::after{content:'';position:absolute;top:3px;right:3px;width:7px;height:7px;
     border-radius:50%;background:#22c55e;border:1.5px solid var(--card);}
+
+  /* Badge de estagnação na sidebar */
+  .stag-dot{display:inline-block;width:7px;height:7px;border-radius:50%;
+            margin-left:4px;vertical-align:middle;flex-shrink:0;}
+  .stag-dot.amarelo{background:#f59e0b;}
+  .stag-dot.vermelho{background:#ef4444;}
   .btn-green { padding: 6px 12px; border-radius: var(--radius); border: none; background: var(--green); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: opacity .15s; }
   .btn-green:hover { opacity: .88; }
   .btn-ghost { padding: 6px 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); font-size: 12px; cursor: pointer; transition: all .15s; }
@@ -1012,6 +1018,13 @@
       <div class="fl"><label>Status</label>
         <select id="f-status"><option value="ativo">Ativo</option><option value="inativo">Inativo</option></select>
       </div>
+      <div class="fl">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+          <input type="checkbox" id="f-auto-disparo" style="width:16px;height:16px;accent-color:var(--green);cursor:pointer;">
+          <span>📤 Disparar relatório e boa semana automaticamente</span>
+        </label>
+        <div style="font-size:10.5px;color:var(--text3);margin-top:3px;line-height:1.4;">Quando marcado, este aluno é incluído nos disparos automáticos em massa. Desmarcado = somente disparo manual.</div>
+      </div>
       <div class="fl" id="template-objetivo-box" style="border:.5px solid var(--border2);border-radius:var(--radius);padding:10px;background:var(--bg2);">
         <label style="font-weight:700;color:var(--green);font-size:12px;margin-bottom:8px;display:block;">🎯 Template de programação (opcional)</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
@@ -1426,6 +1439,23 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
   </div>
 </div>
 
+<!-- MODAL SUBSTITUIR EXERCÍCIO NA ABA -->
+<div class="overlay" id="subst-ex-modal" style="display:none;">
+  <div class="modal" style="width:600px;max-width:95vw;">
+    <div class="modal-header">
+      <span class="modal-title">🔗 Substituir exercício na aba</span>
+      <button class="icon-btn" onclick="document.getElementById('subst-ex-modal').style.display='none'" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+      <div id="subst-ex-content"><div style="text-align:center;padding:20px;color:var(--text3);">Carregando...</div></div>
+    </div>
+    <div class="modal-footer">
+      <span style="font-size:10.5px;color:var(--text3);">O link do YouTube é atualizado automaticamente ao substituir.</span>
+      <button class="btn-ghost" onclick="document.getElementById('subst-ex-modal').style.display='none'">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL TEMPLATES -->
 <div class="overlay" id="templates-modal" style="display:none;">
   <div class="modal" style="width:420px;">
@@ -1754,7 +1784,9 @@ function initials(n) { return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUp
 function renderList(filter) {
   filter = filter || '';
   const list = document.getElementById('student-list');
-  const f = students.filter(s => s.name.toLowerCase().includes(filter.toLowerCase()));
+  const f = students
+    .filter(s => s.name.toLowerCase().includes(filter.toLowerCase()))
+    .slice().sort(function(a,b){ return a.name.localeCompare(b.name,'pt-BR',{sensitivity:'base'}); });
   list.innerHTML = '';
   f.forEach(function(s) {
     const d = document.createElement('div');
@@ -1763,7 +1795,10 @@ function renderList(filter) {
     // Badge 🤖 se houver análise IA não lida
     var iaBadge='';
     try{ var iaObj=JSON.parse(localStorage.getItem('analise_ia_'+s.id)||'null'); if(iaObj&&!iaObj.lida) iaBadge='<span title="Análise IA disponível" style="font-size:11px;margin-left:4px;">🤖</span>'; }catch(e){}
-    d.innerHTML = '<div class="si-av' + (s.status==='inativo'?' off':'') + '">' + initials(s.name) + '</div><div style="flex:1;min-width:0;"><div class="si-name">' + s.name + iaBadge + '</div><div class="si-meta">' + (s.status==='ativo'?'Ativo':'Inativo') + '</div></div><div class="si-dot' + (s.status==='inativo'?' off':'') + '"></div>';
+    // Badge ⚠️ de estagnação/deload
+    var stagLevel=localStorage.getItem('stag_'+s.id);
+    var stagBadge=stagLevel?'<span class="stag-dot '+stagLevel+'" title="'+(stagLevel==='vermelho'?'Deload urgente':'Próximo do limite de semanas')+'"></span>':'';
+    d.innerHTML = '<div class="si-av' + (s.status==='inativo'?' off':'') + '">' + initials(s.name) + '</div><div style="flex:1;min-width:0;"><div class="si-name" style="display:flex;align-items:center;gap:2px;">' + s.name + iaBadge + stagBadge + '</div><div class="si-meta">' + (s.status==='ativo'?'Ativo':'Inativo') + '</div></div><div class="si-dot' + (s.status==='inativo'?' off':'') + '"></div>';
     list.appendChild(d);
   });
   const active = students.filter(s=>s.status==='ativo').length;
@@ -5273,7 +5308,7 @@ async function analisarVolumeSemana() {
   var deload = document.getElementById('vol-dash-deload');
   bars.innerHTML=''; empty.textContent='⏳ Buscando dados...'; empty.style.display='block'; leg.style.display='none'; deload.style.display='none';
   try {
-    var data = await lerPeriodizacaoRobusta(s.sheet, [aba]);
+    var data = await lerPeriodizacaoRobusta(getSheetId(s.sheet)||s.sheet, [aba]);
     var exs = data&&data.abasLidas&&data.abasLidas[0]&&data.abasLidas[0].exercicios||[];
     if (!exs.length) { empty.textContent='Nenhum exercício encontrado nesta semana.'; return; }
     // Contar séries por grupo
@@ -5640,6 +5675,7 @@ function openModal() {
   document.getElementById('modal-title').textContent='Novo aluno';
   ['f-name','f-birth','f-sheet','f-obs'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('f-status').value='ativo';
+  document.getElementById('f-auto-disparo').checked=false;
   document.getElementById('btn-deletar').style.display='none';
   // Template de programação: mostrar e resetar
   var tbox = document.getElementById('template-objetivo-box');
@@ -5657,6 +5693,7 @@ function openEditModal() {
   document.getElementById('f-birth').value=normalizarDataNascimentoApp(s.birth||s.nascimento||'');
   document.getElementById('f-sheet').value=s.sheet||'';
   document.getElementById('f-status').value=s.status||'ativo';
+  document.getElementById('f-auto-disparo').checked=!!(s.autoDisparo);
   document.getElementById('f-obs').value=s.obs||'';
   document.getElementById('btn-deletar').style.display='block';
   // Esconder template box na edição
@@ -5716,34 +5753,64 @@ function aplicarTemplateObjetivo(){
 // ────────────────────────────────────────────────────────────────────────────
 
 // ─── SPRINT 3 #15 — ANÁLISE AUTOMÁTICA POR IA ────────────────────────────────
-function toggleAnaliseIA(){
+async function toggleAnaliseIA(){
   var panel=document.getElementById('analise-ia-panel');
   if(!panel) return;
   var isOpen=panel.style.display!=='none';
   if(isOpen){ fecharAnaliseIA(); return; }
   panel.style.display='block';
-  // Carrega análise salva
   var s=students.find(function(x){return x.id===selectedId;});
   if(!s) return;
   var key='analise_ia_'+s.id;
-  var saved=localStorage.getItem(key);
-  var body=document.getElementById('analise-ia-body');
+  var bodyEl=document.getElementById('analise-ia-body');
   var dataEl=document.getElementById('analise-ia-data');
-  if(saved){
-    try{
-      var obj=JSON.parse(saved);
-      body.textContent=obj.texto||'';
-      dataEl.textContent=obj.data?new Date(obj.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
-      // marcar como lida — remove badge
-      obj.lida=true;
-      localStorage.setItem(key,JSON.stringify(obj));
-      renderList();
-      atualizarBadgeAnaliseIA();
-    }catch(e){ body.textContent=''; dataEl.textContent=''; }
+
+  // Mostra dados locais primeiro (se existir)
+  var localObj=null;
+  try{ localObj=JSON.parse(localStorage.getItem(key)||'null'); }catch(e){}
+  if(localObj&&localObj.texto){
+    bodyEl.textContent=localObj.texto;
+    dataEl.textContent=localObj.data?new Date(localObj.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
   } else {
-    body.textContent='Nenhuma análise salva. Clique em ⚡ Gerar nova análise.';
+    bodyEl.textContent='⏳ Verificando análise…';
     dataEl.textContent='';
   }
+
+  // Busca do backend em paralelo (silencioso)
+  try{
+    var r=await gsPost({getAnaliseIA:true, studentId:s.id});
+    var rd=await r.json();
+    if(rd.sucesso&&rd.analise&&rd.analise.texto){
+      var backData=rd.analise;
+      var backDate=backData.data?new Date(backData.data):null;
+      var localDate=localObj&&localObj.data?new Date(localObj.data):null;
+      // Usa backend se mais recente ou se não há dados locais
+      var usarBackend=!localObj||!localObj.texto||(backDate&&localDate&&backDate>localDate);
+      if(usarBackend){
+        localObj={texto:backData.texto, data:backData.data||new Date().toISOString(), lida:true};
+        localStorage.setItem(key,JSON.stringify(localObj));
+        bodyEl.textContent=localObj.texto;
+        dataEl.textContent=localObj.data?new Date(localObj.data).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+      }
+    } else if(!localObj||!localObj.texto){
+      bodyEl.textContent='Nenhuma análise salva. Clique em ⚡ Gerar nova análise.';
+      dataEl.textContent='';
+    }
+  }catch(e){
+    if(!localObj||!localObj.texto){
+      bodyEl.textContent='Nenhuma análise salva. Clique em ⚡ Gerar nova análise.';
+      dataEl.textContent='';
+    }
+  }
+
+  // Marcar como lida
+  if(localObj&&!localObj.lida){
+    localObj.lida=true;
+    localStorage.setItem(key,JSON.stringify(localObj));
+    gsPost({marcarAnaliseIALida:true, studentId:s.id}).catch(function(){});
+  }
+  renderList();
+  atualizarBadgeAnaliseIA();
 }
 
 function fecharAnaliseIA(){
@@ -5803,9 +5870,11 @@ async function gerarAnaliseAutoIA(){
     body.textContent=texto;
     var agora=new Date();
     dataEl.textContent=agora.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
-    // Salva no localStorage com flag lida=false (nova análise não lida)
+    // Salva no localStorage com flag lida=true (acabou de gerar, já está sendo lida)
     var key='analise_ia_'+s.id;
-    localStorage.setItem(key,JSON.stringify({texto:texto, data:agora.toISOString(), lida:false}));
+    localStorage.setItem(key,JSON.stringify({texto:texto, data:agora.toISOString(), lida:true}));
+    // Salva no backend (ANALISE_IA tab) em background
+    gsPost({salvarAnaliseIA:true, studentId:s.id, nome:s.name, texto:texto}).catch(function(){});
     renderList(); // atualiza badge sidebar
     atualizarBadgeAnaliseIA(); // atualiza ponto verde no botão
     showToast('Análise gerada com sucesso!','ok');
@@ -5833,7 +5902,7 @@ function deletarAluno() {
 function saveStudent() {
   const name=document.getElementById('f-name').value.trim(); if (!name) return;
   const birth = normalizarDataNascimentoApp(document.getElementById('f-birth').value.trim());
-  const data={name:name,birth:birth,nascimento:birth,sheet:document.getElementById('f-sheet').value.trim(),status:document.getElementById('f-status').value,obs:document.getElementById('f-obs').value.trim()};
+  const data={name:name,birth:birth,nascimento:birth,sheet:document.getElementById('f-sheet').value.trim(),status:document.getElementById('f-status').value,autoDisparo:document.getElementById('f-auto-disparo').checked,obs:document.getElementById('f-obs').value.trim()};
   var idSelecionar = editingId || null;
   if (editingId) { const idx=students.findIndex(function(s){return s.id===editingId;}); if(idx>=0) students[idx]=Object.assign({},students[idx],data); }
   else { data.id='st_'+Date.now(); idSelecionar = data.id; students.push(data); }
@@ -6275,11 +6344,19 @@ function mostrarPreview(exercicios, nomeAba) {
 // ─ Preview: coleta exercícios conhecidos para o select ──────
 function coletarExerciciosPreview() {
   var nomes = {};
+  // Exercícios da aba atual
   if (window._dadosAbaAtual) {
     window._dadosAbaAtual.forEach(function(ex) { if (ex && ex.nome) nomes[ex.nome.toUpperCase()] = ex.nome; });
   }
+  // Exercícios do preview atual
   if (window._previewExercicios) {
     window._previewExercicios.forEach(function(ex) { if (ex && ex.nome) nomes[ex.nome.toUpperCase()] = ex.nome; });
+  }
+  // Toda a biblioteca Brainering (principal fonte)
+  if (window._bibliotecaBrainering) {
+    Object.values(window._bibliotecaBrainering).forEach(function(lista) {
+      (lista||[]).forEach(function(nome) { if (nome) nomes[nome.toUpperCase()] = nome; });
+    });
   }
   return Object.values(nomes).sort();
 }
@@ -6652,13 +6729,18 @@ async function verificarDeload(sheetId, nomeAluno) {
     banner.style.display = 'none';
     banner.className = 'deload-banner';
 
+    var s2 = students.find(function(x){ return x.id === selectedId; });
     if (total >= 8) {
       banner.className = 'deload-banner critico';
       texto.innerHTML = '🔴 <strong>' + nomeAluno + '</strong> está na semana <strong>' + total + '</strong> sem deload — alto risco de fadiga acumulada. Considere um deload imediatamente.';
       banner.style.display = 'flex';
+      if (s2) { localStorage.setItem('stag_'+s2.id, 'vermelho'); renderList(); }
     } else if (total >= 6) {
       texto.innerHTML = '⚠️ <strong>' + nomeAluno + '</strong> está na semana <strong>' + total + '</strong> — se aproximando do limite. Planeje o deload para as próximas 1-2 semanas.';
       banner.style.display = 'flex';
+      if (s2) { localStorage.setItem('stag_'+s2.id, 'amarelo'); renderList(); }
+    } else {
+      if (s2) { localStorage.removeItem('stag_'+s2.id); }
     }
   } catch(e) {}
 }
@@ -8118,9 +8200,9 @@ async function testarZapi() {
 // ENVIO WHATSAPP — delegado ao Apps Script (credenciais ficam no GS)
 // ============================================================
 async function dispararRelatorios() {
-  if (!confirm('Disparar relatórios para TODOS os alunos ativos agora?')) return;
-  var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet; });
-  if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha', 'err'); return; }
+  var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet && s.autoDisparo; });
+  if (ativos.length === 0) { showToast('Nenhum aluno com auto-disparo ativo. Marque a opção "Disparar automaticamente" no cadastro.', 'err'); return; }
+  if (!confirm('Disparar relatório para ' + ativos.length + ' aluno(s) com auto-disparo ativado?\n\n' + ativos.map(function(s){return '• '+s.name;}).join('\n'))) return;
   document.getElementById('progress-title').textContent = 'Disparando relatórios WhatsApp...';
   document.getElementById('progress-count').textContent = '0';
   document.getElementById('progress-total').textContent = ativos.length;
@@ -8160,9 +8242,9 @@ async function dispararRelatorios() {
 }
 
 async function dispararBoaSemana() {
-  if (!confirm('Disparar "Boa semana" para TODOS os alunos ativos agora?')) return;
-  var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet; });
-  if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha', 'err'); return; }
+  var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet && s.autoDisparo; });
+  if (ativos.length === 0) { showToast('Nenhum aluno com auto-disparo ativo. Marque a opção "Disparar automaticamente" no cadastro.', 'err'); return; }
+  if (!confirm('Disparar "Boa semana" para ' + ativos.length + ' aluno(s) com auto-disparo ativado?\n\n' + ativos.map(function(s){return '• '+s.name;}).join('\n'))) return;
   document.getElementById('progress-title').textContent = 'Disparando boa semana...';
   document.getElementById('progress-count').textContent = '0';
   document.getElementById('progress-total').textContent = ativos.length;
@@ -8329,6 +8411,119 @@ async function analisarAjustesPlanilha() {
     removeLoading('msgs');
     addMsg('msgs', 'Erro: ' + e.message, false);
   }
+}
+
+// ============================================================
+// SUBSTITUIR EXERCÍCIO NA ABA (Bugs 2+3 — bugs 2025-05-30)
+// Permite trocar exercícios na planilha após geração, com link YouTube automático
+// ============================================================
+async function ativarLinksAluno() {
+  var s = students.find(function(x){return x.id===selectedId;});
+  if (!s) { showToast('Selecione um aluno','err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada','err'); return; }
+  document.getElementById('subst-ex-modal').style.display = 'flex';
+  document.getElementById('subst-ex-content').innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">⏳ Carregando abas...</div>';
+  try {
+    var data = await buscarAbasSpreadsheet(sheetId);
+    var abas = (data.abas||[]).filter(function(a){ return /^S\d+$/i.test(a); });
+    if (!abas.length) { document.getElementById('subst-ex-content').innerHTML = '<p style="color:var(--red)">Nenhuma aba encontrada.</p>'; return; }
+    var html = '<div style="margin-bottom:12px;">' +
+      '<label style="font-size:12px;font-weight:600;margin-bottom:4px;display:block;">Semana:</label>' +
+      '<select id="subst-ex-aba" style="padding:7px 9px;font-size:13px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);width:100%;">' +
+      '<option value="">— selecione —</option>' +
+      abas.map(function(a){ return '<option value="'+a+'">'+a+'</option>'; }).join('') +
+      '</select>' +
+      '<button onclick="carregarExerciciosSubst()" style="margin-top:6px;padding:6px 14px;background:var(--green);color:#fff;border:none;border-radius:var(--radius);font-size:12px;font-weight:700;cursor:pointer;">Carregar exercícios</button>' +
+      '</div><div id="subst-ex-lista"></div>';
+    document.getElementById('subst-ex-content').innerHTML = html;
+    document.getElementById('subst-ex-aba').value = abas[abas.length-1];
+    carregarExerciciosSubst();
+  } catch(e) {
+    document.getElementById('subst-ex-content').innerHTML = '<p style="color:var(--red)">Erro: '+e.message+'</p>';
+  }
+}
+
+window._substExData = null;
+
+async function carregarExerciciosSubst() {
+  var abaEl = document.getElementById('subst-ex-aba'); if (!abaEl) return;
+  var aba = abaEl.value; if (!aba) { showToast('Selecione uma semana','warn'); return; }
+  var s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
+  var sheetId = getSheetId(s.sheet);
+  var lista = document.getElementById('subst-ex-lista');
+  lista.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3)">⏳ Carregando exercícios de '+aba+'...</div>';
+  try {
+    var resp = await gsPost({ lerPeriodizacao: true, spreadsheetId: sheetId, abasSelecionadas: [aba] });
+    var data = await resp.json();
+    if (!data.sucesso || !data.abas || !data.abas[0]) { lista.innerHTML = '<p style="color:var(--red)">Erro ao carregar.</p>'; return; }
+    var exercicios = data.abas[0].exercicios || [];
+    if (!exercicios.length) { lista.innerHTML = '<p style="color:var(--text3);font-size:13px;text-align:center;padding:12px;">Nenhum exercício encontrado em '+aba+'.</p>'; return; }
+    window._substExData = { exercicios: exercicios, sheetId: sheetId, aba: aba };
+    // Autocomplete list
+    var libNomes = [];
+    if (window._bibliotecaBrainering) {
+      Object.values(window._bibliotecaBrainering).forEach(function(arr){ libNomes = libNomes.concat(arr||[]); });
+    }
+    libNomes.sort();
+    var dlHtml = '<datalist id="subst-ex-dl">' + libNomes.map(function(n){ return '<option value="'+n.replace(/"/g,'&quot;')+'">'; }).join('') + '</datalist>';
+    // Group by day
+    var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+    var porDia = {};
+    exercicios.forEach(function(ex){
+      if (!porDia[ex.dia]) porDia[ex.dia] = [];
+      porDia[ex.dia].push(ex);
+    });
+    var html = dlHtml;
+    diasOrdem.forEach(function(dia){
+      if (!porDia[dia]||!porDia[dia].length) return;
+      html += '<div style="margin-bottom:14px;"><div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;padding-bottom:3px;border-bottom:.5px solid var(--border);">'+dia+'</div>';
+      porDia[dia].forEach(function(ex){
+        var idx = exercicios.indexOf(ex);
+        html += '<div style="display:grid;grid-template-columns:1fr 20px 1fr;gap:6px;align-items:center;margin-bottom:5px;">' +
+          '<div style="font-size:11px;color:var(--text2);padding:4px 6px;background:var(--bg2);border-radius:var(--radius-sm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+ex.nome+'">'+ex.nome+'</div>' +
+          '<div style="text-align:center;color:var(--text3);">→</div>' +
+          '<input type="text" list="subst-ex-dl" id="subst-'+idx+'" value="'+ex.nome.replace(/"/g,'&quot;')+'" ' +
+          'style="padding:5px 7px;font-size:12px;border:.5px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);">' +
+          '</div>';
+      });
+      html += '</div>';
+    });
+    html += '<button onclick="aplicarSubstituicoes()" style="width:100%;padding:10px;background:var(--green);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;">✅ Aplicar substituições na planilha</button>';
+    lista.innerHTML = html;
+  } catch(e) {
+    lista.innerHTML = '<p style="color:var(--red)">Erro: '+e.message+'</p>';
+  }
+}
+
+async function aplicarSubstituicoes() {
+  var d = window._substExData; if (!d) return;
+  var alterados = [];
+  d.exercicios.forEach(function(ex, idx){
+    var input = document.getElementById('subst-'+idx); if (!input) return;
+    var novoNome = input.value.trim();
+    if (!novoNome || novoNome === ex.nome) return;
+    alterados.push({
+      nome: novoNome, dia: ex.dia, _linha: ex.linha,
+      series: ex.series, reps: ex.reps||ex.repeticoes,
+      rir: ex.rir, tipo: ex.tipo, criterio: ex.criterio, cadencia: ex.cadencia
+    });
+  });
+  if (!alterados.length) { showToast('Nenhuma alteração detectada','warn'); return; }
+  showToast('⏳ Aplicando '+alterados.length+' substituição(ões)...','ok');
+  try {
+    var resp = await gsPost({
+      acao: 'editarNaPlanilha', spreadsheetId: d.sheetId, aba: d.aba,
+      exercicios: alterados, modoEdicao: true
+    });
+    var data = await resp.json();
+    if (data.sucesso || (data.escritos && data.escritos > 0)) {
+      showToast('✅ '+alterados.length+' exercício(s) substituído(s) com links atualizados!','ok');
+      document.getElementById('subst-ex-modal').style.display = 'none';
+    } else {
+      showToast('Erro: '+(data.erro||'desconhecido'),'err');
+    }
+  } catch(e) { showToast('Erro: '+e.message,'err'); }
 }
 
 init();

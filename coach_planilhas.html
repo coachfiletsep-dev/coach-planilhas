@@ -360,6 +360,7 @@
   <div class="nav">
     <button class="nav-btn active" onclick="showPage(&#39;alunos&#39;,this)">Alunos</button>
     <button class="nav-btn" onclick="showPage(&#39;newsletter&#39;,this)">Newsletter</button>
+    <button class="nav-btn" onclick="showPage(&#39;biblioteca&#39;,this)">Biblioteca</button>
     <button class="nav-btn" onclick="showPage(&#39;config&#39;,this)">Configuração</button>
     <button class="auth-pill" id="auth-pill" onclick="showAuthModal()">
       <div class="auth-dot" id="auth-dot"></div>
@@ -812,6 +813,55 @@
         </div>
       </div>
 
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PÁGINA: BIBLIOTECA DE EXERCÍCIOS
+     ═══════════════════════════════════════════════ -->
+<div id="page-biblioteca" style="display:none;overflow-y:auto;flex:1;padding:20px;">
+  <div style="max-width:1100px;margin:0 auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-size:18px;font-weight:800;">📚 Biblioteca de Exercícios</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;">Padrão de movimento e nível de dificuldade por exercício</div>
+      </div>
+      <button onclick="carregarBibliotecaPage(true)" style="padding:7px 16px;border-radius:var(--radius);border:.5px solid var(--green);background:var(--green-light);color:var(--green);font-size:12px;font-weight:700;cursor:pointer;">↺ Recarregar</button>
+    </div>
+
+    <!-- Filtros -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <input id="bib-search" type="search" placeholder="Buscar exercício..." oninput="filtrarBibliotecaPage()"
+        style="flex:1;min-width:180px;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:12px;outline:none;">
+      <select id="bib-grupo" onchange="filtrarBibliotecaPage()"
+        style="padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:12px;">
+        <option value="">Todos os grupos</option>
+      </select>
+      <select id="bib-padrao" onchange="filtrarBibliotecaPage()"
+        style="padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:12px;">
+        <option value="">Todos os padrões</option>
+      </select>
+      <select id="bib-dific" onchange="filtrarBibliotecaPage()"
+        style="padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:12px;">
+        <option value="">Todos os níveis</option>
+      </select>
+    </div>
+
+    <div id="bib-info" style="font-size:12px;color:var(--text3);margin-bottom:10px;"></div>
+    <div id="bib-loading" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;display:none;">⏳ Carregando...</div>
+    <div id="bib-empty" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;display:none;">
+      Nenhum exercício encontrado com os filtros selecionados.
+    </div>
+    <div id="bib-notice" style="display:none;margin-bottom:12px;padding:10px 14px;background:#FEF3C7;border:.5px solid #FCD34D;border-radius:var(--radius);font-size:12px;color:#92400E;line-height:1.5;">
+      <strong>ℹ️ Colunas opcionais não encontradas.</strong>
+      Para exibir padrão de movimento e dificuldade, adicione as colunas <code>padrao_movimento</code> e <code>dificuldade</code> na aba <strong>bd_exercicios</strong> da planilha Brainering, com esses textos exatos como cabeçalho.
+    </div>
+    <div id="bib-table-wrap">
+      <table id="bib-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead id="bib-thead"></thead>
+        <tbody id="bib-tbody"></tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -2205,7 +2255,8 @@ function getSystemPrompt() {
     '• Hipertrofia: padrao para exercicios multiarticulares e isoladores de musculacao (supino, remada, leg press, rosca, triceps, etc.)\n' +
     '• Forca tecnica: 1o exercicio multiarticular do dia com enfase em padrao de movimento e carga progressiva (ex: AGACHAMENTO BARRA LIVRE ou SUPINO RETO BARRA como 1o exercicio do dia)\n' +
     '• Ativacao: (a) TODOS os exercicios de abdome/core (PRANCHA FRONTAL NO SOLO, CRUNCH NA POLIA, DEAD BUG); (b) exercicios isolados de gluteo medio/maximo quando forem o 1o ou 2o exercicio do dia em lower (CADEIRA ABDUTORA FLEXIONADO, ABDUCAO NA POLIA, ELEVACAO PELVICA quando usada como pre-ativacao no inicio do treino); (c) exercicios preventivos de ombro quando usados como abertura/aquecimento do treino\n' +
-    '• Saude articular: exercicios preventivos de manguito/ombro quando nao forem o 1o do dia (MANGUITO ROTACAO EXTERNA CABO, YTW COM HALTERES, DUMBBELL SCAPTION 120, FACEPULL COM ROTACAO EXTERNA quando no meio do treino)\n\n' +
+    '• Saude articular: exercicios preventivos de manguito/ombro quando nao forem o 1o do dia (MANGUITO ROTACAO EXTERNA CABO, YTW COM HALTERES, DUMBBELL SCAPTION 120, FACEPULL COM ROTACAO EXTERNA quando no meio do treino)\n' +
+    '• Mobilidade: exercicios de mobilidade articular, alongamento ativo, flexibilidade ou tempo de sustentacao (ex: mobilidade de quadril, hip flexor stretch, thoracic rotation, pigeon pose). Para esses exercicios: (1) objetivo="Mobilidade"; (2) tipo_card="mobilidade"; (3) repeticoes = tempo de sustentacao (ex: "30s", "45s") ou numero de ciclos (ex: "10 ciclos"); (4) series = numero de series/passagens; (5) RiR vazio; (6) criterio = cue de execucao especifico.\n\n' +
     'CRITERIO TECNICO — preencher campo "criterio" com 1-2 cues objetivos especificos ao exercicio (nao genericos). Use exatamente os cues abaixo conforme o exercicio:\n' +
     'SUPINO RETO BARRA=cotovelos 45°, sem rib flare, barra toca o esterno | SUPINO INCLINADO BARRA=cotovelos 45°, angulo 30-45° no banco, sem rib flare | SUPINO RETO COM HALTER=cotovelos 45°, halteres nao se tocam no topo, controle excentrico | SUPINO INCLINADO COM HALTER=cotovelos 45°, angulo 30-45° no banco, controle excentrico | SUPINO INCLINADO ARTICULADO=cotovelos 45°, amplitude completa, controle excentrico | CRUCIFIXO RETO COM HALTER=leve flexao no cotovelo, alongamento controlado, amplitude segura | PEC DECK=cotovelos fixos no apoio, amplitude completa, contracao isometrica no pico\n' +
     'PUXADA FRENTE ABERTA=escapulas deprimidas antes de puxar, cotovelos apontam para baixo, sem hiperextensao lombar | PUXADA UNILATERAL MAQUINA=escapula depressa antes de puxar, sem rotacao excessiva do tronco | REMADA ALTERNADA COM HALTERES BANCO=tronco paralelo ao solo, cotovelo proximo ao corpo, escapula retraida no pico | REMADA SERROTE APOIO BAIXO=tronco paralelo, cotovelo 45°, escapula retraida no pico | FACEPULL=alinhar com as orelhas, rotacao externa, polegar para tras | DUMBBELL SCAPTION 120=polegar para cima, bracos 30-45° do plano frontal, sem elevar o trapezio\n' +
@@ -2254,8 +2305,8 @@ function getSystemPrompt() {
     '5. Para AVANCADOS: ciclos podem ser de 3 semanas; RiR0 permitido em forca tecnica; tecnicas avancadas na ultima serie de isoladores.\n' +
     '6. Deload: SEMPRE na ultima semana de um bloco — reduzir volume 40-50%, manter RiR 3-4, usar exercicios base sem tecnicas avancadas.\n' +
     '7. NAO use sempre 6-8 reps para tudo. Aplique o modelo ativo; se nao houver macrociclo salvo, pergunte ao coach qual modelo usar.\n\n' +
-    'JSON: {"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Forca tecnica","series":4,"repeticoes":"6-8","cadencia":"3010","rir":"2","ultimaSerie":"sem tecnica avancada","criterio":"cotovelos 45°, sem rib flare, barra toca o esterno","observacoes":""},{"dia":"SEG","nome":"CRUNCH NA POLIA","objetivo":"Ativacao","series":3,"repeticoes":"15-20","cadencia":"2010","rir":"1","ultimaSerie":"sem tecnica avancada","criterio":"flexao do tronco sobre o quadril, nao puxar com os bracos","observacoes":""}]}\n' +
-    'dia=SEG/TER/QUA/QUI/SEX/SAB/DOM. RiR=0-3. Preencher "objetivo" e "criterio" em TODOS os exercicios de TODOS os dias. Seja direto, sem saudacoes.' +
+    'JSON: {"aba":"S7","exercicios":[{"dia":"SEG","nome":"SUPINO RETO BARRA","objetivo":"Forca tecnica","series":4,"repeticoes":"6-8","cadencia":"3010","rir":"2","ultimaSerie":"sem tecnica avancada","criterio":"cotovelos 45°, sem rib flare, barra toca o esterno","observacoes":""},{"dia":"SEG","nome":"CRUNCH NA POLIA","objetivo":"Ativacao","series":3,"repeticoes":"15-20","cadencia":"2010","rir":"1","ultimaSerie":"sem tecnica avancada","criterio":"flexao do tronco sobre o quadril, nao puxar com os bracos","observacoes":""},{"dia":"SEG","nome":"STRETCHING HIP FLEXOR 90-90","objetivo":"Mobilidade","tipo_card":"mobilidade","series":3,"repeticoes":"45s","rir":"","criterio":"pelve neutra, expire fundo, alongue progressivamente","observacoes":""}]}\n' +
+    'dia=SEG/TER/QUA/QUI/SEX/SAB/DOM. RiR=0-3 (mobilidade: vazio). tipo_card="mobilidade" OBRIGATORIO para objetivo=Mobilidade. Preencher "objetivo" e "criterio" em TODOS os exercicios de TODOS os dias. Seja direto, sem saudacoes.' +
     (prefs.trim() ? '\nPREFS: ' + prefs.trim() : '');
 }
 
@@ -5309,8 +5360,22 @@ async function analisarVolumeSemana() {
   bars.innerHTML=''; empty.textContent='⏳ Buscando dados...'; empty.style.display='block'; leg.style.display='none'; deload.style.display='none';
   try {
     var data = await lerPeriodizacaoRobusta(getSheetId(s.sheet)||s.sheet, [aba]);
-    var exs = data&&data.abasLidas&&data.abasLidas[0]&&data.abasLidas[0].exercicios||[];
-    if (!exs.length) { empty.textContent='Nenhum exercício encontrado nesta semana.'; return; }
+    var abaData = data && data.abas && data.abas[0];
+    var exs = [];
+    if (abaData) {
+      if (abaData.exercicios && abaData.exercicios.length) {
+        exs = abaData.exercicios; // flat list (Sheets API path)
+      } else if (abaData.dias) {
+        // Nested by day (Apps Script path) — flatten
+        ['SEG','TER','QUA','QUI','SEX','SAB','DOM'].forEach(function(dia){
+          var d = abaData.dias[dia];
+          if (d && d.exercicios) exs = exs.concat(d.exercicios.map(function(ex){
+            return Object.assign({}, ex, {dia: dia});
+          }));
+        });
+      }
+    }
+    if (!exs.length) { empty.textContent='Nenhum exercício encontrado nesta semana. Verifique se a aba tem treinos escritos.'; return; }
     // Contar séries por grupo
     var seriasGrupo = {};
     exs.forEach(function(ex){
@@ -5381,8 +5446,133 @@ function showPage(page, el) {
   document.getElementById('page-alunos').style.display=page==='alunos'?'flex':'none';
   document.getElementById('page-config').style.display=page==='config'?'flex':'none';
   document.getElementById('page-newsletter').style.display=page==='newsletter'?'block':'none';
+  document.getElementById('page-biblioteca').style.display=page==='biblioteca'?'block':'none';
   if (page==='config') { updateConfigStatus(); loadCoachPrefs(); loadZapiConfig(); carregarModoEconomicoTokens(); }
   if (page==='newsletter') { carregarNewsletterSalva(); }
+  if (page==='biblioteca') { carregarBibliotecaPage(false); }
+}
+
+// ── BIBLIOTECA PAGE ──────────────────────────────────────────────────
+var _bibDados = null; // cache dos dados da biblioteca
+
+async function carregarBibliotecaPage(forcar) {
+  if (!forcar && _bibDados) { renderizarBibliotecaPage(); return; }
+  document.getElementById('bib-loading').style.display = 'block';
+  document.getElementById('bib-table-wrap').style.display = 'none';
+  document.getElementById('bib-empty').style.display = 'none';
+  document.getElementById('bib-notice').style.display = 'none';
+  try {
+    var res = await fetch(APPS_SCRIPT_URL + '?action=getBiblioteca');
+    var data = await res.json();
+    document.getElementById('bib-loading').style.display = 'none';
+    if (!data.sucesso) { showToast('Erro ao carregar biblioteca: ' + (data.erro||'desconhecido'), 'err'); return; }
+    _bibDados = data;
+    window._bibliotecaBrainering = data.biblioteca;
+    window._bibliotecaDetalhes = data.bibliotecaDetalhes || {};
+    renderizarBibliotecaPage();
+  } catch(e) {
+    document.getElementById('bib-loading').style.display = 'none';
+    showToast('Erro: ' + e.message, 'err');
+  }
+}
+
+function renderizarBibliotecaPage() {
+  if (!_bibDados) return;
+  var detalhes = _bibDados.bibliotecaDetalhes || {};
+  var temDetalhes = Object.keys(detalhes).length > 0;
+  var temPadrao = false, temDific = false;
+
+  // Flatten all exercises
+  var todos = [];
+  Object.keys(_bibDados.biblioteca).forEach(function(grupo) {
+    var dets = detalhes[grupo] || [];
+    (_bibDados.biblioteca[grupo] || []).forEach(function(nome, i) {
+      var det = dets[i] || {};
+      if (det.padrao) temPadrao = true;
+      if (det.dificuldade) temDific = true;
+      todos.push({ grupo: grupo, nome: nome, padrao: det.padrao||'', dificuldade: det.dificuldade||'' });
+    });
+  });
+
+  _bibDados._todos = todos;
+
+  // Populate filter selects
+  var grupos = Object.keys(_bibDados.biblioteca).sort();
+  var selGrupo = document.getElementById('bib-grupo');
+  var prev = selGrupo.value;
+  selGrupo.innerHTML = '<option value="">Todos os grupos</option>';
+  grupos.forEach(function(g){ var o=document.createElement('option'); o.value=g; o.textContent=g; selGrupo.appendChild(o); });
+  if (prev) selGrupo.value = prev;
+
+  var padroes = [...new Set(todos.map(function(t){return t.padrao;}).filter(Boolean))].sort();
+  var selPadrao = document.getElementById('bib-padrao');
+  var prevP = selPadrao.value;
+  selPadrao.innerHTML = '<option value="">Todos os padrões</option>';
+  padroes.forEach(function(p){ var o=document.createElement('option'); o.value=p; o.textContent=p; selPadrao.appendChild(o); });
+  if (prevP) selPadrao.value = prevP;
+
+  var difics = [...new Set(todos.map(function(t){return t.dificuldade;}).filter(Boolean))].sort();
+  var selDific = document.getElementById('bib-dific');
+  var prevD = selDific.value;
+  selDific.innerHTML = '<option value="">Todos os níveis</option>';
+  difics.forEach(function(d){ var o=document.createElement('option'); o.value=d; o.textContent=d; selDific.appendChild(o); });
+  if (prevD) selDific.value = prevD;
+
+  // Show notice if columns missing
+  document.getElementById('bib-notice').style.display = (!temPadrao && !temDific) ? 'block' : 'none';
+
+  // Build table head
+  var thead = document.getElementById('bib-thead');
+  thead.innerHTML = '<tr style="border-bottom:1.5px solid var(--border2);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);">' +
+    '<th style="padding:7px 10px;text-align:left;font-weight:700;">Exercício</th>' +
+    '<th style="padding:7px 10px;text-align:left;font-weight:700;">Grupo</th>' +
+    (temPadrao ? '<th style="padding:7px 10px;text-align:left;font-weight:700;">Padrão de Movimento</th>' : '') +
+    (temDific  ? '<th style="padding:7px 10px;text-align:left;font-weight:700;">Nível</th>' : '') +
+    '</tr>';
+
+  document.getElementById('bib-table-wrap').style.display = 'block';
+  filtrarBibliotecaPage();
+}
+
+function filtrarBibliotecaPage() {
+  if (!_bibDados || !_bibDados._todos) return;
+  var q = (document.getElementById('bib-search').value || '').trim().toUpperCase();
+  var fGrupo = document.getElementById('bib-grupo').value;
+  var fPadrao = document.getElementById('bib-padrao').value;
+  var fDific = document.getElementById('bib-dific').value;
+  var detalhes = _bibDados.bibliotecaDetalhes || {};
+  var temPadrao = _bibDados._todos.some(function(t){ return t.padrao; });
+  var temDific = _bibDados._todos.some(function(t){ return t.dificuldade; });
+
+  var filtrados = _bibDados._todos.filter(function(t) {
+    if (fGrupo && t.grupo !== fGrupo) return false;
+    if (fPadrao && t.padrao !== fPadrao) return false;
+    if (fDific && t.dificuldade !== fDific) return false;
+    if (q && t.nome.indexOf(q) === -1) return false;
+    return true;
+  });
+
+  document.getElementById('bib-info').textContent = filtrados.length + ' exercício(s)' + (q||fGrupo||fPadrao||fDific?' (filtrado)':'') + ' de ' + _bibDados._todos.length + ' total';
+
+  var tbody = document.getElementById('bib-tbody');
+  if (!filtrados.length) {
+    tbody.innerHTML = '';
+    document.getElementById('bib-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('bib-empty').style.display = 'none';
+
+  var DIFIC_COR = { 'iniciante':'#22c55e', 'intermediario':'#f59e0b', 'intermediário':'#f59e0b', 'avancado':'#ef4444', 'avançado':'#ef4444' };
+  tbody.innerHTML = filtrados.map(function(t, i) {
+    var bg = i % 2 === 0 ? 'var(--bg)' : 'var(--bg2)';
+    var cor = DIFIC_COR[t.dificuldade.toLowerCase()] || 'var(--text2)';
+    return '<tr style="background:' + bg + ';border-bottom:.5px solid var(--border);">' +
+      '<td style="padding:7px 10px;font-weight:600;color:var(--text);">' + t.nome + '</td>' +
+      '<td style="padding:7px 10px;color:var(--text2);">' + t.grupo + '</td>' +
+      (temPadrao ? '<td style="padding:7px 10px;color:var(--text2);">' + (t.padrao||'—') + '</td>' : '') +
+      (temDific  ? '<td style="padding:7px 10px;"><span style="font-size:10px;font-weight:700;color:' + cor + ';">' + (t.dificuldade||'—') + '</span></td>' : '') +
+      '</tr>';
+  }).join('');
 }
 
 function newsStatus(txt, erro) {
@@ -6085,12 +6275,34 @@ async function confirmarEdicao() {
     // Montar biblioteca do Brainering por grupo muscular
     if (dataBib.sucesso && dataBib.biblioteca) {
       window._bibliotecaBrainering = dataBib.biblioteca;
+      window._bibliotecaDetalhes = dataBib.bibliotecaDetalhes || {};
       bibliotecaTexto = '\n=== BIBLIOTECA DE EXERCICIOS DO BRAINERING (nomes EXATOS para substituicao) ===\n';
+      var temDetalhes = dataBib.bibliotecaDetalhes && Object.keys(dataBib.bibliotecaDetalhes).length > 0;
       Object.keys(dataBib.biblioteca).sort().forEach(function(grupo) {
         var nomes = dataBib.biblioteca[grupo].filter(function(nome) { return !exercicioBloqueadoApp(nome); });
-        bibliotecaTexto += grupo + ': ' + nomes.join(', ') + '\n';
+        if (temDetalhes && dataBib.bibliotecaDetalhes[grupo]) {
+          // Include padrao_movimento and dificuldade when available
+          var detsFiltrados = dataBib.bibliotecaDetalhes[grupo].filter(function(d){ return !exercicioBloqueadoApp(d.nome); });
+          var comDets = detsFiltrados.some(function(d){ return d.padrao || d.dificuldade; });
+          if (comDets) {
+            bibliotecaTexto += grupo + ':\n';
+            detsFiltrados.forEach(function(d){
+              var meta = [];
+              if (d.padrao) meta.push('padrão:' + d.padrao);
+              if (d.dificuldade) meta.push('nível:' + d.dificuldade);
+              bibliotecaTexto += '  ' + d.nome + (meta.length ? ' [' + meta.join(', ') + ']' : '') + '\n';
+            });
+          } else {
+            bibliotecaTexto += grupo + ': ' + nomes.join(', ') + '\n';
+          }
+        } else {
+          bibliotecaTexto += grupo + ': ' + nomes.join(', ') + '\n';
+        }
       });
       bibliotecaTexto += '\nUSE APENAS nomes desta lista. Nao invente nomes fora dela. Nunca use ELEVACAO LATERAL COM ELASTICO.\n';
+      if (temDetalhes) {
+        bibliotecaTexto += 'Use os campos "padrão" e "nível" para selecionar exercicios adequados ao aluno (iniciante/intermediario/avancado) e equilibrar padroes de movimento.\n';
+      }
     }
 
   } catch(e) {
@@ -6274,12 +6486,13 @@ function mostrarPreview(exercicios, nomeAba) {
     var editBtnHtml = window._previewModo === 'novo'
       ? '<button class="preview-edit-btn" onclick="toggleEdicaoPreview(' + previewIdx + ')">✏️ editar</button>'
       : '';
+    var exIsMobi = ex.tipo_card === 'mobilidade' || /^(mobilidade|flexibilidade|alongamento)$/i.test(ex.objetivo||'');
     depoisEl.innerHTML =
-      '<strong>' + ex.nome + '</strong>' + editBtnHtml + '<br>' +
+      '<strong>' + ex.nome + '</strong>' + editBtnHtml +
+      (exIsMobi ? ' <span style="font-size:10px;color:#0369A1;background:#E0F2FE;border-radius:4px;padding:1px 5px;">🧘 Mobilidade</span>' : '') + '<br>' +
       (ex.series || (original && original.series) || '?') + 'x' +
       (ex.repeticoes || (original && original.repeticoes) || '?') +
-      ' | ' + (ex.cadencia || (original && original.cadencia) || '?') +
-      ' | RiR ' + (ex.rir || (original && original.rir) || '?') +
+      (!exIsMobi ? ' | ' + (ex.cadencia || (original && original.cadencia) || '?') + ' | RiR ' + (ex.rir || (original && original.rir) || '?') : '') +
       (ultimaSerie ? '<br><span style="color:#0F3460;font-size:11px;">Ultima serie: ' + ultimaSerie + '</span>' : '') +
       (observacoes ? '<br><span style="color:#596672;font-size:11px;">Obs: ' + observacoes + '</span>' : '');
 

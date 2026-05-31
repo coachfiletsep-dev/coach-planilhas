@@ -234,10 +234,15 @@
   @keyframes fadeup { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
   /* PREVIEW MODAL */
-  .preview-row { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:var(--radius); border:0.5px solid var(--border); background:var(--bg2); margin-bottom:6px; }
+  .preview-row { display:flex; align-items:flex-start; gap:10px; padding:8px 10px; border-radius:var(--radius); border:0.5px solid var(--border); background:var(--bg2); margin-bottom:6px; transition:border-color .15s; }
   .preview-antes { flex:1; font-size:11px; color:var(--red); text-decoration:line-through; line-height:1.5; }
   .preview-depois { flex:1; font-size:11px; color:var(--green-dark); font-weight:600; line-height:1.5; }
   .preview-arrow { font-size:14px; color:var(--text3); flex-shrink:0; padding-top:1px; }
+  .preview-drag-handle { cursor:grab; color:var(--text3); font-size:16px; padding:0 2px; flex-shrink:0; user-select:none; line-height:1; padding-top:2px; }
+  .preview-drag-handle:active { cursor:grabbing; }
+  .preview-row.drag-over-top { border-top:2px solid var(--green) !important; }
+  .preview-row.drag-over-bot { border-bottom:2px solid var(--green) !important; }
+  .preview-row.dragging { opacity:.4; }
   .preview-dia { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:.05em; width:32px; flex-shrink:0; padding-top:2px; }
 
   /* HISTORICO */
@@ -6419,6 +6424,8 @@ function getSheetId(url) {
 // ============================================================
 // PREVIEW ANTES/DEPOIS
 // ============================================================
+var _dragSrcIdx = -1; // drag-and-drop source index
+
 function mostrarPreview(exercicios, nomeAba) {
   // Garantia técnica: remover exercícios bloqueados antes de qualquer exibição
   var bloqueadosRemovidos = [];
@@ -6457,6 +6464,51 @@ function mostrarPreview(exercicios, nomeAba) {
 
     var row = document.createElement('div');
     row.className = 'preview-row';
+    // Drag-and-drop (only in novo mode where order matters)
+    if (window._previewModo === 'novo') {
+      row.draggable = true;
+      row.dataset.idx = previewIdx;
+      row.addEventListener('dragstart', function(e) {
+        _dragSrcIdx = previewIdx;
+        row.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      row.addEventListener('dragend', function() {
+        row.classList.remove('dragging');
+        lista.querySelectorAll('.preview-row').forEach(function(r){
+          r.classList.remove('drag-over-top','drag-over-bot');
+        });
+      });
+      row.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        var rect = row.getBoundingClientRect();
+        var mid = rect.top + rect.height / 2;
+        lista.querySelectorAll('.preview-row').forEach(function(r){
+          r.classList.remove('drag-over-top','drag-over-bot');
+        });
+        row.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bot');
+      });
+      row.addEventListener('dragleave', function() {
+        row.classList.remove('drag-over-top','drag-over-bot');
+      });
+      row.addEventListener('drop', function(e) {
+        e.preventDefault();
+        row.classList.remove('drag-over-top','drag-over-bot');
+        var dstIdx = previewIdx;
+        if (_dragSrcIdx < 0 || _dragSrcIdx === dstIdx) return;
+        // Determine insert position (before or after dst)
+        var rect = row.getBoundingClientRect();
+        var mid = rect.top + rect.height / 2;
+        var insertAfter = e.clientY >= mid;
+        var arr = window._previewExercicios.slice();
+        var moved = arr.splice(_dragSrcIdx, 1)[0];
+        var newDst = dstIdx > _dragSrcIdx ? dstIdx - 1 : dstIdx;
+        arr.splice(insertAfter ? newDst + 1 : newDst, 0, moved);
+        _dragSrcIdx = -1;
+        mostrarPreview(arr, window._previewAba);
+      });
+    }
 
     var diaEl = document.createElement('div');
     diaEl.className = 'preview-dia';
@@ -6496,6 +6548,13 @@ function mostrarPreview(exercicios, nomeAba) {
       (ultimaSerie ? '<br><span style="color:#0F3460;font-size:11px;">Ultima serie: ' + ultimaSerie + '</span>' : '') +
       (observacoes ? '<br><span style="color:#596672;font-size:11px;">Obs: ' + observacoes + '</span>' : '');
 
+    if (window._previewModo === 'novo') {
+      var handle = document.createElement('div');
+      handle.className = 'preview-drag-handle';
+      handle.title = 'Arrastar para reordenar';
+      handle.innerHTML = '⠿';
+      row.appendChild(handle);
+    }
     row.appendChild(diaEl);
     row.appendChild(antesEl);
     row.appendChild(arrow);
@@ -6552,6 +6611,27 @@ function mostrarPreview(exercicios, nomeAba) {
   }
 
   document.getElementById('preview-modal').style.display = 'flex';
+
+  // FIX: se a biblioteca não estiver carregada (fluxo novo meso), buscar e atualizar os datalists
+  if (window._previewModo === 'novo' && !window._bibliotecaBrainering) {
+    fetch(APPS_SCRIPT_URL + '?action=getBiblioteca')
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (!data.sucesso || !data.biblioteca) return;
+        window._bibliotecaBrainering = data.biblioteca;
+        window._bibliotecaDetalhes = data.bibliotecaDetalhes || {};
+        // Atualizar todos os datalists já renderizados
+        var todos = coletarExerciciosPreview();
+        var opts = todos.map(function(n){
+          return '<option value="' + n.replace(/"/g,'&quot;') + '">';
+        }).join('');
+        for (var i = 0; i < (window._previewExercicios||[]).length; i++) {
+          var dl = document.getElementById('pe-dl-' + i);
+          if (dl) dl.innerHTML = opts;
+        }
+      })
+      .catch(function(){});
+  }
 }
 
 // ─ Preview: coleta exercícios conhecidos para o select ──────

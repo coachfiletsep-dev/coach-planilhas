@@ -2018,7 +2018,7 @@ async function restaurarDropdownsAluno() {
     const data = await res.json();
     removeLoading('msgs');
     if (data.sucesso) {
-      addMsg('msgs', 'Dropdowns restaurados na aba ' + data.aba + '! (' + data.restaurados + ' células). Abra a planilha — o ▼ voltou.', false);
+      addMsg('msgs', 'Dropdowns restaurados na aba ' + data.aba + '! (' + data.restaurados + ' células). Auto-link ativado — trocar exercício no dropdown já atualiza o link automaticamente.', false);
       showToast('Dropdowns restaurados!', 'ok');
     } else {
       addMsg('msgs', 'Erro: ' + (data.erro || 'desconhecido'), false);

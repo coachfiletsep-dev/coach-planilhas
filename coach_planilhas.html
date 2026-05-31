@@ -73,8 +73,11 @@
   .ph-name { font-size: 14px; font-weight: 600; }
   .ph-meta { font-size: 11px; color: var(--text2); }
   .ph-actions { display: flex; gap: 6px; }
-  .icon-btn { padding: 6px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; cursor: pointer; color: var(--text2); display: flex; align-items: center; transition: all .15s; font-size: 15px; }
+  .icon-btn { padding: 6px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; cursor: pointer; color: var(--text2); display: flex; align-items: center; transition: all .15s; font-size: 15px; position:relative; }
   .icon-btn:hover { background: var(--bg2); }
+  /* Badge "Novo" no botão de análise IA */
+  .icon-btn.ia-nova::after{content:'';position:absolute;top:3px;right:3px;width:7px;height:7px;
+    border-radius:50%;background:#22c55e;border:1.5px solid var(--card);}
   .btn-green { padding: 6px 12px; border-radius: var(--radius); border: none; background: var(--green); color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: opacity .15s; }
   .btn-green:hover { opacity: .88; }
   .btn-ghost { padding: 6px 12px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); font-size: 12px; cursor: pointer; transition: all .15s; }
@@ -437,6 +440,7 @@
         <button class="tab" onclick="switchTab(&#39;ia&#39;,this)">Assistente IA</button>
         <button class="tab active" onclick="switchTab(&#39;macro&#39;,this)">Macrociclo</button>
         <button class="tab" onclick="switchTab(&#39;volume&#39;,this)">📊 Volume</button>
+        <button class="tab" onclick="switchTab(&#39;adesao&#39;,this)">🏅 Adesão</button>
       </div>
       <div class="tab-body" id="tab-treino" style="display: none;">
         <div class="ag">
@@ -752,6 +756,26 @@
               <button class="btn-green" style="font-size:11px;padding:5px 10px;" onclick="ganttAdicionarBloco()">+ Bloco</button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- TAB ADESÃO: compliance dashboard -->
+      <div class="tab-body" id="tab-adesao" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div>
+            <div style="font-size:14px;font-weight:800;color:var(--text);">Adesão Semanal</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Sessões realizadas vs prescritas — aba mais recente de cada aluno</div>
+          </div>
+          <button onclick="carregarDashboardAdesao(true)" style="padding:5px 10px;font-size:11px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text2);cursor:pointer;">↺ Atualizar</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--text2);margin-bottom:12px;">
+          <span><span style="display:inline-block;width:10px;height:10px;background:#22c55e;border-radius:50%;vertical-align:middle;margin-right:4px;"></span>≥ 80%</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:50%;vertical-align:middle;margin-right:4px;"></span>50–79%</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:50%;vertical-align:middle;margin-right:4px;"></span>&lt; 50%</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:var(--border2);border-radius:50%;vertical-align:middle;margin-right:4px;"></span>Sem dados</span>
+        </div>
+        <div id="adesao-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;">
+          <div style="font-size:12px;color:var(--text3);padding:20px;text-align:center;grid-column:1/-1;">Clique em ↺ para carregar</div>
         </div>
       </div>
 
@@ -1763,6 +1787,7 @@ function selectStudent(id) {
   const sv = document.getElementById('student-view');
   sv.style.display = 'flex'; sv.style.flexDirection = 'column'; sv.style.flex = '1';
   renderList(document.getElementById('search-input').value);
+  atualizarBadgeAnaliseIA(id);
   carregarContextoMacroAluno();
   var macroTab = document.getElementById('tab-macro');
   if (macroTab && macroTab.style.display !== 'none') {
@@ -5017,11 +5042,50 @@ function switchTab(tab, el) {
   document.getElementById('tab-ia').style.display=tab==='ia'?'block':'none';
   document.getElementById('tab-macro').style.display=tab==='macro'?'block':'none';
   document.getElementById('tab-volume').style.display=tab==='volume'?'block':'none';
+  document.getElementById('tab-adesao').style.display=tab==='adesao'?'block':'none';
   if (tab === 'macro') {
     carregarContextoMacroAluno();
     carregarAbasMacrociclo(false);
   }
   if (tab === 'volume') popularAbasVolumeDash();
+  if (tab === 'adesao') carregarDashboardAdesao(false);
+}
+
+// ─── DASHBOARD DE ADESÃO ─────────────────────────────────────────────────────
+
+var _adesaoCarregado = false;
+
+async function carregarDashboardAdesao(forcar) {
+  if (_adesaoCarregado && !forcar) return;
+  var grid = document.getElementById('adesao-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:20px;text-align:center;grid-column:1/-1;">⏳ Carregando adesão de todos os alunos...</div>';
+  try {
+    var r = await gp({ getDashboardCompliance: true });
+    var d = await r.json();
+    if (!d.sucesso) { grid.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:12px;grid-column:1/-1;">Erro: ' + (d.erro||'Desconhecido') + '</div>'; return; }
+    var alunos = d.alunos || [];
+    if (!alunos.length) { grid.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:20px;text-align:center;grid-column:1/-1;">Nenhum aluno ativo encontrado.</div>'; return; }
+    var COR = { verde:'#22c55e', amarelo:'#f59e0b', vermelho:'ef4444', cinza:'var(--border2)' };
+    var BG  = { verde:'rgba(34,197,94,.1)', amarelo:'rgba(245,158,11,.1)', vermelho:'rgba(239,68,68,.1)', cinza:'var(--bg2)' };
+    grid.innerHTML = alunos.map(function(a) {
+      var cor = COR[a.status] || COR.cinza;
+      var bg  = BG[a.status]  || BG.cinza;
+      var pct = a.compliance !== null ? a.compliance + '%' : '—';
+      var dias = a.prescritos != null ? a.realizados + '/' + a.prescritos + ' dias' : (a.erro || '—');
+      return '<div onclick="selectStudent(\'' + a.id + '\')" style="background:' + bg + ';border:1.5px solid ' + cor + ';border-radius:10px;padding:10px 12px;cursor:pointer;transition:filter .1s;" onmouseover="this.style.filter=\'brightness(.95)\'" onmouseout="this.style.filter=\'\'">' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">' +
+        '<span style="width:10px;height:10px;border-radius:50%;background:' + cor + ';flex-shrink:0;display:inline-block;"></span>' +
+        '<span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (a.nome||'—') + '</span></div>' +
+        '<div style="font-size:22px;font-weight:800;color:' + cor + ';line-height:1;">' + pct + '</div>' +
+        '<div style="font-size:10px;color:var(--text3);margin-top:3px;">' + dias + '</div>' +
+        '<div style="font-size:9px;color:var(--text3);margin-top:1px;">' + (a.aba||'') + '</div>' +
+        '</div>';
+    }).join('');
+    _adesaoCarregado = true;
+  } catch(e2) {
+    grid.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:12px;grid-column:1/-1;">Erro ao carregar: ' + e2.message + '</div>';
+  }
 }
 
 // ─── SPRINT 3 #17 — GANTT DE MACROCICLO ─────────────────────────────────────
@@ -5674,6 +5738,7 @@ function toggleAnaliseIA(){
       obj.lida=true;
       localStorage.setItem(key,JSON.stringify(obj));
       renderList();
+      atualizarBadgeAnaliseIA();
     }catch(e){ body.textContent=''; dataEl.textContent=''; }
   } else {
     body.textContent='Nenhuma análise salva. Clique em ⚡ Gerar nova análise.';
@@ -5684,6 +5749,16 @@ function toggleAnaliseIA(){
 function fecharAnaliseIA(){
   var panel=document.getElementById('analise-ia-panel');
   if(panel) panel.style.display='none';
+}
+
+function atualizarBadgeAnaliseIA(studentId){
+  var btn=document.getElementById('btn-analise-ia'); if(!btn) return;
+  var id=studentId||selectedId; if(!id) return;
+  try{
+    var obj=JSON.parse(localStorage.getItem('analise_ia_'+id)||'null');
+    if(obj&&!obj.lida) btn.classList.add('ia-nova');
+    else btn.classList.remove('ia-nova');
+  }catch(e){ btn.classList.remove('ia-nova'); }
 }
 
 async function gerarAnaliseAutoIA(){
@@ -5731,7 +5806,8 @@ async function gerarAnaliseAutoIA(){
     // Salva no localStorage com flag lida=false (nova análise não lida)
     var key='analise_ia_'+s.id;
     localStorage.setItem(key,JSON.stringify({texto:texto, data:agora.toISOString(), lida:false}));
-    renderList(); // atualiza badge
+    renderList(); // atualiza badge sidebar
+    atualizarBadgeAnaliseIA(); // atualiza ponto verde no botão
     showToast('Análise gerada com sucesso!','ok');
   }catch(e){
     body.textContent='Erro: '+e.message;

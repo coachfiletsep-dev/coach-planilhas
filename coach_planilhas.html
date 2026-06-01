@@ -2351,6 +2351,7 @@ function getSystemPrompt() {
     'ALUNO: ' + s.name + (s.obs ? ' | ' + s.obs : '') + '\n\n' +
     'EXERCICIOS (use nomes EXATOS):\n' +
     '⛔ BLOQUEADO PERMANENTEMENTE — NUNCA USE SOB NENHUMA CIRCUNSTANCIA: ELEVACAO LATERAL COM ELASTICO. Este exercicio nao existe na biblioteca e foi banido pelo coach. Qualquer JSON que contenha ELEVACAO LATERAL COM ELASTICO sera automaticamente rejeitado e o meso inteiro descartado. Isso inclui qualquer variacao do nome. Para ombro lateral use ELEVACAO LATERAL NA POLIA UNI ou ELEVACAO LATERAL EM PE COM HALTER.\n' +
+    '⚠️ EXERCICIOS A EVITAR POR PADRAO (nao incluir salvo instrucao explicita do coach): SUPINO RETO BARRA (desgastante ao ombro, alunos nao gostam — preferir SUPINO RETO COM HALTER, SUPINO INCLINADO BARRA ou SUPINO INCLINADO COM HALTER); ELEVACAO PELVICA COM BARRA (montagem demorada na academia, maquinas sao preferidas — usar ELEVACAO PELVICA NA MAQUINA ou ELEVACAO PELVICA UNI COM HALTER); REMADA ALTERNADA COM HALTERES BANCO (reservada para inclusao manual do coach quando necessario — preferir REMADA SERROTE APOIO BAIXO ou PUXADA UNILATERAL MAQUINA).\n' +
     'PEITO: SUPINO RETO BARRA, SUPINO INCLINADO BARRA, SUPINO RETO COM HALTER, SUPINO INCLINADO COM HALTER, SUPINO INCLINADO ARTICULADO, CRUCIFIXO RETO COM HALTER, PEC DECK\n' +
     'COSTAS: PUXADA FRENTE ABERTA, PUXADA UNILATERAL MAQUINA, REMADA ALTERNADA COM HALTERES BANCO, REMADA SERROTE APOIO BAIXO, FACEPULL, DUMBBELL SCAPTION 120\n' +
     'OMBRO: DESENVOLVIMENTO SENTADO COM HALTERES, DESENVOLVIMENTO ARTICULADO ABERTO, ELEVACAO LATERAL EM PE COM HALTER, ELEVACAO LATERAL NA POLIA UNI, MANGUITO ROTACAO EXTERNA CABO, FACEPULL COM ROTACAO EXTERNA, YTW COM HALTERES\n' +
@@ -2372,6 +2373,11 @@ function getSystemPrompt() {
     'Mobilidade: quando solicitado, incluir 1-2 exercicios de mobilidade no inicio da sessao como aquecimento ativo. Series 2-3, duracao 30-60s cada, objetivo "ativacao".\n\n' +
     'VOLUME/TEMPO: 45min=15ser | 1h=20 | 1h15=24 | 1h30=28 (por sessao, rigido)\n\n' +
     'NOVO MESO: antes de gerar JSON, converse com o coach se faltar briefing, objetivo, restricoes ou divisao.\n\n' +
+    'ORDENACAO OBRIGATORIA DOS EXERCICIOS NA SESSAO:\n' +
+    '1. CORE PRIMEIRO: se houver exercicio de core/abdome (PRANCHA FRONTAL NO SOLO, DEAD BUG, CRUNCH NA POLIA), posicionar como 1o exercicio do dia.\n' +
+    '2. SAUDE ARTICULAR SEGUNDO: exercicios preventivos de manguito/ombro (MANGUITO ROTACAO EXTERNA CABO, YTW COM HALTERES, DUMBBELL SCAPTION 120, FACEPULL COM ROTACAO EXTERNA) vem imediatamente apos o core — ou como 1o se nao houver core na sessao.\n' +
+    '3. Se houver core E manguito na mesma sessao: core = 1o exercicio, manguito = 2o exercicio, demais exercicios seguem normalmente.\n' +
+    '4. Demais exercicios seguem ordem tecnica normal por padroes de movimento.\n\n' +
     'SERIES AVANCADAS E COMBINACOES:\n' +
     '- Use o campo "ultimaSerie" para tecnica feita somente na ultima serie: drop-set, rest-pause, cluster, parciais, GVT ou "sem tecnica avancada".\n' +
     '- Use o campo "observacoes" para bi-set, tri-set, super-set, ordem combinada e instrucoes de transicao entre exercicios.\n' +

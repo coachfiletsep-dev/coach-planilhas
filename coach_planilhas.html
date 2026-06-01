@@ -3567,20 +3567,43 @@ function descartarMemoriaParcialAluno() {
 
 function gruposExercicioFallbackApp(nome) {
   var n = normalizarTextoMacro(nome);
-  var grupos = [];
-  if (/supino|crucifixo|pec deck/.test(n)) grupos.push('PEITO');
-  if (/puxada|remada|serrote|dorsal/.test(n)) grupos.push('COSTAS');
-  if (/desenvolvimento|elevacao lateral|manguito|facepull|ytw|scaption/.test(n)) grupos.push('OMBRO');
-  if (/triceps/.test(n)) grupos.push('TRICEPS');
-  if (/biceps|rosca/.test(n)) grupos.push('BICEPS');
-  if (/agachamento|bulgaro|leg press|extensora|hack/.test(n)) grupos.push('QUADRICEPS');
-  if (/stiff|mesa flexora|cadeira flexora|rdl|deadlift|nordica/.test(n)) grupos.push('POSTERIOR');
-  if (/panturrilha|gemeos|gastrocnemio|soleo/.test(n)) grupos.push('PANTURRILHA');
-  if (/pelvica/.test(n)) grupos.push('GMAX');
-  if (/abdutora|abducao/.test(n)) grupos.push('GMEDIO');
-  if (/prancha|crunch|dead bug|abdome/.test(n)) grupos.push('ABDOME');
-  if (/mobilizacao|stretching|hip flexor|mobilidade|bretzel|world greatest|prying squat|dead hang|rotacao de quadril|deep squat/.test(n)) grupos.push('MOBILIDADE');
-  return grupos;
+  var g = {}; // objeto para deduplicar automaticamente
+  function add(gr) { g[gr] = true; }
+
+  // ── Primários ──────────────────────────────────────────────
+  if (/supino|crucifixo|pec deck/.test(n))                          add('PEITO');
+  if (/puxada|remada|serrote|dorsal/.test(n))                       add('COSTAS');
+  if (/desenvolvimento|elevacao lateral|manguito|facepull|ytw|scaption/.test(n)) add('OMBRO');
+  if (/triceps/.test(n))                                             add('TRICEPS');
+  if (/biceps|rosca/.test(n))                                        add('BICEPS');
+  if (/agachamento|bulgaro|leg press|extensora|hack/.test(n))       add('QUADRICEPS');
+  if (/stiff|mesa flexora|cadeira flexora|rdl|deadlift|nordica|hiperextensao/.test(n)) add('POSTERIOR');
+  if (/panturrilha|gemeos|gastrocnemio|soleo/.test(n))              add('PANTURRILHA');
+  if (/pelvica|coice|kickback|gluteo.*isolado/.test(n))             add('GMAX');
+  if (/abdutora|abducao/.test(n))                                    add('GMEDIO');
+  if (/prancha|crunch|dead bug|abdome/.test(n))                     add('ABDOME');
+  if (/mobilizacao|stretching|hip flexor|mobilidade|bretzel|world greatest|prying squat|dead hang|rotacao de quadril|deep squat/.test(n)) add('MOBILIDADE');
+
+  // ── Ativações indiretas ────────────────────────────────────
+  // Supino → deltoide anterior + tríceps
+  if (/supino/.test(n))                    { add('OMBRO'); add('TRICEPS'); }
+  // Crucifixo / Pec Deck → deltoide anterior
+  if (/crucifixo|pec deck/.test(n))          add('OMBRO');
+  // Puxadas e remadas → bíceps (ativação indireta significativa)
+  if (/puxada|remada|serrote/.test(n))       add('BICEPS');
+  // Remadas e facepull → deltoide posterior
+  if (/remada|serrote|facepull/.test(n))     add('OMBRO');
+  // Desenvolvimento → tríceps
+  if (/desenvolvimento/.test(n))             add('TRICEPS');
+  // Agachamento, búlgaro, leg press → glúteo máximo
+  if (/agachamento|bulgaro|leg press/.test(n)) add('GMAX');
+  // Stiff e RDL → glúteo máximo
+  if (/stiff|rdl|deadlift/.test(n))          add('GMAX');
+  // Elevação pélvica → isquiotibiais (posterior)
+  if (/pelvica/.test(n))                     add('POSTERIOR');
+  // Coice → já GMAX no primário; não precisa de secundário adicional
+
+  return Object.keys(g);
 }
 
 function classificarTipoDiaApp(grupos) {
@@ -5676,6 +5699,51 @@ async function popularAbasVolumeDash() {
   }
 }
 
+// ── Ativações musculares da biblioteca ────────────────────────────────────
+// Cache global — carregado sob demanda em analisarVolumeSemana
+window._activacoesLib = window._activacoesLib || null;
+
+// Normaliza nome de coluna para comparação (remove acentos, minúsculas, espaços simples)
+function _normalizarColuna(s) {
+  try { s = String(s).normalize('NFD').replace(/[̀-ͯ]/g,''); } catch(e) {}
+  return s.toLowerCase().replace(/[^a-z0-9]/g,' ').replace(/\s+/g,' ').trim();
+}
+
+// Mapeia nome de coluna da planilha Brainering para grupo do dashboard
+function _colunaParaGrupoDash(colNome) {
+  var c = _normalizarColuna(colNome);
+  if (/peitoral|pec /.test(c))                                          return 'PEITO';
+  if (/deltaide|deltoid|ombro/.test(c))                                  return 'OMBRO';
+  if (/dorsal|latissimo|trapezio|romboide|infra.?espinhal|redondo|serratis/.test(c)) return 'COSTAS';
+  if (/triceps/.test(c))                                                 return 'TRICEPS';
+  if (/biceps|braquial/.test(c))                                         return 'BICEPS';
+  if (/quadriceps|reto.?femoral|vasto/.test(c))                          return 'QUADRICEPS';
+  if (/isquiotibial|biceps.?femoral|semimembran|semitendin/.test(c))     return 'POSTERIOR';
+  if (/gluteo.?max|gmax/.test(c))                                        return 'GMAX';
+  if (/gluteo.?med|gmedio/.test(c))                                      return 'GMEDIO';
+  if (/gastrocnemio|soleo|panturrilha|gemeo/.test(c))                    return 'PANTURRILHA';
+  if (/abdominal|reto.?abdominal|obliquo|core/.test(c))                  return 'ABDOME';
+  return null;
+}
+
+// Retorna mapa { GRUPO: peso } para um exercício usando dados reais da biblioteca.
+// Usa o valor MÁXIMO entre colunas que mapeiam para o mesmo grupo (evita soma dupla).
+function getActivacaoGrupos(nome) {
+  var lib = window._activacoesLib;
+  if (!lib) return null;
+  var act = lib[String(nome||'').toUpperCase().trim()];
+  if (!act || !Object.keys(act).length) return null;
+  var resultado = {};
+  Object.keys(act).forEach(function(colNome) {
+    var grupo = _colunaParaGrupoDash(colNome);
+    if (!grupo) return;
+    var val = act[colNome] || 0;
+    if (!resultado[grupo] || val > resultado[grupo]) resultado[grupo] = val;
+  });
+  return Object.keys(resultado).length ? resultado : null;
+}
+// ──────────────────────────────────────────────────────────────────────────
+
 async function analisarVolumeSemana() {
   var s = students.find(function(x){return x.id===selectedId;}); if (!s) return;
   var aba = document.getElementById('vol-dash-aba').value; if (!aba) { showToast('Selecione uma semana','err'); return; }
@@ -5702,18 +5770,44 @@ async function analisarVolumeSemana() {
       }
     }
     if (!exs.length) { empty.textContent='Nenhum exercício encontrado nesta semana. Verifique se a aba tem treinos escritos.'; return; }
-    // Contar séries por grupo
+
+    // Carregar ativações da biblioteca se ainda não em cache
+    if (!window._activacoesLib) {
+      try {
+        var resLib = await fetch(APPS_SCRIPT_URL + '?action=getBiblioteca');
+        var dataLib = await resLib.json();
+        if (dataLib.sucesso && dataLib.activacoes) {
+          window._activacoesLib = dataLib.activacoes;
+          if (dataLib.biblioteca)       window._bibliotecaBrainering  = dataLib.biblioteca;
+          if (dataLib.bibliotecaDetalhes) window._bibliotecaDetalhes  = dataLib.bibliotecaDetalhes;
+        }
+      } catch(eLib) { /* segue com fallback regex */ }
+    }
+
+    // Contar séries por grupo — pesos reais da biblioteca quando disponível
     var seriasGrupo = {};
     exs.forEach(function(ex){
+      var series = Number(ex.series||0)||0;
+      if (!series) return;
+      // Tenta usar pesos reais da biblioteca Brainering
+      var activacaoLib = getActivacaoGrupos(ex.nome);
+      if (activacaoLib) {
+        Object.keys(activacaoLib).forEach(function(g){
+          seriasGrupo[g] = (seriasGrupo[g]||0) + series * activacaoLib[g];
+        });
+        return;
+      }
+      // Fallback: classificação por regex (exercícios fora da biblioteca)
       var grupos = [];
       if (ex.grupo) grupos = grupos.concat(gruposDiaParaListaApp(ex.grupo));
       if (ex.grupoMuscular) grupos = grupos.concat(gruposDiaParaListaApp(ex.grupoMuscular));
       if (!grupos.length) grupos = gruposExercicioFallbackApp(ex.nome);
-      var series = Number(ex.series||0)||0;
       grupos.forEach(function(g){
         seriasGrupo[g]=(seriasGrupo[g]||0)+series;
       });
     });
+    // Arredondar para 1 casa decimal
+    Object.keys(seriasGrupo).forEach(function(g){ seriasGrupo[g]=Math.round(seriasGrupo[g]*10)/10; });
     // Renderizar barras
     var grupos = Object.keys(MEV_MAV_MRV).filter(function(g){ return (seriasGrupo[g]||0)>0; });
     if (!grupos.length) { empty.textContent='Não foi possível mapear grupos musculares desta semana.'; return; }

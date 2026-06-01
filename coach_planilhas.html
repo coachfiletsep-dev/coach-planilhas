@@ -819,6 +819,7 @@
             </select>
             <button onclick="analisarVolumeSemana()" style="padding:5px 10px;border-radius:var(--radius);border:.5px solid var(--green);background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;cursor:pointer;">Analisar</button>
             <button onclick="copiarVolumeComoTexto()" id="btn-copiar-volume" style="padding:5px 10px;border-radius:var(--radius);border:.5px solid var(--border2);background:var(--bg2);color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;display:none;">📋 Copiar</button>
+            <button onclick="abrirAjusteVolume()" id="btn-ajuste-volume" style="padding:5px 10px;border-radius:var(--radius);border:.5px solid #7c3aed;background:#f5f3ff;color:#7c3aed;font-size:11px;font-weight:700;cursor:pointer;display:none;">⚡ Ajustar</button>
           </div>
         </div>
         <div id="vol-dash-deload" style="display:none;"></div>
@@ -830,6 +831,26 @@
             <span><span style="display:inline-block;width:12px;height:12px;background:#ef4444;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Abaixo do MEV — volume insuficiente</span>
             <span><span style="display:inline-block;width:12px;height:12px;background:#22c55e;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Janela MAV — zona ideal</span>
             <span><span style="display:inline-block;width:12px;height:12px;background:#f59e0b;border-radius:2px;vertical-align:middle;margin-right:4px;"></span>Próximo ou acima do MRV</span>
+          </div>
+        </div>
+
+        <!-- PAINEL DE AJUSTE DE VOLUME -->
+        <div id="vol-ajuste-panel" style="display:none;margin-top:14px;border:.5px solid #7c3aed;border-radius:var(--radius);overflow:hidden;">
+          <div style="background:#f5f3ff;padding:9px 12px;border-bottom:.5px solid #ddd6fe;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12px;font-weight:700;color:#5b21b6;">⚡ Ajustar volume do meso</span>
+            <button onclick="fecharAjusteVolume()" style="background:none;border:none;cursor:pointer;font-size:14px;color:#7c3aed;padding:0;">✕</button>
+          </div>
+          <div style="padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--card);">
+            <div id="vol-ajuste-diagnostico" style="font-size:11px;line-height:1.7;padding:8px 10px;background:var(--bg2);border-radius:var(--radius);border:.5px solid var(--border);"></div>
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px;">Contexto adicional (opcional)</label>
+              <textarea id="vol-ajuste-contexto" rows="2" placeholder="Ex: evitar supino barra, a aluna tem dor no ombro, manter mesmos dias..." style="width:100%;padding:7px 9px;font-size:12px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;box-sizing:border-box;"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="ajustarVolumeMesoIA()" style="flex:1;padding:8px;border-radius:var(--radius);border:.5px solid #7c3aed;background:#7c3aed;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">🤖 Sugestão IA</button>
+              <button onclick="ajustarVolumeMesoManual()" style="flex:1;padding:8px;border-radius:var(--radius);border:.5px solid var(--border2);background:var(--bg2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;">✏️ Editar manualmente</button>
+            </div>
+            <div id="vol-ajuste-resultado" style="display:none;"></div>
           </div>
         </div>
       </div>
@@ -5808,12 +5829,17 @@ async function analisarVolumeSemana() {
     });
     // Arredondar para 1 casa decimal
     Object.keys(seriasGrupo).forEach(function(g){ seriasGrupo[g]=Math.round(seriasGrupo[g]*10)/10; });
+    // Salvar diagnóstico globalmente para uso no ajuste
+    window._volDiagnostico = { seriasGrupo: seriasGrupo, aba: aba };
     // Renderizar barras
     var grupos = Object.keys(MEV_MAV_MRV).filter(function(g){ return (seriasGrupo[g]||0)>0; });
     if (!grupos.length) { empty.textContent='Não foi possível mapear grupos musculares desta semana.'; return; }
     empty.style.display='none'; leg.style.display='block'; bars.innerHTML='';
     var btnCopiar = document.getElementById('btn-copiar-volume');
     if (btnCopiar) btnCopiar.style.display='';
+    var btnAjuste = document.getElementById('btn-ajuste-volume');
+    if (btnAjuste) btnAjuste.style.display='';
+    document.getElementById('vol-ajuste-panel').style.display='none'; // fecha painel anterior
     var acimaMrv=[], estagnados=[];
     grupos.forEach(function(g){
       var s2=seriasGrupo[g]||0; var ref=MEV_MAV_MRV[g];
@@ -5862,6 +5888,120 @@ async function analisarVolumeSemana() {
     showToast('Erro ao analisar volume','err');
   }
 }
+// ── AJUSTE DE VOLUME ─────────────────────────────────────────────────────────
+
+function abrirAjusteVolume() {
+  var diag = window._volDiagnostico;
+  if (!diag) { showToast('Analise primeiro','err'); return; }
+  var panel = document.getElementById('vol-ajuste-panel');
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  // Monta texto do diagnóstico
+  var linhas = [];
+  var ref = MEV_MAV_MRV;
+  Object.keys(diag.seriasGrupo).forEach(function(g) {
+    if (!ref[g]) return;
+    var s = diag.seriasGrupo[g];
+    var r = ref[g];
+    var status = s < r.mev ? '🔴 ABAIXO MEV (min '+r.mev+') — precisa de mais volume'
+               : s >= r.mrv ? '🟠 ACIMA MRV (max '+r.mrv+') — reduzir ou trocar exercício'
+               : s > r.mav  ? '🟡 Próximo MRV ('+r.mav+'–'+r.mrv+')'
+               : '✅ MAV (zona ideal)';
+    linhas.push('<span style="font-weight:600;">'+g+':</span> '+s+' séries · '+status);
+  });
+  document.getElementById('vol-ajuste-diagnostico').innerHTML = linhas.join('<br>');
+  document.getElementById('vol-ajuste-resultado').style.display = 'none';
+  document.getElementById('vol-ajuste-contexto').value = '';
+}
+
+function fecharAjusteVolume() {
+  document.getElementById('vol-ajuste-panel').style.display = 'none';
+}
+
+function ajustarVolumeMesoManual() {
+  fecharAjusteVolume();
+  editarAbaAtual(); // Abre o modal de edição manual já existente
+}
+
+async function ajustarVolumeMesoIA() {
+  var diag = window._volDiagnostico;
+  if (!diag) { showToast('Analise primeiro','err'); return; }
+  var s = students.find(function(x){return x.id===selectedId;});
+  if (!s) { showToast('Selecione um aluno','err'); return; }
+  var contextoExtra = (document.getElementById('vol-ajuste-contexto').value||'').trim();
+  var resultado = document.getElementById('vol-ajuste-resultado');
+  resultado.style.display = 'block';
+  resultado.innerHTML = '<div style="font-size:12px;color:var(--text2);padding:8px;">⏳ Lendo aba e gerando sugestões...</div>';
+
+  // Ler exercícios da aba atual
+  var sheetId = getSheetId(s.sheet);
+  var aba = diag.aba;
+  var contextoLinhas = '';
+  try {
+    var resAba = await gsPost({ lerPeriodizacao: true, spreadsheetId: sheetId, abasSelecionadas: [aba] });
+    var dataAba = await resAba.json();
+    if (dataAba.sucesso && dataAba.abas && dataAba.abas[0]) {
+      var exs = dataAba.abas[0].exercicios || [];
+      window._dadosAbaAtual = exs;
+      exs.forEach(function(ex) { ex._linha = ex.linha; });
+      exs.forEach(function(ex) {
+        contextoLinhas += 'Linha '+ex.linha+' | '+ex.dia+' | '+ex.posicao+'º | '+ex.nome+' | '+ex.series+'x'+ex.repeticoes+' | RiR '+ex.rir+'\n';
+      });
+    }
+  } catch(e) { contextoLinhas = '(erro ao ler aba: '+e.message+')'; }
+
+  // Monta diagnóstico textual
+  var ref = MEV_MAV_MRV;
+  var diagLines = [];
+  Object.keys(diag.seriasGrupo).forEach(function(g) {
+    if (!ref[g]) return;
+    var sv = diag.seriasGrupo[g]; var rv = ref[g];
+    var st = sv < rv.mev ? 'ABAIXO MEV (mín '+rv.mev+') — ADICIONAR volume'
+           : sv >= rv.mrv ? 'ACIMA MRV (máx '+rv.mrv+') — REDUZIR volume'
+           : sv > rv.mav  ? 'Próximo MRV — cuidado'
+           : 'OK (MAV)';
+    diagLines.push(g+': '+sv+' séries → '+st);
+  });
+
+  var prompt = 'Você está ajustando o volume semanal da aba '+aba+' do aluno '+s.name+'.\n\n' +
+    'DIAGNÓSTICO MEV/MAV/MRV:\n' + diagLines.join('\n') + '\n\n' +
+    'EXERCÍCIOS ATUAIS (Linha | Dia | Posição | Nome | Volume | RiR):\n' + contextoLinhas + '\n' +
+    'TAREFA: Sugira ajustes cirúrgicos e mínimos para corrigir os grupos fora da zona ideal.\n' +
+    '- Grupos ABAIXO MEV: aumentar séries de exercício existente OU adicionar exercício (escolha o que fizer mais sentido)\n' +
+    '- Grupos ACIMA MRV: reduzir séries OU trocar por exercício que ative menos esse grupo\n' +
+    '- Grupos na zona MAV: não mexa\n' +
+    '- Use SOMENTE exercícios da biblioteca (nomes exatos do system prompt)\n' +
+    '- Priorize a logística: não crie conflitos de equipamento\n' +
+    (contextoExtra ? 'INSTRUÇÕES ADICIONAIS DO COACH: '+contextoExtra+'\n' : '') +
+    '\nRetorne APENAS JSON no formato:\n' +
+    '{"aba":"'+aba+'","exercicios":[{"linha":229,"dia":"SEG","posicao":1,"nome":"NOME EXATO","series":4,"repeticoes":"10-12","cadencia":"3010","rir":"2","objetivo":"Hipertrofia","ultimaSerie":"sem tecnica avancada","observacoes":""}]}\n' +
+    'Inclua SOMENTE os exercícios alterados. Campo "linha" obrigatório. Campo "aba" deve ser "'+aba+'". Antes do JSON, escreva 2-3 linhas explicando o raciocínio.';
+
+  try {
+    var reply = await callClaude([{role:'user',content:prompt}], getSystemPrompt(), 4000);
+    var parsed = tryParseJSON(reply);
+    // Extrair texto de raciocínio (antes do JSON)
+    var raciocinio = reply.replace(/```json[\s\S]*```/g,'').replace(/\{[\s\S]*\}/,'').trim();
+    var htmlResult = '';
+    if (raciocinio) {
+      htmlResult += '<div style="font-size:11px;color:var(--text2);line-height:1.5;padding:8px 10px;background:var(--bg2);border-radius:var(--radius);border:.5px solid var(--border);margin-bottom:8px;">'+raciocinio.replace(/\n/g,'<br>')+'</div>';
+    }
+    if (parsed && parsed.exercicios && parsed.aba) {
+      if (parsed.aba !== aba) parsed.aba = aba;
+      window._previewModo = 'edicao';
+      window._previewCardio = [];
+      htmlResult += '<div style="font-size:11px;color:#5b21b6;font-weight:600;margin-bottom:6px;">'+parsed.exercicios.length+' exercício(s) a alterar — confira o preview abaixo e confirme.</div>';
+      resultado.innerHTML = htmlResult;
+      mostrarPreview(parsed.exercicios, parsed.aba);
+    } else {
+      resultado.innerHTML = htmlResult || '<div style="font-size:12px;color:var(--text2);padding:8px;">'+reply+'</div>';
+    }
+  } catch(e) {
+    resultado.innerHTML = '<div style="font-size:12px;color:#ef4444;padding:8px;">Erro: '+e.message+'</div>';
+  }
+}
+
 function copiarVolumeComoTexto() {
   var s = students.find(function(x){return x.id===selectedId;});
   var aba = document.getElementById('vol-dash-aba').value;

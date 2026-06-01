@@ -6635,6 +6635,8 @@ async function confirmarEdicao() {
         ex._tipo = divisaoSemanaEdit[ex.dia] || '?';
         contextoLinhas += '  Linha ' + ex.linha + ' | DIA ' + ex.dia + ' (' + ex._tipo + ') | ' + ex.posicao + 'o exercicio | ' + ex.nome + ' | ' + ex.series + 'x' + ex.repeticoes + ' | cadencia ' + ex.cadencia + ' | RiR ' + ex.rir + '\n';
       });
+      // Cardio existente na aba
+      window._cardioAbaAtual = aba.cardio || [];
     }
 
     // Montar biblioteca do Brainering por grupo muscular
@@ -6676,11 +6678,20 @@ async function confirmarEdicao() {
     return;
   }
 
+  var cardioAtualTexto = '';
+  if (window._cardioAbaAtual && window._cardioAbaAtual.length > 0) {
+    cardioAtualTexto = '\nCARDIO ATUAL NA ABA (pode ser alterado se o pedido envolver aerobio):\n';
+    window._cardioAbaAtual.forEach(function(c) {
+      cardioAtualTexto += '  ' + (c.dia||'?') + ' | ' + (c.tipo||'?') + ' | ' + (c.ergometro||'?') + ' | ' + (c.duracao||'?') + ' | ' + (c.intensidade||'?') + '\n';
+    });
+  }
+
   var prompt = 'Voce esta editando a aba ' + window._abaAtual + ' do aluno ' + window._nomeAluno + '.\n' +
     'ATENCAO: O campo "aba" no JSON de resposta DEVE ser EXATAMENTE "' + window._abaAtual + '" — nunca outra aba.\n\n' +
     'PEDIDO DO COACH: ' + instrucoes + '\n\n' +
     'PROGRAMACAO ATUAL (linha | dia | tipo | posicao | exercicio | series x reps | RiR):\n' +
     contextoLinhas +
+    cardioAtualTexto +
     bibliotecaTexto + '\n' +
     'REGRAS CRITICAS — violar qualquer uma e um erro grave:\n' +
     '1. NUNCA mencione numeros de linha na resposta — use posicao ordinal (ex: 2o exercicio da terca).\n' +
@@ -6689,10 +6700,11 @@ async function confirmarEdicao() {
     '3. Use SOMENTE nomes da biblioteca do Brainering acima. Nao invente nomes.\n' +
     '4. NUNCA use ELEVACAO LATERAL COM ELASTICO; este exercicio esta bloqueado pelo coach.\n' +
     '5. Se o pedido for ambiguo, pergunte antes de aplicar.\n' +
-    '6. Quando confirmado, retorne JSON APENAS com exercicios alterados.\n' +
-    '   FORMATO OBRIGATORIO: {"aba":"' + window._abaAtual + '","exercicios":[{"dia":"SEG","posicao":2,"nome":"Agachamento","series":4,"repeticoes":"8-10","rir":2,"tipo":"Forca","ultimaSerie":"sem tecnica avancada","observacoes":""}]}\n' +
-    '   INCLUA "posicao" (numero ordinal do exercicio no dia, ex: posicao:2 = 2o exercicio) em TODOS os exercicios alterados.\n' +
-    '   O campo "aba" DEVE ser "' + window._abaAtual + '". Nao inclua exercicios nao alterados.\n';
+    '6. Quando confirmado, retorne JSON com os campos alterados:\n' +
+    '   - Para exercicios: {"aba":"' + window._abaAtual + '","exercicios":[{"dia":"SEG","posicao":2,"nome":"Agachamento","series":4,"repeticoes":"8-10","rir":2,"tipo":"Forca","ultimaSerie":"sem tecnica avancada","observacoes":""}]}\n' +
+    '   - Para cardio (inclua o array "cardio" se o pedido envolver aerobio): {"aba":"' + window._abaAtual + '","cardio":[{"dia":"TER","tipo":"Continuo Z2","ergometro":"Bike","duracao":"30 min","intensidade":"Z2 / RPE 5-6","faixaFc":"120-138 bpm","progressao":"+5min","observacao":"apos lower"}]}\n' +
+    '   - Pode retornar exercicios E cardio no mesmo JSON se ambos forem alterados.\n' +
+    '   INCLUA "posicao" em TODOS os exercicios alterados. O campo "aba" DEVE ser "' + window._abaAtual + '". Nao inclua exercicios nao alterados.\n';
 
   msgHistory.push({role:'user', content: prompt});
   addMsg('msgs', '⏳ Aplicando correções...', false);
@@ -6702,13 +6714,13 @@ async function confirmarEdicao() {
   callClaude(msgHistory, getSystemPrompt()).then(function(reply) {
     removeLoading('msgs');
     var parsed = tryParseJSON(reply);
-    if (parsed && parsed.exercicios && parsed.aba) {
+    if (parsed && (parsed.exercicios || parsed.cardio) && parsed.aba) {
       if (parsed.aba !== window._abaAtual) parsed.aba = window._abaAtual;
       msgHistory.push({role:'assistant', content: reply});
       // Mostrar PREVIEW antes de escrever
       window._previewModo = 'edicao';
-      window._previewCardio = [];
-      mostrarPreview(parsed.exercicios, parsed.aba);
+      window._previewCardio = Array.isArray(parsed.cardio) ? parsed.cardio : [];
+      mostrarPreview(parsed.exercicios || [], parsed.aba);
     } else {
       addMsg('msgs', reply, false);
       msgHistory.push({role:'assistant', content: reply});
@@ -6724,7 +6736,7 @@ async function confirmarEdicao() {
 // ============================================================
 // editarNaPlanilha — FIX BUG 1: NUNCA cria nova aba, só edita
 // ============================================================
-async function editarNaPlanilha(exercicios, nomeAba) {
+async function editarNaPlanilha(exercicios, nomeAba, cardio) {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
   exercicios = (Array.isArray(exercicios) ? exercicios : []).map(function(ex) {
@@ -6753,11 +6765,13 @@ async function editarNaPlanilha(exercicios, nomeAba) {
     nomeAba = window._abaAtual;
   }
 
-  addMsg('msgs', 'Aplicando correções na aba ' + nomeAba + ' (' + exercicios.length + ' exercício(s))...', false);
+  var _cardioMsg = (Array.isArray(cardio) && cardio.length > 0) ? ' + ' + cardio.length + ' sessão(ões) de cardio' : '';
+  addMsg('msgs', 'Aplicando correções na aba ' + nomeAba + ' (' + exercicios.length + ' exercício(s)' + _cardioMsg + ')...', false);
   addLoading('msgs');
   try {
     // modoEdicao:true instrui o Apps Script a EDITAR (não criar) a aba
-    const payload = { acao: 'editarNaPlanilha', aba: nomeAba, exercicios: exercicios, modoEdicao: true }; // [FIX] acao ausente causava "Ação desconhecida" no GS
+    const payload = { acao: 'editarNaPlanilha', aba: nomeAba, exercicios: exercicios, modoEdicao: true };
+    if (Array.isArray(cardio) && cardio.length > 0) payload.cardio = cardio;
     if (sheetId) payload.spreadsheetId = sheetId;
     const res = await gsPost(payload);
     const data = await res.json();
@@ -7116,7 +7130,7 @@ async function confirmarPreview() {
   } else {
     // Registrar no histórico antes de escrever
     registrarHistorico(exercicios, aba);
-    await editarNaPlanilha(exercicios, aba);
+    await editarNaPlanilha(exercicios, aba, window._previewCardio || []);
   }
 }
 

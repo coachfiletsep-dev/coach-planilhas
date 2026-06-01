@@ -1217,6 +1217,49 @@
         </select>
         <div style="font-size:11px;color:var(--text3);line-height:1.4;">A IA usa "Ultima Serie" para drop-set, rest-pause, cluster, parciais ou GVT, e "Observacoes" para bi-set, tri-set e super-set.</div>
       </div>
+      <div class="fl" id="meso-biset-box">
+        <label style="font-weight:600;">Combinações (bi-set / super-set / tri-set)</label>
+        <select id="meso-biset-modo" onchange="toggleBisetOpcoes()" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="ia">IA decide se usar e como combinar</option>
+          <option value="usar">Sim — quero combinações neste meso</option>
+          <option value="nao">Não usar neste meso</option>
+        </select>
+        <div id="meso-biset-opcoes" style="display:none;flex-direction:column;gap:8px;padding:8px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border2);margin-top:2px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="fl">
+              <label>Combinações por sessão</label>
+              <select id="meso-biset-qtd" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
+                <option value="1">1 combinação</option>
+                <option value="2" selected>2 combinações</option>
+                <option value="3">3 combinações</option>
+              </select>
+            </div>
+            <div class="fl">
+              <label>Tipo preferido</label>
+              <select id="meso-biset-tipo" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
+                <option value="bi-set">Bi-set</option>
+                <option value="super-set">Super-set</option>
+                <option value="tri-set">Tri-set</option>
+                <option value="misto">Misto (IA decide por exercício)</option>
+              </select>
+            </div>
+          </div>
+          <div class="fl">
+            <label>Foco muscular das combinações</label>
+            <select id="meso-biset-foco" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
+              <option value="upper">Membros superiores (peito, costas, ombro, bíceps, tríceps)</option>
+              <option value="lower">Membros inferiores</option>
+              <option value="misto">Misto — IA distribui conforme o treino</option>
+            </select>
+          </div>
+          <div class="fl">
+            <label>Instruções específicas (opcional)</label>
+            <textarea id="meso-biset-instrucoes" rows="2" placeholder="Ex: supino halteres com serrote; tríceps polia com rosca barra W — pares que usam equipamentos próximos na academia" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
+          </div>
+          <div style="font-size:10px;color:var(--text3);line-height:1.5;">⚠️ A IA vai priorizar pares que usam equipamentos próximos (halteres + halteres, polia + polia). Evita combinações inviáveis em academia lotada.</div>
+        </div>
+      </div>
+
       <div class="fl" id="split-selector-wrap">
         <label style="font-weight:600;">Divisão do treino</label>
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
@@ -2379,8 +2422,14 @@ function getSystemPrompt() {
     '3. Se houver core E manguito na mesma sessao: core = 1o exercicio, manguito = 2o exercicio, demais exercicios seguem normalmente.\n' +
     '4. Demais exercicios seguem ordem tecnica normal por padroes de movimento.\n\n' +
     'SERIES AVANCADAS E COMBINACOES:\n' +
-    '- Use o campo "ultimaSerie" para tecnica feita somente na ultima serie: drop-set, rest-pause, cluster, parciais, GVT ou "sem tecnica avancada".\n' +
-    '- Use o campo "observacoes" para bi-set, tri-set, super-set, ordem combinada e instrucoes de transicao entre exercicios.\n' +
+    '- Use o campo "ultimaSerie" para tecnica feita somente na ultima serie. Especifique SEMPRE com os parametros completos — nunca escreva apenas o nome da tecnica:\n' +
+    '  drop-set: "drop-set 2x" (quantas reducoes de carga, ex: drop-set 1x / drop-set 2x / drop-set 3x)\n' +
+    '  rest-pause: "rest-pause 2x 15s" (quantas pausas e duracao de cada, ex: rest-pause 1x 15s / rest-pause 2x 10s)\n' +
+    '  cluster: "cluster 4x2 10s" (blocos x reps por bloco e pausa entre blocos, ex: cluster 3x3 12s)\n' +
+    '  parciais: "parciais 6 reps" (quantas repeticoes parciais)\n' +
+    '  GVT: "GVT 10x10" | "sem tecnica avancada" quando nao houver.\n' +
+    '- Use o campo "observacoes" para bi-set, tri-set, super-set, ordem combinada e instrucoes de transicao entre exercicios. Formato: "bi-set com NOME_EXERCICIO — execute em sequencia sem descanso" ou "super-set com NOME_EXERCICIO".\n' +
+    '- LOGISTICA DE ACADEMIA (regra obrigatoria para qualquer combinacao): combine SOMENTE exercicios com equipamentos proximos ou no mesmo espaco. Exemplos validos: halteres+halteres (supino com serrote), polia alta+halteres (triceps polia com rosca), maquinas adjacentes (extensora+flexora). Exemplos PROIBIDOS por logistica: supino barra livre + remada triangulo, leg press + puxada frente (estacoes opostas em academia lotada).\n' +
     '- Iniciantes: evitar tecnicas avancadas; no maximo observacoes tecnicas simples. Intermediarios: tecnicas pontuais em isoladores. Avancados: tecnicas avancadas controladas, sem exagerar na fadiga sistemica.\n' +
     '- Nao use tecnica avancada em todo exercicio; escolha apenas onde houver beneficio claro.\n\n' +
     'CONDICIONAMENTO FS — quando o coach solicitar cardio, aplique:\n' +
@@ -3940,6 +3989,12 @@ function publicarPreviewNovoMeso(parsed) {
   mostrarPreview(parsed.exercicios, parsed.aba);
 }
 
+function toggleBisetOpcoes() {
+  var modo = document.getElementById('meso-biset-modo').value;
+  var opcoes = document.getElementById('meso-biset-opcoes');
+  if (opcoes) opcoes.style.display = modo === 'usar' ? 'flex' : 'none';
+}
+
 function toggleCardioSection() {
   var sec = document.getElementById('cardio-section');
   var icon = document.getElementById('cardio-toggle-icon');
@@ -4472,6 +4527,11 @@ async function confirmarNovoMeso() {
   const blocoSemana = (document.getElementById('meso-bloco-semana') && document.getElementById('meso-bloco-semana').value.trim()) || '';
   const tempoSessao = document.getElementById('meso-tempo').value;
   const seriesAvancadasMeso = macroCampo('meso-series-avancadas');
+  const bisetModo = (document.getElementById('meso-biset-modo') || {}).value || 'ia';
+  const bisetQtd = (document.getElementById('meso-biset-qtd') || {}).value || '2';
+  const bisetTipo = (document.getElementById('meso-biset-tipo') || {}).value || 'bi-set';
+  const bisetFoco = (document.getElementById('meso-biset-foco') || {}).value || 'upper';
+  const bisetInstrucoes = ((document.getElementById('meso-biset-instrucoes') || {}).value || '').trim();
   const splitSelecionadoMeso = obterSplitSelecionado(); // null se modo for 'manter' ou 'ia'
   const divisaoModoMeso = splitModoAtual === 'chips' && splitSelecionadoMeso ? 'manter divisao atual'
     : splitModoAtual === 'ia' ? 'ia pode propor nova divisao'
@@ -4696,8 +4756,19 @@ async function confirmarNovoMeso() {
   prompt += '- Dia UPPER PURO (tem PEITO, COSTAS, OMBRO, BICEPS ou TRICEPS, SEM grupos lower): PROIBIDO incluir exercicios de COXA, POSTERIOR, GMEDIO, GMAX, PANTURRILHA ou ELEVACAO PELVICA.\n';
   prompt += '- Antes de finalizar o JSON, percorra cada dia e confirme que nenhum exercicio puro (lower-only ou upper-only) viola essa separacao.\n';
   prompt += 'Series avancadas neste meso: ' + (seriesAvancadasMeso || 'macro') + '.\n';
-  prompt += 'Use "ultimaSerie" em todos os exercicios: escreva a tecnica da ultima serie quando houver ou "sem tecnica avancada". Use "observacoes" para bi-set, tri-set, super-set ou combinacoes; deixe vazio quando nao houver.\n';
+  prompt += 'Use "ultimaSerie" em todos os exercicios: escreva a tecnica com parametros completos (drop-set 2x | rest-pause 2x 15s | cluster 4x2 10s | parciais 6 reps | GVT 10x10) ou "sem tecnica avancada". Nunca escreva apenas o nome da tecnica sem os parametros. Use "observacoes" para bi-set, tri-set, super-set ou combinacoes; deixe vazio quando nao houver.\n';
   prompt += 'Regra por experiencia: iniciante evita tecnicas avancadas; intermediario usa pontualmente em isoladores; avancado pode usar drop-set, rest-pause, cluster, parciais ou GVT de forma dosada e coerente com o bloco.\n';
+  if (bisetModo === 'nao') {
+    prompt += 'COMBINACOES: NAO usar bi-set, super-set nem tri-set neste meso. Campo "observacoes" deve ficar vazio em todos os exercicios.\n';
+  } else if (bisetModo === 'usar') {
+    var _bTipo = bisetTipo === 'misto' ? 'bi-set ou super-set (IA decide por exercicio)' : bisetTipo;
+    var _bFoco = bisetFoco === 'upper' ? 'membros superiores (peito, costas, ombro, biceps, triceps)' : bisetFoco === 'lower' ? 'membros inferiores' : 'distribuir conforme o treino';
+    prompt += 'COMBINACOES OBRIGATORIAS: incluir exatamente ' + bisetQtd + ' ' + _bTipo + '(s) por sessao de treino. Foco: ' + _bFoco + '.\n';
+    prompt += 'LOGISTICA DE ACADEMIA: ao combinar exercicios, use SOMENTE pares com equipamentos proximos ou compativeis no mesmo espaco. Exemplos validos: SUPINO RETO COM HALTER + REMADA SERROTE APOIO BAIXO (halteres), TRICEPS NA CORDA + ROSCA DIRETA EM PE COM HALTERES (polia/halteres proximos), CADEIRA EXTENSORA + CADEIRA FLEXORA (maquinas adjacentes). Exemplos INVIÁVEIS em academia lotada: supino barra livre + remada triangulo (estacoes opostas), leg press + puxada (andares diferentes). Priorize combinações que o aluno consiga executar sem perder o equipamento.\n';
+    if (bisetInstrucoes) prompt += 'Instrucoes especificas do coach para as combinacoes: ' + bisetInstrucoes + '\n';
+  } else {
+    prompt += 'COMBINACOES: a IA pode usar bi-set, super-set ou tri-set quando houver beneficio claro. Ao combinar, respeitar logistica da academia: usar somente equipamentos proximos ou no mesmo espaco. Nunca combinar exercicios em estacoes opostas da academia.\n';
+  }
   if (macroMesoCtx) {
     prompt += '\n=== MACROCICLO SALVO DO ALUNO ===\n';
     if (macroMesoCtx.macro && macroMesoCtx.macro.ctx) {

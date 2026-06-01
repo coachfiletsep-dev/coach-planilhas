@@ -1592,7 +1592,7 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
 </div>
 
 <script>
-const APP_VERSION = 'v48';
+const APP_VERSION = 'v49';
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwM3xuEYX3XLmhPRdSNTZ4r6x94yqME9yC9JekFZlxs0CgMVV890woiMcGUKiVfPIsXrw/exec';
 const PROXY_URL = 'https://coach-proxy.coachfiletsep.workers.dev';
 const APP_ALUNO_URL = 'https://coachfiletsep-dev.github.io/app-aluno/';
@@ -2228,7 +2228,7 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
   }
 
   try {
-    await verificarAppsScriptAtualizado(42);
+    await verificarAppsScriptAtualizado(53);
   } catch(e) {
     if (erroAppsScriptVersaoAntiga(e)) {
       addMsg('msgs', 'BLOQUEADO: ' + e.message, false);
@@ -2295,6 +2295,7 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
       var abaFinal = data.aba || data.novaAba || nomeAba;
       var avisos = [];
       if (data.avisos && data.avisos.length > 0) avisos = avisos.concat(data.avisos);
+      if (data.erros && data.erros.length > 0) avisos = avisos.concat(data.erros);
       if (data.errosCardio && data.errosCardio.length > 0) avisos = avisos.concat(data.errosCardio.map(function(e){ return 'Cardio: ' + e; }));
       var avisosTxt = avisos.length > 0 ? '<br><small>' + avisos.join(' | ') + '</small>' : '';
       var msgCardioOk = data.escritosCardio ? ' + ' + data.escritosCardio + ' sessao(oes) de cardio' : '';
@@ -2312,7 +2313,7 @@ async function escreverNaPlanilha(exercicios, nomeAba) {
       addMsg('msgs', 'Bloqueado pelo GS: ' + data.errosValidacao.join(', '), false);
       showToast('Bloqueado pelo GS', 'err');
     } else {
-      addMsg('msgs', 'Erro ao escrever: ' + (data.erro || JSON.stringify(data)), false);
+      addMsg('msgs', 'Erro ao escrever: ' + (data.erro || (data.erros && data.erros.join(' | ')) || JSON.stringify(data)), false);
       showToast('Erro ao escrever', 'err');
     }
   } catch(e) {

@@ -2032,8 +2032,8 @@ async function recriarAbaAluno() {
     const data = await res.json();
     removeLoading('msgs');
     if (data.sucesso) {
-      var msgCardio = data.cardioEscritos > 0 ? ' + ' + data.cardioEscritos + ' sessões de aeróbio' : '';
-      addMsg('msgs', '✅ Aba ' + data.aba + ' recriada com ' + data.escritos + ' exercícios' + msgCardio + '! ' + (data.aviso || ''), false);
+      addMsg('msgs', '✅ Aba ' + data.aba + ' recriada com ' + data.escritos + ' exercícios! Aba antiga salva como ' + data.abaBackup + '.', false);
+      if (data.avisoAerobio) addMsg('msgs', '⚠️ ' + data.avisoAerobio, false);
       showToast('Aba recriada!', 'ok');
       atualizarAbasDoAlunoAtual().catch(function(){});
     } else {
@@ -2138,6 +2138,18 @@ function montarResumoVolumeSemanalHTML(volumeSemanal) {
   return html;
 }
 
+function obterCampoTextoExercicioApp(ex, nomes) {
+  ex = ex || {};
+  for (var i = 0; i < nomes.length; i++) {
+    var nome = nomes[i];
+    if (Object.prototype.hasOwnProperty.call(ex, nome)) {
+      var valor = ex[nome];
+      return valor === null || valor === undefined ? '' : String(valor).trim();
+    }
+  }
+  return null;
+}
+
 function validarProgramacaoIA(parsed) {
   var erros = [];
   if (!parsed.aba || !/^S\d+$/.test(parsed.aba)) erros.push('Campo "aba" invalido: ' + parsed.aba);
@@ -2164,7 +2176,7 @@ function validarProgramacaoIA(parsed) {
       erros.push(p + 'dia invalido: ' + ex.dia);
     if (!ex.series || isNaN(parseInt(ex.series)))
       erros.push(p + 'series invalido: ' + ex.series);
-    if (!ex.repeticoes) erros.push(p + 'repeticoes ausente');
+    if (!obterCampoTextoExercicioApp(ex, ['repeticoes','reps'])) erros.push(p + 'repeticoes ausente');
     var ser = parseInt(ex.series);
     if (!isNaN(ser) && (ser < 1 || ser > 10))
       erros.push(p + 'series fora do range (1-10): ' + ser);
@@ -2864,8 +2876,11 @@ async function lerHistoricoMacrocicloRobusto(sheetId, abasSelecionadas) {
 function valorPareceExercicioApp(nome) {
   var s = String(nome || '').trim();
   if (!s) return false;
+  if (s === '-' || s.charAt(0) === '#') return false;
+  if (/^(N\/A|NA|NULL|ERRO|ERROR)$/i.test(s)) return false;
   var n = s.toUpperCase();
   if (/^(TIPO|ERGOMETRO|DURACAO|INTENSIDADE|PROGRESSAO|OBSERVACAO|PRESCRICAO|REGISTRO|SEMANA|EXERCICIO)$/.test(n)) return false;
+  if (/^(CARGA|REPS?|OBS)\s*S\d+$/i.test(s)) return false;
   if (/^(ZONA|FC|BPM|CARDIO|CONDICIONAMENTO|AEROBIO)\b/.test(n)) return false;
   return s.length >= 3;
 }
@@ -6597,7 +6612,7 @@ async function confirmarEdicao() {
     '4. NUNCA use ELEVACAO LATERAL COM ELASTICO; este exercicio esta bloqueado pelo coach.\n' +
     '5. Se o pedido for ambiguo, pergunte antes de aplicar.\n' +
     '6. Quando confirmado, retorne JSON APENAS com exercicios alterados.\n' +
-    '   FORMATO OBRIGATORIO: {"aba":"' + window._abaAtual + '","exercicios":[{"dia":"SEG","posicao":2,"nome":"Agachamento","series":4,"reps":"8-10","rir":2,"tipo":"Forca"}]}\n' +
+    '   FORMATO OBRIGATORIO: {"aba":"' + window._abaAtual + '","exercicios":[{"dia":"SEG","posicao":2,"nome":"Agachamento","series":4,"repeticoes":"8-10","rir":2,"tipo":"Forca","ultimaSerie":"sem tecnica avancada","observacoes":""}]}\n' +
     '   INCLUA "posicao" (numero ordinal do exercicio no dia, ex: posicao:2 = 2o exercicio) em TODOS os exercicios alterados.\n' +
     '   O campo "aba" DEVE ser "' + window._abaAtual + '". Nao inclua exercicios nao alterados.\n';
 
@@ -6841,8 +6856,9 @@ function mostrarPreview(exercicios, nomeAba) {
 
     var depoisEl = document.createElement('div');
     depoisEl.className = 'preview-depois';
-    var ultimaSerie = ex.ultimaSerie || ex.ultima_serie || ex.serieAvancada || ex.tecnicaAvancada || '';
-    var observacoes = ex.observacoes || ex.observacao || ex.combinacao || '';
+    var repeticoesPreview = obterCampoTextoExercicioApp(ex, ['repeticoes','reps']) || (original && original.repeticoes) || '?';
+    var ultimaSerie = obterCampoTextoExercicioApp(ex, ['ultimaSerie','ultima_serie','serieAvancada','tecnicaAvancada','seriesAvancadas','tecnicaUltimaSerie']) || '';
+    var observacoes = obterCampoTextoExercicioApp(ex, ['observacoes','observacao','combinacao','seriesCombinadas','serieCombinada','grupoCombinado']) || '';
     var editBtnHtml = window._previewModo === 'novo'
       ? '<button class="preview-edit-btn" onclick="toggleEdicaoPreview(' + previewIdx + ')">✏️ editar</button>'
       : '';
@@ -6851,7 +6867,7 @@ function mostrarPreview(exercicios, nomeAba) {
       '<strong>' + ex.nome + '</strong>' + editBtnHtml +
       (exIsMobi ? ' <span style="font-size:10px;color:#0369A1;background:#E0F2FE;border-radius:4px;padding:1px 5px;">🧘 Mobilidade</span>' : '') + '<br>' +
       (ex.series || (original && original.series) || '?') + 'x' +
-      (ex.repeticoes || (original && original.repeticoes) || '?') +
+      repeticoesPreview +
       (!exIsMobi ? ' | ' + (ex.cadencia || (original && original.cadencia) || '?') + ' | RiR ' + (ex.rir || (original && original.rir) || '?') : '') +
       (ultimaSerie ? '<br><span style="color:#0F3460;font-size:11px;">Ultima serie: ' + ultimaSerie + '</span>' : '') +
       (observacoes ? '<br><span style="color:#596672;font-size:11px;">Obs: ' + observacoes + '</span>' : '');

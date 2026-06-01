@@ -6795,10 +6795,11 @@ async function confirmarEdicao() {
     '4. NUNCA use ELEVACAO LATERAL COM ELASTICO; este exercicio esta bloqueado pelo coach.\n' +
     '5. Se o pedido for ambiguo, pergunte antes de aplicar.\n' +
     '6. Quando confirmado, retorne JSON com os campos alterados:\n' +
-    '   - Para exercicios: {"aba":"' + window._abaAtual + '","exercicios":[{"dia":"SEG","posicao":2,"nome":"Agachamento","series":4,"repeticoes":"8-10","rir":2,"tipo":"Forca","ultimaSerie":"sem tecnica avancada","observacoes":""}]}\n' +
-    '   - Para cardio (inclua o array "cardio" se o pedido envolver aerobio): {"aba":"' + window._abaAtual + '","cardio":[{"dia":"TER","tipo":"Continuo Z2","ergometro":"Bike","duracao":"30 min","intensidade":"Z2 / RPE 5-6","faixaFc":"120-138 bpm","progressao":"+5min","observacao":"apos lower"}]}\n' +
+    '   - Para exercicios: {"aba":"' + window._abaAtual + '","exercicios":[{"linha":229,"dia":"SEG","posicao":2,"nome":"Agachamento","series":4,"repeticoes":"8-10","rir":2,"objetivo":"Hipertrofia","ultimaSerie":"sem tecnica avancada","observacoes":""}]}\n' +
+    '   - "linha" OBRIGATORIO: use o numero exato da linha mostrado na lista acima (ex: "Linha 229"). Sem "linha" o exercicio nao sera escrito na posicao correta.\n' +
+    '   - Para cardio: {"aba":"' + window._abaAtual + '","cardio":[{"dia":"TER","tipo":"Continuo Z2","ergometro":"Bike","duracao":"30 min","intensidade":"Z2 / RPE 5-6","faixaFc":"120-138 bpm","progressao":"+5min","observacao":"apos lower"}]}\n' +
     '   - Pode retornar exercicios E cardio no mesmo JSON se ambos forem alterados.\n' +
-    '   INCLUA "posicao" em TODOS os exercicios alterados. O campo "aba" DEVE ser "' + window._abaAtual + '". Nao inclua exercicios nao alterados.\n';
+    '   O campo "aba" DEVE ser "' + window._abaAtual + '". Nao inclua exercicios nao alterados.\n';
 
   msgHistory.push({role:'user', content: prompt});
   addMsg('msgs', '⏳ Aplicando correções...', false);
@@ -6835,14 +6836,24 @@ async function editarNaPlanilha(exercicios, nomeAba, cardio) {
   const sheetId = s ? getSheetId(s.sheet) : null;
   exercicios = (Array.isArray(exercicios) ? exercicios : []).map(function(ex) {
     ex = Object.assign({}, ex);
-    if (!ex._linha && ex.linha) ex._linha = ex.linha;
+    // 1) IA retornou "linha" diretamente (campo explícito) — caminho preferido
+    if (!ex._linha && ex.linha) ex._linha = String(ex.linha);
+    // 2) Fallback: buscar linha via posicao no cache de dados da aba
     if (!ex._linha && window._dadosAbaAtual) {
       var dia = String(ex.dia || '').toUpperCase();
       var pos = parseInt(ex.posicao || ex.ordem || ex.indice || ex.exercicio, 10);
-      var original = window._dadosAbaAtual.find(function(o) {
-        return String(o.dia || '').toUpperCase() === dia && !isNaN(pos) && Number(o.posicao) === pos;
-      });
-      if (original && original.linha) ex._linha = original.linha;
+      var original = null;
+      for (var _oi = 0; _oi < window._dadosAbaAtual.length; _oi++) {
+        var o = window._dadosAbaAtual[_oi];
+        if (String(o.dia || '').toUpperCase() === dia && !isNaN(pos) && Number(o.posicao) === pos) {
+          original = o; break;
+        }
+      }
+      if (original && original.linha) ex._linha = String(original.linha);
+    }
+    // 3) Se ainda não resolveu, avisa no console (não escreve em posição errada)
+    if (!ex._linha) {
+      console.warn('[editarNaPlanilha] linha nao resolvida para exercicio:', ex.nome, ex.dia, ex.posicao);
     }
     return ex;
   });

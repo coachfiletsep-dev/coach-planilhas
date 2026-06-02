@@ -4537,7 +4537,8 @@ async function confirmarNovoMeso() {
     abasSelecionadas.push(cb.value);
   });
   const instrucoes = document.getElementById('meso-instrucoes').value.trim();
-  const divisaoBriefingMeso = detectarDivisaoBriefingNovoMeso(instrucoes);
+  // Não detectar divisão no briefing quando o coach já definiu dias customizados manualmente
+  const divisaoBriefingMeso = splitModoAtual !== 'custom' ? detectarDivisaoBriefingNovoMeso(instrucoes) : null;
   const blocoSemana = (document.getElementById('meso-bloco-semana') && document.getElementById('meso-bloco-semana').value.trim()) || '';
   const tempoSessao = document.getElementById('meso-tempo').value;
   const seriesAvancadasMeso = macroCampo('meso-series-avancadas');
@@ -4611,7 +4612,7 @@ async function confirmarNovoMeso() {
           salvarMemoriaTecnicaAluno(memoriaTecnicaMeso);
         }
         window._gruposPorDiaBaseNovoMeso = memoriaTecnicaMeso.gruposPorDia || {};
-        contextoAbas = '\n\n=== MEMORIA TECNICA COMPACTA DO ALUNO ===\n' + formatarMemoriaTecnicaParaPrompt(memoriaTecnicaMeso) + '\n';
+        contextoAbas = ''; // memória técnica já incluída no bloco principal do prompt (evita duplicação)
         if (usarHistoricoCompletoMeso && !usandoMemoriaAnterior) {
           contextoAbas += '\nREF SEMANAS DETALHADA:\n';
           data.abas.forEach(function(aba) {

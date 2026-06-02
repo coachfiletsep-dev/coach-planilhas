@@ -1266,50 +1266,20 @@
           <option value="nao">Não usar neste meso</option>
         </select>
         <div id="meso-biset-opcoes" style="display:none;flex-direction:column;gap:8px;padding:8px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border2);margin-top:2px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div class="fl">
-              <label>Combinações por sessão</label>
-              <select id="meso-biset-qtd" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
-                <option value="1">1 combinação</option>
-                <option value="2" selected>2 combinações</option>
-                <option value="3">3 combinações</option>
-              </select>
-            </div>
-            <div class="fl">
-              <label>Tipo preferido</label>
-              <select id="meso-biset-tipo" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
-                <option value="bi-set">Bi-set</option>
-                <option value="super-set">Super-set</option>
-                <option value="tri-set">Tri-set</option>
-                <option value="misto">Misto (IA decide por exercício)</option>
-              </select>
-            </div>
+          <div class="fl">
+            <label>Tipo preferido</label>
+            <select id="meso-biset-tipo" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
+              <option value="misto">IA decide por exercício (misto)</option>
+              <option value="bi-set">Bi-set</option>
+              <option value="super-set">Super-set</option>
+              <option value="tri-set">Tri-set</option>
+            </select>
           </div>
           <div class="fl">
-            <label>Em quais dias usar combinações</label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin-bottom:4px;">
-              <input type="checkbox" id="meso-biset-todos-dias" checked onchange="toggleBisetDias()"> Em todo o treino (todos os dias)
-            </label>
-            <div id="meso-biset-dias-wrap" style="display:none;flex-direction:column;gap:4px;">
-              <div style="display:flex;flex-wrap:wrap;gap:5px;" id="meso-biset-dias-check">
-                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="SEG"> SEG</label>
-                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="TER"> TER</label>
-                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="QUA"> QUA</label>
-                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="QUI"> QUI</label>
-                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="SEX"> SEX</label>
-                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="SAB"> SAB</label>
-              </div>
-              <div class="fl" style="margin-top:2px;">
-                <label>Grupos/foco por dia (opcional)</label>
-                <input type="text" id="meso-biset-foco-dias" placeholder="Ex: SEG peito+tríceps, QUI costas+bíceps" style="padding:5px 8px;font-size:11px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
-              </div>
-            </div>
+            <label>Instruções para a IA (opcional)</label>
+            <textarea id="meso-biset-instrucoes" rows="2" placeholder="Ex: usar só nos dias de upper; supino com serrote; tríceps polia com rosca barra W" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
           </div>
-          <div class="fl">
-            <label>Instruções específicas (opcional)</label>
-            <textarea id="meso-biset-instrucoes" rows="2" placeholder="Ex: supino halteres com serrote; tríceps polia com rosca barra W — pares que usam equipamentos próximos na academia" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
-          </div>
-          <div style="font-size:10px;color:var(--text3);line-height:1.5;">⚠️ A IA vai priorizar pares que usam equipamentos próximos (halteres + halteres, polia + polia). Evita combinações inviáveis em academia lotada.</div>
+          <div style="font-size:10px;color:var(--text3);line-height:1.5;">A IA distribui as combinações nos dias e grupos que fizerem mais sentido, priorizando pares com equipamentos próximos.</div>
         </div>
       </div>
 
@@ -2726,7 +2696,7 @@ async function sendMsg2() {
 async function atualizarAbasDoAlunoAtual() {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
-  if (!sheetId) throw new Error('Planilha do aluno nao configurada');
+  if (!sheetId) throw new Error('Planilha do aluno nao configurada — verifique o campo "Link da planilha" no cadastro de ' + (s ? s.name : 'aluno'));
   const data = await buscarAbasSpreadsheet(sheetId);
   const abas = Array.isArray(data.abas) ? data.abas : [];
   const abaAtual = data.abaAtual || (abas.length ? abas[abas.length - 1] : 'S0');
@@ -4572,14 +4542,7 @@ async function confirmarNovoMeso() {
   const tempoSessao = document.getElementById('meso-tempo').value;
   const seriesAvancadasMeso = macroCampo('meso-series-avancadas');
   const bisetModo = (document.getElementById('meso-biset-modo') || {}).value || 'ia';
-  const bisetQtd = (document.getElementById('meso-biset-qtd') || {}).value || '2';
-  const bisetTipo = (document.getElementById('meso-biset-tipo') || {}).value || 'bi-set';
-  const bisetTodosDias = !document.getElementById('meso-biset-todos-dias') || document.getElementById('meso-biset-todos-dias').checked;
-  var bisetDiasSelecionados = [];
-  if (!bisetTodosDias) {
-    document.querySelectorAll('#meso-biset-dias-check input:checked').forEach(function(cb){ bisetDiasSelecionados.push(cb.value); });
-  }
-  const bisetFocoDias = ((document.getElementById('meso-biset-foco-dias') || {}).value || '').trim();
+  const bisetTipo = (document.getElementById('meso-biset-tipo') || {}).value || 'misto';
   const bisetInstrucoes = ((document.getElementById('meso-biset-instrucoes') || {}).value || '').trim();
   const splitSelecionadoMeso = obterSplitSelecionado(); // null se modo for 'manter' ou 'ia'
   const divisaoModoMeso = splitModoAtual === 'chips' && splitSelecionadoMeso ? 'divisao selecionada pelo coach'
@@ -4812,15 +4775,10 @@ async function confirmarNovoMeso() {
   if (bisetModo === 'nao') {
     prompt += 'COMBINACOES: NAO usar bi-set, super-set nem tri-set neste meso. Campo "observacoes" deve ficar vazio em todos os exercicios.\n';
   } else if (bisetModo === 'usar') {
-    var _bTipo = bisetTipo === 'misto' ? 'bi-set ou super-set (IA decide por exercicio)' : bisetTipo;
-    if (bisetDiasSelecionados.length > 0) {
-      prompt += 'COMBINACOES OBRIGATORIAS apenas nos dias: ' + bisetDiasSelecionados.join(', ') + '. Incluir exatamente ' + bisetQtd + ' ' + _bTipo + '(s) nesses dias. Nos demais dias nao usar combinacoes.\n';
-    } else {
-      prompt += 'COMBINACOES OBRIGATORIAS em todos os dias de treino: incluir exatamente ' + bisetQtd + ' ' + _bTipo + '(s) por sessao.\n';
-    }
-    if (bisetFocoDias) prompt += 'Foco/grupos por dia para as combinacoes: ' + bisetFocoDias + '. Respeitar essa distribuicao ao montar os pares.\n';
+    var _bTipo = bisetTipo === 'misto' ? 'bi-set, super-set ou tri-set (escolha o mais adequado por exercicio)' : bisetTipo;
+    prompt += 'COMBINACOES: incluir ' + _bTipo + ' nos dias e grupos que fizerem mais sentido dentro da divisao escolhida. Distribua de forma coerente com a logica do treino.\n';
     prompt += 'LOGISTICA DE ACADEMIA: ao combinar exercicios, use SOMENTE pares com equipamentos proximos ou compativeis no mesmo espaco. Exemplos validos: SUPINO RETO COM HALTER + REMADA SERROTE APOIO BAIXO (halteres), TRICEPS NA CORDA + ROSCA DIRETA EM PE COM HALTERES (polia/halteres proximos), CADEIRA EXTENSORA + CADEIRA FLEXORA (maquinas adjacentes). Exemplos INVIÁVEIS em academia lotada: supino barra livre + remada triangulo (estacoes opostas), leg press + puxada (andares diferentes). Priorize combinações que o aluno consiga executar sem perder o equipamento.\n';
-    if (bisetInstrucoes) prompt += 'Instrucoes especificas do coach para as combinacoes: ' + bisetInstrucoes + '\n';
+    if (bisetInstrucoes) prompt += 'Instrucoes do coach para as combinacoes: ' + bisetInstrucoes + '\n';
   } else {
     prompt += 'COMBINACOES: a IA pode usar bi-set, super-set ou tri-set quando houver beneficio claro. Ao combinar, respeitar logistica da academia: usar somente equipamentos proximos ou no mesmo espaco. Nunca combinar exercicios em estacoes opostas da academia.\n';
   }
@@ -7047,7 +7005,11 @@ async function editarNaPlanilha(exercicios, nomeAba, cardio) {
 function getSheetId(url) {
   if (!url) return null;
   var m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  return m ? m[1] : null;
+  if (m) return m[1];
+  // Aceita ID puro (sem URL completa) — string alfanumérica sem espaços e sem /
+  var clean = url.trim();
+  if (/^[a-zA-Z0-9-_]{20,}$/.test(clean)) return clean;
+  return null;
 }
 
 

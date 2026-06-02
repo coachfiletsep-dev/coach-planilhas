@@ -347,6 +347,22 @@
   .preview-edit-form input, .preview-edit-form select { padding:4px 7px; font-size:12px; border:.5px solid var(--border2); border-radius:var(--radius); background:var(--bg); color:var(--text); width:100%; box-sizing:border-box; font-family:inherit; }
   .preview-edit-btn { font-size:10px; padding:2px 7px; border:.5px solid var(--border2); border-radius:99px; background:transparent; color:var(--text3); cursor:pointer; margin-left:6px; }
   .preview-edit-btn:hover { border-color:var(--green); color:var(--green); }
+  /* ─ Conectar exercícios no preview ─ */
+  .preview-link-btn { font-size:11px; padding:2px 7px; border:.5px solid var(--border2); border-radius:99px; background:transparent; color:var(--text3); cursor:pointer; margin-left:5px; line-height:1; vertical-align:middle; }
+  .preview-link-btn:hover { border-color:var(--green); color:var(--green); }
+  .preview-link-btn.connected { border-color:var(--green); color:var(--green); background:var(--green-light); font-weight:700; }
+  .preview-link-menu { display:none; flex-direction:column; gap:4px; background:var(--bg); border:.5px solid var(--green); border-radius:var(--radius); padding:8px 10px; margin-bottom:6px; }
+  .preview-link-menu-title { font-size:10px; font-weight:700; color:var(--text3); margin-bottom:2px; text-transform:uppercase; letter-spacing:.04em; }
+  .preview-link-menu-row { display:flex; flex-wrap:wrap; gap:4px; }
+  .plm-btn { padding:4px 10px; font-size:11px; font-weight:600; border:.5px solid var(--border2); border-radius:99px; background:var(--bg2); color:var(--text2); cursor:pointer; }
+  .plm-btn:hover { border-color:var(--green); color:var(--green); }
+  .plm-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
+  .plm-desfazer { border-color:var(--red,#e55); color:var(--red,#e55); }
+  .plm-desfazer:hover { background:var(--red,#e55); color:#fff; }
+  .preview-grp-conn { display:flex; align-items:center; justify-content:center; gap:5px; padding:4px 10px; background:var(--green-light); color:var(--green-dark); font-size:11px; font-weight:700; border-radius:var(--radius); margin-bottom:6px; border:.5px solid var(--green-mid); }
+  .preview-row.preview-grp-first { border-color:var(--green); border-bottom-left-radius:0; border-bottom-right-radius:0; margin-bottom:0; }
+  .preview-row.preview-grp-last { border-color:var(--green); border-top-left-radius:0; border-top-right-radius:0; margin-bottom:6px; }
+  .preview-row.preview-grp-mid { border-color:var(--green); border-radius:0; margin-bottom:0; }
   /* ─ Split custom days ─ */
   .split-custom-dia-btn { padding:4px 9px; font-size:12px; font-weight:600; border:.5px solid var(--border2); border-radius:99px; background:var(--bg2); color:var(--text2); cursor:pointer; transition:all .15s; }
   .split-custom-dia-btn.active { background:var(--green); color:#fff; border-color:var(--green); }
@@ -887,6 +903,14 @@
       <select id="bib-dific" onchange="filtrarBibliotecaPage()"
         style="padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:12px;">
         <option value="">Todos os níveis</option>
+      </select>
+      <select id="bib-nivel-core" onchange="filtrarBibliotecaPage()"
+        style="display:none;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:12px;">
+        <option value="">Core: todos os níveis</option>
+      </select>
+      <select id="bib-funcao-core" onchange="filtrarBibliotecaPage()"
+        style="display:none;padding:7px 10px;border:.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-size:12px;">
+        <option value="">Core: todas as funções</option>
       </select>
     </div>
 
@@ -6045,11 +6069,17 @@ async function carregarBibliotecaPage(forcar) {
   }
 }
 
+var CORE_NIVEL_COR = { 'Basico':'#22c55e','Intermediario':'#f59e0b','Avancado':'#f97316','Master':'#ef4444' };
+var CORE_FUNCAO_COR = {
+  'Anti-extensao':'#6366f1','Anti-rotacao':'#8b5cf6','Anti-flexao lateral':'#ec4899',
+  'Flexao de tronco':'#14b8a6','Core integracao':'#0ea5e9','Controle lombopelvico':'#84cc16',
+  'Core atletico':'#f97316','Rotacao potente':'#ef4444'
+};
+
 function renderizarBibliotecaPage() {
   if (!_bibDados) return;
   var detalhes = _bibDados.bibliotecaDetalhes || {};
-  var temDetalhes = Object.keys(detalhes).length > 0;
-  var temPadrao = false, temDific = false;
+  var temPadrao = false, temDific = false, temCore = false;
 
   // Flatten all exercises
   var todos = [];
@@ -6059,13 +6089,15 @@ function renderizarBibliotecaPage() {
       var det = dets[i] || {};
       if (det.padrao) temPadrao = true;
       if (det.dificuldade) temDific = true;
-      todos.push({ grupo: grupo, nome: nome, padrao: det.padrao||'', dificuldade: det.dificuldade||'' });
+      if (det.nivelCore || det.funcaoCore) temCore = true;
+      todos.push({ grupo: grupo, nome: nome, padrao: det.padrao||'', dificuldade: det.dificuldade||'', nivelCore: det.nivelCore||'', funcaoCore: det.funcaoCore||'' });
     });
   });
 
   _bibDados._todos = todos;
+  _bibDados._temCore = temCore;
 
-  // Populate filter selects
+  // Filtro: grupos
   var grupos = Object.keys(_bibDados.biblioteca).sort();
   var selGrupo = document.getElementById('bib-grupo');
   var prev = selGrupo.value;
@@ -6073,6 +6105,7 @@ function renderizarBibliotecaPage() {
   grupos.forEach(function(g){ var o=document.createElement('option'); o.value=g; o.textContent=g; selGrupo.appendChild(o); });
   if (prev) selGrupo.value = prev;
 
+  // Filtro: padrão de movimento
   var padroes = [...new Set(todos.map(function(t){return t.padrao;}).filter(Boolean))].sort();
   var selPadrao = document.getElementById('bib-padrao');
   var prevP = selPadrao.value;
@@ -6080,6 +6113,7 @@ function renderizarBibliotecaPage() {
   padroes.forEach(function(p){ var o=document.createElement('option'); o.value=p; o.textContent=p; selPadrao.appendChild(o); });
   if (prevP) selPadrao.value = prevP;
 
+  // Filtro: dificuldade
   var difics = [...new Set(todos.map(function(t){return t.dificuldade;}).filter(Boolean))].sort();
   var selDific = document.getElementById('bib-dific');
   var prevD = selDific.value;
@@ -6087,16 +6121,38 @@ function renderizarBibliotecaPage() {
   difics.forEach(function(d){ var o=document.createElement('option'); o.value=d; o.textContent=d; selDific.appendChild(o); });
   if (prevD) selDific.value = prevD;
 
-  // Show notice if columns missing
-  document.getElementById('bib-notice').style.display = (!temPadrao && !temDific) ? 'block' : 'none';
+  // Filtros Core: nível e função (mostrar só quando existirem exercícios core)
+  var selNivelCore = document.getElementById('bib-nivel-core');
+  var selFuncaoCore = document.getElementById('bib-funcao-core');
+  selNivelCore.style.display = temCore ? '' : 'none';
+  selFuncaoCore.style.display = temCore ? '' : 'none';
+  if (temCore) {
+    var ORDEM_NIVEL = ['Basico','Intermediario','Avancado','Master'];
+    var niveis = ORDEM_NIVEL.filter(function(n){ return todos.some(function(t){ return t.nivelCore === n; }); });
+    var prevNC = selNivelCore.value;
+    selNivelCore.innerHTML = '<option value="">Core: todos os níveis</option>';
+    niveis.forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent='🔷 '+n; selNivelCore.appendChild(o); });
+    if (prevNC) selNivelCore.value = prevNC;
 
-  // Build table head
+    var funcoes = [...new Set(todos.map(function(t){return t.funcaoCore;}).filter(Boolean))].sort();
+    var prevFC = selFuncaoCore.value;
+    selFuncaoCore.innerHTML = '<option value="">Core: todas as funções</option>';
+    funcoes.forEach(function(f){ var o=document.createElement('option'); o.value=f; o.textContent=f; selFuncaoCore.appendChild(o); });
+    if (prevFC) selFuncaoCore.value = prevFC;
+  }
+
+  // Aviso se nenhuma coluna opcional encontrada
+  document.getElementById('bib-notice').style.display = (!temPadrao && !temDific && !temCore) ? 'block' : 'none';
+
+  // Cabeçalho da tabela
   var thead = document.getElementById('bib-thead');
   thead.innerHTML = '<tr style="border-bottom:1.5px solid var(--border2);font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);">' +
     '<th style="padding:7px 10px;text-align:left;font-weight:700;">Exercício</th>' +
     '<th style="padding:7px 10px;text-align:left;font-weight:700;">Grupo</th>' +
-    (temPadrao ? '<th style="padding:7px 10px;text-align:left;font-weight:700;">Padrão de Movimento</th>' : '') +
-    (temDific  ? '<th style="padding:7px 10px;text-align:left;font-weight:700;">Nível</th>' : '') +
+    (temPadrao ? '<th style="padding:7px 10px;text-align:left;font-weight:700;">Padrão</th>' : '') +
+    (temDific  ? '<th style="padding:7px 10px;text-align:left;font-weight:700;">Dificuldade</th>' : '') +
+    (temCore   ? '<th style="padding:7px 10px;text-align:left;font-weight:700;">Nível Core</th>' : '') +
+    (temCore   ? '<th style="padding:7px 10px;text-align:left;font-weight:700;">Função</th>' : '') +
     '</tr>';
 
   document.getElementById('bib-table-wrap').style.display = 'block';
@@ -6106,22 +6162,27 @@ function renderizarBibliotecaPage() {
 function filtrarBibliotecaPage() {
   if (!_bibDados || !_bibDados._todos) return;
   var q = (document.getElementById('bib-search').value || '').trim().toUpperCase();
-  var fGrupo = document.getElementById('bib-grupo').value;
+  var fGrupo  = document.getElementById('bib-grupo').value;
   var fPadrao = document.getElementById('bib-padrao').value;
-  var fDific = document.getElementById('bib-dific').value;
-  var detalhes = _bibDados.bibliotecaDetalhes || {};
+  var fDific  = document.getElementById('bib-dific').value;
+  var fNivelCore  = (document.getElementById('bib-nivel-core') || {}).value || '';
+  var fFuncaoCore = (document.getElementById('bib-funcao-core') || {}).value || '';
   var temPadrao = _bibDados._todos.some(function(t){ return t.padrao; });
-  var temDific = _bibDados._todos.some(function(t){ return t.dificuldade; });
+  var temDific  = _bibDados._todos.some(function(t){ return t.dificuldade; });
+  var temCore   = _bibDados._temCore;
 
   var filtrados = _bibDados._todos.filter(function(t) {
     if (fGrupo && t.grupo !== fGrupo) return false;
     if (fPadrao && t.padrao !== fPadrao) return false;
     if (fDific && t.dificuldade !== fDific) return false;
+    if (fNivelCore && t.nivelCore !== fNivelCore) return false;
+    if (fFuncaoCore && t.funcaoCore !== fFuncaoCore) return false;
     if (q && t.nome.indexOf(q) === -1) return false;
     return true;
   });
 
-  document.getElementById('bib-info').textContent = filtrados.length + ' exercício(s)' + (q||fGrupo||fPadrao||fDific?' (filtrado)':'') + ' de ' + _bibDados._todos.length + ' total';
+  var filtrou = q||fGrupo||fPadrao||fDific||fNivelCore||fFuncaoCore;
+  document.getElementById('bib-info').textContent = filtrados.length + ' exercício(s)' + (filtrou ? ' (filtrado)' : '') + ' de ' + _bibDados._todos.length + ' total';
 
   var tbody = document.getElementById('bib-tbody');
   if (!filtrados.length) {
@@ -6131,15 +6192,23 @@ function filtrarBibliotecaPage() {
   }
   document.getElementById('bib-empty').style.display = 'none';
 
-  var DIFIC_COR = { 'iniciante':'#22c55e', 'intermediario':'#f59e0b', 'intermediário':'#f59e0b', 'avancado':'#ef4444', 'avançado':'#ef4444' };
+  var DIFIC_COR = { 'iniciante':'#22c55e','intermediario':'#f59e0b','intermediário':'#f59e0b','avancado':'#ef4444','avançado':'#ef4444' };
+
   tbody.innerHTML = filtrados.map(function(t, i) {
     var bg = i % 2 === 0 ? 'var(--bg)' : 'var(--bg2)';
-    var cor = DIFIC_COR[t.dificuldade.toLowerCase()] || 'var(--text2)';
+    var dificCor = DIFIC_COR[(t.dificuldade||'').toLowerCase()] || 'var(--text2)';
+    var nivelCoreCor = CORE_NIVEL_COR[t.nivelCore] || 'var(--text3)';
+    var funcaoBg = CORE_FUNCAO_COR[t.funcaoCore];
+    var funcaoBadge = t.funcaoCore
+      ? '<span style="font-size:9px;font-weight:700;color:#fff;background:' + (funcaoBg||'#6366f1') + ';padding:2px 6px;border-radius:99px;">' + t.funcaoCore + '</span>'
+      : '—';
     return '<tr style="background:' + bg + ';border-bottom:.5px solid var(--border);">' +
       '<td style="padding:7px 10px;font-weight:600;color:var(--text);">' + t.nome + '</td>' +
       '<td style="padding:7px 10px;color:var(--text2);">' + t.grupo + '</td>' +
       (temPadrao ? '<td style="padding:7px 10px;color:var(--text2);">' + (t.padrao||'—') + '</td>' : '') +
-      (temDific  ? '<td style="padding:7px 10px;"><span style="font-size:10px;font-weight:700;color:' + cor + ';">' + (t.dificuldade||'—') + '</span></td>' : '') +
+      (temDific  ? '<td style="padding:7px 10px;"><span style="font-size:10px;font-weight:700;color:' + dificCor + ';">' + (t.dificuldade||'—') + '</span></td>' : '') +
+      (temCore   ? '<td style="padding:7px 10px;"><span style="font-size:10px;font-weight:700;color:' + nivelCoreCor + ';">' + (t.nivelCore||'—') + '</span></td>' : '') +
+      (temCore   ? '<td style="padding:7px 10px;">' + funcaoBadge + '</td>' : '') +
       '</tr>';
   }).join('');
 }
@@ -7065,6 +7134,32 @@ function mostrarPreview(exercicios, nomeAba) {
   var lista = document.getElementById('preview-lista');
   lista.innerHTML = '';
 
+  // ── Conexões de bloco (bi-set, super-set, tri-set, giant-set, combinado) ──
+  if (!window._previewCombinacoes) { window._previewCombinacoes = {}; }
+  // Parsear observacoes existentes para pré-popular conexões ainda não definidas
+  exercicios.forEach(function(ex, idx) {
+    var obs = obterCampoTextoExercicioApp(ex, ['observacoes','observacao','combinacao']) || '';
+    if (obs && window._previewCombinacoes[idx] === undefined) {
+      if      (/tri.?set/i.test(obs))   window._previewCombinacoes[idx] = 'tri-set';
+      else if (/giant.?set/i.test(obs)) window._previewCombinacoes[idx] = 'giant-set';
+      else if (/super.?set/i.test(obs)) window._previewCombinacoes[idx] = 'super-set';
+      else if (/bi.?set/i.test(obs))    window._previewCombinacoes[idx] = 'bi-set';
+      else if (/combinado/i.test(obs))  window._previewCombinacoes[idx] = 'combinado';
+    }
+  });
+  // Precompute _prvGrpOf[]: mapeia cada exercício ao índice-start do seu grupo (-1 = sem grupo)
+  var _prvGrpOf = exercicios.map(function(){ return -1; });
+  var _prvGrpSize = {}; // cache de tamanho por startIdx
+  Object.keys(window._previewCombinacoes).forEach(function(idxStr) {
+    var si = parseInt(idxStr);
+    var tp = window._previewCombinacoes[si] || '';
+    var sz = 2;
+    if (/tri.?set/i.test(tp)) sz = 3;
+    else if (/giant.?set/i.test(tp)) sz = Math.min(4, exercicios.length - si);
+    _prvGrpSize[si] = sz;
+    for (var k = 0; k < sz && si + k < exercicios.length; k++) _prvGrpOf[si + k] = si;
+  });
+
   exercicios.forEach(function(ex, previewIdx) {
     // Encontrar o exercício original na aba atual pelo campo dia + linha
     var original = null;
@@ -7183,6 +7278,19 @@ function mostrarPreview(exercicios, nomeAba) {
       (ultimaSerie ? '<br><span style="color:#0F3460;font-size:11px;">Ultima serie: ' + ultimaSerie + '</span>' : '') +
       (observacoes ? '<br><span style="color:#596672;font-size:11px;">Obs: ' + observacoes + '</span>' : '');
 
+    // Botão 🔗 — conectar com próximo (apenas modo novo, exceto último exercício)
+    if (window._previewModo === 'novo' && previewIdx < exercicios.length - 1) {
+      var isConnStart = window._previewCombinacoes[previewIdx] !== undefined;
+      var linkBtn = document.createElement('button');
+      linkBtn.className = 'preview-link-btn' + (isConnStart ? ' connected' : '');
+      linkBtn.title = isConnStart
+        ? 'Combinação: ' + window._previewCombinacoes[previewIdx] + ' — clique para alterar'
+        : 'Conectar com próximo exercício';
+      linkBtn.innerHTML = '🔗';
+      linkBtn.addEventListener('click', (function(i){ return function(e){ e.stopPropagation(); abrirMenuConectar(i); }; })(previewIdx));
+      depoisEl.appendChild(linkBtn);
+    }
+
     if (window._previewModo === 'novo') {
       var handle = document.createElement('div');
       handle.className = 'preview-drag-handle';
@@ -7195,6 +7303,17 @@ function mostrarPreview(exercicios, nomeAba) {
     row.appendChild(arrow);
     row.appendChild(depoisEl);
     lista.appendChild(row);
+
+    // CSS de grupo nos rows
+    if (window._previewModo === 'novo') {
+      var _grpStart = _prvGrpOf[previewIdx];
+      if (_grpStart >= 0) {
+        var _grpSz = _prvGrpSize[_grpStart] || 2;
+        if (previewIdx === _grpStart) row.classList.add('preview-grp-first');
+        else if (previewIdx === _grpStart + _grpSz - 1) row.classList.add('preview-grp-last');
+        else row.classList.add('preview-grp-mid');
+      }
+    }
 
     // Form de edição inline (apenas no modo 'novo')
     if (window._previewModo === 'novo') {
@@ -7226,6 +7345,37 @@ function mostrarPreview(exercicios, nomeAba) {
           '<button onclick="toggleEdicaoPreview(' + previewIdx + ')" style="padding:4px 10px;font-size:12px;background:none;border:.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;color:var(--text2);">✕ Cancelar</button>' +
         '</div>';
       lista.appendChild(editForm);
+
+      // Menu de conexão (para todos exceto o último exercício)
+      if (previewIdx < exercicios.length - 1) {
+        var menuEl = document.createElement('div');
+        menuEl.className = 'preview-link-menu';
+        menuEl.id = 'preview-link-menu-' + previewIdx;
+        var _tipos = [['bi-set','Bi-set'],['super-set','Super-set'],['tri-set','Tri-set'],['giant-set','Giant-set'],['combinado','Combinado ↕']];
+        var _mHtml = '<div class="preview-link-menu-title">Conectar com próximo:</div><div class="preview-link-menu-row">';
+        _tipos.forEach(function(t) {
+          var isAct = window._previewCombinacoes[previewIdx] === t[0];
+          _mHtml += '<button class="plm-btn'+(isAct?' active':'')+'" onclick="conectarPreview('+previewIdx+',\''+t[0]+'\')">'+t[1]+'</button>';
+        });
+        _mHtml += '</div>';
+        if (window._previewCombinacoes[previewIdx]) {
+          _mHtml += '<button class="plm-btn plm-desfazer" onclick="desconectarPreview('+previewIdx+')" style="margin-top:4px;">✕ Desfazer conexão</button>';
+        }
+        menuEl.innerHTML = _mHtml;
+        lista.appendChild(menuEl);
+      }
+
+      // Connector visual entre exercícios de um bloco (aparece se este exercício pertence a grupo e não é o último)
+      var _grpId = _prvGrpOf[previewIdx];
+      if (_grpId >= 0) {
+        var _grpSzConn = _prvGrpSize[_grpId] || 2;
+        if (previewIdx < _grpId + _grpSzConn - 1) {
+          var connDiv = document.createElement('div');
+          connDiv.className = 'preview-grp-conn';
+          connDiv.innerHTML = '↓ ' + (window._previewCombinacoes[_grpId] || '') + ' — execute em sequência, sem descanso';
+          lista.appendChild(connDiv);
+        }
+      }
     }
   });
 
@@ -7327,10 +7477,81 @@ function fecharPreview() {
   window._previewExercicios = null;
   window._previewAba = null;
   window._previewModo = null;
+  window._previewCombinacoes = {};
 }
+
+// ── Funções de conexão de bloco no preview ──────────────────────────────────
+
+function abrirMenuConectar(idx) {
+  // Fecha todos os outros menus antes de abrir este
+  document.querySelectorAll('.preview-link-menu').forEach(function(m) {
+    if (m.id !== 'preview-link-menu-' + idx) m.style.display = 'none';
+  });
+  var menu = document.getElementById('preview-link-menu-' + idx);
+  if (!menu) return;
+  menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+  menu.style.flexDirection = 'column';
+}
+
+function conectarPreview(idx, tipo) {
+  window._previewCombinacoes = window._previewCombinacoes || {};
+  window._previewCombinacoes[idx] = tipo;
+  mostrarPreview(window._previewExercicios, window._previewAba);
+}
+
+function desconectarPreview(idx) {
+  window._previewCombinacoes = window._previewCombinacoes || {};
+  delete window._previewCombinacoes[idx];
+  mostrarPreview(window._previewExercicios, window._previewAba);
+}
+
+// Aplica as conexões definidas no _previewCombinacoes ao campo observacoes de cada exercício
+// Chamado antes de escrever na planilha para garantir formato correto
+function aplicarCombinacoesPreviews() {
+  var exs = window._previewExercicios;
+  if (!exs || !window._previewCombinacoes) return;
+  var comb = window._previewCombinacoes;
+  // Primeiro limpar observacoes de combinações em exercícios que não são mais start
+  exs.forEach(function(ex, idx) {
+    var obs = (ex.observacoes || '').trim();
+    var isCombObs = /bi.?set|tri.?set|super.?set|giant.?set|combinado/i.test(obs);
+    if (isCombObs && comb[idx] === undefined) {
+      // Este exercício tinha uma combinação que foi desfeita — limpar
+      exs[idx] = Object.assign({}, ex, { observacoes: '' });
+    }
+  });
+  // Aplicar combinações definidas
+  Object.keys(comb).forEach(function(idxStr) {
+    var si = parseInt(idxStr);
+    var tipo = comb[si];
+    var sz = 2;
+    if (/tri.?set/i.test(tipo)) sz = 3;
+    else if (/giant.?set/i.test(tipo)) sz = Math.min(4, exs.length - si);
+    if (si >= exs.length) return;
+    // Nomes dos exercícios seguintes
+    var nomes = [];
+    for (var k = 1; k < sz && si + k < exs.length; k++) {
+      nomes.push((exs[si + k].nome || '').toUpperCase());
+      // Limpar observacoes dos exercícios subordinados
+      exs[si + k] = Object.assign({}, exs[si + k], { observacoes: '' });
+    }
+    // Montar texto de observacoes para o exercício start
+    var obs = '';
+    if (nomes.length === 1) {
+      obs = tipo + ' com ' + nomes[0] + ' — execute em sequencia sem descanso';
+    } else if (nomes.length >= 2) {
+      obs = tipo + ' com ' + nomes.slice(0, -1).join(', ') + ' e ' + nomes[nomes.length-1] + ' — sem descanso entre eles';
+    }
+    exs[si] = Object.assign({}, exs[si], { observacoes: obs });
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 
 async function confirmarPreview() {
   if (!window._previewExercicios || !window._previewAba) return;
+  // Aplicar conexões de bloco ao campo observacoes antes de escrever
+  if (window._previewModo === 'novo') aplicarCombinacoesPreviews();
   var exercicios = window._previewExercicios;
   var aba = window._previewAba;
   var modo = window._previewModo;

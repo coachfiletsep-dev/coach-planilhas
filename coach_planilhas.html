@@ -1184,7 +1184,7 @@
     </div>
     <div class="modal-body">
       <div class="fl">
-        <label style="font-weight:600;">Semanas para analisar</label>
+        <label style="font-weight:600;">Semanas para analisar <span style="font-weight:400;color:var(--text3);font-size:11px;">— apenas como referência</span></label>
         <div id="meso-abas-loading" style="font-size:12px;color:var(--text3);padding:8px;">Buscando abas disponíveis...</div>
         <div id="meso-abas-lista" style="display:none;max-height:160px;overflow-y:auto;border:0.5px solid var(--border2);border-radius:var(--radius);padding:6px;background:var(--bg2);flex-direction:column;gap:4px;"></div>
         <div style="display:flex;gap:8px;margin-top:4px;">
@@ -1196,89 +1196,22 @@
           Analise profunda: enviar detalhes completos das abas
         </label>
       </div>
-      <div class="fl">
-        <label style="font-weight:600;">Tempo disponível por sessão</label>
-        <select id="meso-tempo" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-          <option value="">Não especificado</option>
-          <option value="45min">45 minutos (até 15 séries/sessão)</option>
-          <option value="1h">1 hora (até 20 séries/sessão)</option>
-          <option value="1h15">1h15 (até 24 séries/sessão)</option>
-          <option value="1h30">1h30 (até 28 séries/sessão)</option>
-        </select>
-      </div>
-      <!-- DENSIDADE DO TREINO -->
-      <div class="fl" id="meso-densidade-box">
-        <label style="font-weight:600;">Exercícios por dia <span style="font-weight:400;color:var(--text3);">(instrução obrigatória à IA)</span></label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="number" id="meso-ex-global" min="1" max="15" value="8" oninput="_onGlobalExChange()"
-            style="width:58px;padding:6px 8px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);text-align:center;">
-          <span style="font-size:12px;color:var(--text2);">exercícios em todos os dias</span>
-          <button type="button" onclick="toggleDensidadePorDia()" id="meso-densidade-toggle"
-            style="margin-left:auto;font-size:11px;color:var(--green);background:none;border:none;cursor:pointer;padding:0;white-space:nowrap;text-decoration:underline;">
-            Personalizar por dia ↓
-          </button>
-        </div>
-        <div id="meso-densidade-por-dia" style="display:none;flex-direction:column;gap:6px;padding:8px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border2);margin-top:2px;"></div>
-      </div>
 
       <div class="fl" id="meso-macro-box" style="display:none;">
         <label style="font-weight:600;">Bloco do macrociclo</label>
         <select id="meso-macro-bloco" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);"></select>
         <div id="meso-macro-resumo" style="font-size:11px;color:var(--text3);padding:7px 8px;background:var(--bg2);border-radius:var(--radius);line-height:1.4;"></div>
       </div>
+
       <div class="fl">
-        <label style="font-weight:600;">Series avancadas no meso</label>
-        <select id="meso-series-avancadas" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-          <option value="macro">Usar orientacao do macrociclo</option>
-          <option value="ia decide">IA decide pelo nivel</option>
-          <option value="evitar">Evitar neste meso</option>
-          <option value="conservador">Conservador</option>
-          <option value="moderado">Moderado</option>
-          <option value="avancado">Avancado</option>
+        <label style="font-weight:600;">Tempo disponível por sessão</label>
+        <select id="meso-tempo" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="">Não especificado</option>
+          <option value="45min">45 min (~8 exercícios / até 15 séries)</option>
+          <option value="1h">1 hora (~10 exercícios / até 20 séries)</option>
+          <option value="1h15">1h15 (~12 exercícios / até 24 séries)</option>
+          <option value="1h30">1h30 (~14 exercícios / até 28 séries)</option>
         </select>
-        <div style="font-size:11px;color:var(--text3);line-height:1.4;">A IA usa "Ultima Serie" para drop-set, rest-pause, cluster, parciais ou GVT, e "Observacoes" para bi-set, tri-set e super-set.</div>
-      </div>
-      <div class="fl" id="meso-biset-box">
-        <label style="font-weight:600;">Combinações (bi-set / super-set / tri-set)</label>
-        <select id="meso-biset-modo" onchange="toggleBisetOpcoes()" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
-          <option value="ia">IA decide se usar e como combinar</option>
-          <option value="usar">Sim — quero combinações neste meso</option>
-          <option value="nao">Não usar neste meso</option>
-        </select>
-        <div id="meso-biset-opcoes" style="display:none;flex-direction:column;gap:8px;padding:8px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border2);margin-top:2px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div class="fl">
-              <label>Combinações por sessão</label>
-              <select id="meso-biset-qtd" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
-                <option value="1">1 combinação</option>
-                <option value="2" selected>2 combinações</option>
-                <option value="3">3 combinações</option>
-              </select>
-            </div>
-            <div class="fl">
-              <label>Tipo preferido</label>
-              <select id="meso-biset-tipo" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
-                <option value="bi-set">Bi-set</option>
-                <option value="super-set">Super-set</option>
-                <option value="tri-set">Tri-set</option>
-                <option value="misto">Misto (IA decide por exercício)</option>
-              </select>
-            </div>
-          </div>
-          <div class="fl">
-            <label>Foco muscular das combinações</label>
-            <select id="meso-biset-foco" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
-              <option value="upper">Membros superiores (peito, costas, ombro, bíceps, tríceps)</option>
-              <option value="lower">Membros inferiores</option>
-              <option value="misto">Misto — IA distribui conforme o treino</option>
-            </select>
-          </div>
-          <div class="fl">
-            <label>Instruções específicas (opcional)</label>
-            <textarea id="meso-biset-instrucoes" rows="2" placeholder="Ex: supino halteres com serrote; tríceps polia com rosca barra W — pares que usam equipamentos próximos na academia" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
-          </div>
-          <div style="font-size:10px;color:var(--text3);line-height:1.5;">⚠️ A IA vai priorizar pares que usam equipamentos próximos (halteres + halteres, polia + polia). Evita combinações inviáveis em academia lotada.</div>
-        </div>
       </div>
 
       <div class="fl" id="split-selector-wrap">
@@ -1308,6 +1241,89 @@
           </div>
           <div id="split-custom-grupos" style="display:flex;flex-direction:column;gap:5px;"></div>
         </div>
+      </div>
+
+      <!-- DENSIDADE DO TREINO -->
+      <div class="fl" id="meso-densidade-box">
+        <label style="font-weight:600;">Exercícios por dia <span style="font-weight:400;color:var(--text3);">(instrução obrigatória à IA)</span></label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="number" id="meso-ex-global" min="1" max="15" value="8" oninput="_onGlobalExChange()"
+            style="width:58px;padding:6px 8px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);text-align:center;">
+          <span style="font-size:12px;color:var(--text2);">exercícios em todos os dias</span>
+          <button type="button" onclick="toggleDensidadePorDia()" id="meso-densidade-toggle"
+            style="margin-left:auto;font-size:11px;color:var(--green);background:none;border:none;cursor:pointer;padding:0;white-space:nowrap;text-decoration:underline;">
+            Personalizar por dia ↓
+          </button>
+        </div>
+        <div id="meso-densidade-por-dia" style="display:none;flex-direction:column;gap:6px;padding:8px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border2);margin-top:2px;"></div>
+      </div>
+
+      <div class="fl" id="meso-biset-box">
+        <label style="font-weight:600;">Combinações (bi-set / super-set / tri-set)</label>
+        <select id="meso-biset-modo" onchange="toggleBisetOpcoes()" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="ia">IA decide se usar e como combinar</option>
+          <option value="usar">Sim — quero combinações neste meso</option>
+          <option value="nao">Não usar neste meso</option>
+        </select>
+        <div id="meso-biset-opcoes" style="display:none;flex-direction:column;gap:8px;padding:8px;background:var(--bg2);border-radius:var(--radius);border:0.5px solid var(--border2);margin-top:2px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="fl">
+              <label>Combinações por sessão</label>
+              <select id="meso-biset-qtd" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
+                <option value="1">1 combinação</option>
+                <option value="2" selected>2 combinações</option>
+                <option value="3">3 combinações</option>
+              </select>
+            </div>
+            <div class="fl">
+              <label>Tipo preferido</label>
+              <select id="meso-biset-tipo" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
+                <option value="bi-set">Bi-set</option>
+                <option value="super-set">Super-set</option>
+                <option value="tri-set">Tri-set</option>
+                <option value="misto">Misto (IA decide por exercício)</option>
+              </select>
+            </div>
+          </div>
+          <div class="fl">
+            <label>Em quais dias usar combinações</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin-bottom:4px;">
+              <input type="checkbox" id="meso-biset-todos-dias" checked onchange="toggleBisetDias()"> Em todo o treino (todos os dias)
+            </label>
+            <div id="meso-biset-dias-wrap" style="display:none;flex-direction:column;gap:4px;">
+              <div style="display:flex;flex-wrap:wrap;gap:5px;" id="meso-biset-dias-check">
+                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="SEG"> SEG</label>
+                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="TER"> TER</label>
+                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="QUA"> QUA</label>
+                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="QUI"> QUI</label>
+                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="SEX"> SEX</label>
+                <label style="display:flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);cursor:pointer;"><input type="checkbox" value="SAB"> SAB</label>
+              </div>
+              <div class="fl" style="margin-top:2px;">
+                <label>Grupos/foco por dia (opcional)</label>
+                <input type="text" id="meso-biset-foco-dias" placeholder="Ex: SEG peito+tríceps, QUI costas+bíceps" style="padding:5px 8px;font-size:11px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
+              </div>
+            </div>
+          </div>
+          <div class="fl">
+            <label>Instruções específicas (opcional)</label>
+            <textarea id="meso-biset-instrucoes" rows="2" placeholder="Ex: supino halteres com serrote; tríceps polia com rosca barra W — pares que usam equipamentos próximos na academia" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
+          </div>
+          <div style="font-size:10px;color:var(--text3);line-height:1.5;">⚠️ A IA vai priorizar pares que usam equipamentos próximos (halteres + halteres, polia + polia). Evita combinações inviáveis em academia lotada.</div>
+        </div>
+      </div>
+
+      <div class="fl">
+        <label style="font-weight:600;">Series avancadas no meso</label>
+        <select id="meso-series-avancadas" style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);">
+          <option value="macro">Usar orientacao do macrociclo</option>
+          <option value="ia decide">IA decide pelo nivel</option>
+          <option value="evitar">Evitar neste meso</option>
+          <option value="conservador">Conservador</option>
+          <option value="moderado">Moderado</option>
+          <option value="avancado">Avancado</option>
+        </select>
+        <div style="font-size:11px;color:var(--text3);line-height:1.4;">A IA incorpora a técnica diretamente no campo "Ultima Serie" (drop-set, rest-pause, cluster, parciais, GVT) e "Observacoes" (bi-set, tri-set, super-set).</div>
       </div>
       <div class="fl">
         <label>Briefing do aluno e instruções do novo meso</label>
@@ -1348,28 +1364,6 @@
                 <option value="condicionamento">Condicionamento / performance</option>
                 <option value="retorno">Retorno / conservador</option>
               </select>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-              <div class="fl">
-                <label>Sessões por semana</label>
-                <select id="cardio-freq" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
-                  <option value="1">1x/semana</option>
-                  <option value="2">2x/semana</option>
-                  <option value="3" selected="">3x/semana</option>
-                  <option value="4">4x/semana</option>
-                  <option value="5">5x/semana</option>
-                </select>
-              </div>
-              <div class="fl">
-                <label>Duração por sessão</label>
-                <select id="cardio-duracao" style="padding:6px 8px;font-size:12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);color:var(--text);">
-                  <option value="15-20 min">15-20 min</option>
-                  <option value="20-30 min" selected="">20-30 min</option>
-                  <option value="30-40 min">30-40 min</option>
-                  <option value="40-50 min">40-50 min</option>
-                  <option value="50-60 min">50-60 min</option>
-                </select>
-              </div>
             </div>
             <div class="fl">
               <label>Dias e duração por sessão (opcional)</label>
@@ -4039,6 +4033,12 @@ function toggleBisetOpcoes() {
   if (opcoes) opcoes.style.display = modo === 'usar' ? 'flex' : 'none';
 }
 
+function toggleBisetDias() {
+  var todos = document.getElementById('meso-biset-todos-dias');
+  var wrap = document.getElementById('meso-biset-dias-wrap');
+  if (wrap) wrap.style.display = (todos && todos.checked) ? 'none' : 'flex';
+}
+
 function toggleCardioSection() {
   var sec = document.getElementById('cardio-section');
   var icon = document.getElementById('cardio-toggle-icon');
@@ -4574,10 +4574,15 @@ async function confirmarNovoMeso() {
   const bisetModo = (document.getElementById('meso-biset-modo') || {}).value || 'ia';
   const bisetQtd = (document.getElementById('meso-biset-qtd') || {}).value || '2';
   const bisetTipo = (document.getElementById('meso-biset-tipo') || {}).value || 'bi-set';
-  const bisetFoco = (document.getElementById('meso-biset-foco') || {}).value || 'upper';
+  const bisetTodosDias = !document.getElementById('meso-biset-todos-dias') || document.getElementById('meso-biset-todos-dias').checked;
+  var bisetDiasSelecionados = [];
+  if (!bisetTodosDias) {
+    document.querySelectorAll('#meso-biset-dias-check input:checked').forEach(function(cb){ bisetDiasSelecionados.push(cb.value); });
+  }
+  const bisetFocoDias = ((document.getElementById('meso-biset-foco-dias') || {}).value || '').trim();
   const bisetInstrucoes = ((document.getElementById('meso-biset-instrucoes') || {}).value || '').trim();
   const splitSelecionadoMeso = obterSplitSelecionado(); // null se modo for 'manter' ou 'ia'
-  const divisaoModoMeso = splitModoAtual === 'chips' && splitSelecionadoMeso ? 'manter divisao atual'
+  const divisaoModoMeso = splitModoAtual === 'chips' && splitSelecionadoMeso ? 'divisao selecionada pelo coach'
     : splitModoAtual === 'ia' ? 'ia pode propor nova divisao'
     : splitModoAtual === 'custom' ? 'dias customizados pelo coach'
     : 'manter divisao atual';
@@ -4765,9 +4770,9 @@ async function confirmarNovoMeso() {
   if (memoriaTecnicaMeso) {
     prompt += '\n=== REGRAS DE DIVISAO E MEMORIA TECNICA ===\n';
     prompt += 'Modo da divisao: ' + divisaoModoMeso + '.\n';
-    // Para custom mode: remover divisaoAtual e gruposPorDia da memória (evita que IA siga divisão antiga)
+    // Para custom mode e divisao selecionada: remover divisaoAtual e gruposPorDia da memória (evita que IA siga divisão antiga)
     var memoriaParaPrompt = memoriaTecnicaMeso;
-    if (divisaoModoMeso === 'dias customizados pelo coach') {
+    if (divisaoModoMeso === 'dias customizados pelo coach' || divisaoModoMeso === 'divisao selecionada pelo coach') {
       memoriaParaPrompt = Object.assign({}, memoriaTecnicaMeso);
       delete memoriaParaPrompt.divisaoAtual;
       delete memoriaParaPrompt.gruposPorDia;
@@ -4776,6 +4781,8 @@ async function confirmarNovoMeso() {
     prompt += 'Memoria tecnica compacta: ' + formatarMemoriaTecnicaParaPrompt(memoriaParaPrompt) + '\n';
     if (divisaoBriefingMeso) {
       prompt += 'Como o briefing trouxe uma divisao explicita, nao preserve a divisao antiga se ela contradisser o briefing. Preserve somente preferencias, historico, exercicios bem tolerados e volume adequado.\n';
+    } else if (divisaoModoMeso === 'divisao selecionada pelo coach') {
+      prompt += '⚠️ NOVA DIVISÃO SELECIONADA PELO COACH: IGNORE completamente divisaoAtual, gruposPorDia e diasMusculacao da memoria tecnica acima. Esses dados sao do meso ANTERIOR e NAO devem interferir neste meso. Use a memoria SOMENTE para historico de exercicios tolerados, volume de referencia e preferencias do aluno. A divisao OBRIGATORIA esta na secao "DIVISÃO SELECIONADA PELO COACH" acima — ela prevalece sobre qualquer historico.\n';
     } else if (divisaoModoMeso === 'dias customizados pelo coach') {
       prompt += '⚠️ MODO CUSTOMIZADO: IGNORE diasMusculacao, divisaoAtual e gruposPorDia da memoria tecnica acima. Esses dados sao do meso anterior e NAO devem ser usados para montar este meso. Use a memoria SOMENTE para historico de exercicios tolerados, volume de referencia e preferencias do aluno. Os dias e grupos OBRIGATORIOS estao na secao "DIAS CUSTOMIZADOS DEFINIDOS PELO COACH" acima.\n';
     } else {
@@ -4806,8 +4813,12 @@ async function confirmarNovoMeso() {
     prompt += 'COMBINACOES: NAO usar bi-set, super-set nem tri-set neste meso. Campo "observacoes" deve ficar vazio em todos os exercicios.\n';
   } else if (bisetModo === 'usar') {
     var _bTipo = bisetTipo === 'misto' ? 'bi-set ou super-set (IA decide por exercicio)' : bisetTipo;
-    var _bFoco = bisetFoco === 'upper' ? 'membros superiores (peito, costas, ombro, biceps, triceps)' : bisetFoco === 'lower' ? 'membros inferiores' : 'distribuir conforme o treino';
-    prompt += 'COMBINACOES OBRIGATORIAS: incluir exatamente ' + bisetQtd + ' ' + _bTipo + '(s) por sessao de treino. Foco: ' + _bFoco + '.\n';
+    if (bisetDiasSelecionados.length > 0) {
+      prompt += 'COMBINACOES OBRIGATORIAS apenas nos dias: ' + bisetDiasSelecionados.join(', ') + '. Incluir exatamente ' + bisetQtd + ' ' + _bTipo + '(s) nesses dias. Nos demais dias nao usar combinacoes.\n';
+    } else {
+      prompt += 'COMBINACOES OBRIGATORIAS em todos os dias de treino: incluir exatamente ' + bisetQtd + ' ' + _bTipo + '(s) por sessao.\n';
+    }
+    if (bisetFocoDias) prompt += 'Foco/grupos por dia para as combinacoes: ' + bisetFocoDias + '. Respeitar essa distribuicao ao montar os pares.\n';
     prompt += 'LOGISTICA DE ACADEMIA: ao combinar exercicios, use SOMENTE pares com equipamentos proximos ou compativeis no mesmo espaco. Exemplos validos: SUPINO RETO COM HALTER + REMADA SERROTE APOIO BAIXO (halteres), TRICEPS NA CORDA + ROSCA DIRETA EM PE COM HALTERES (polia/halteres proximos), CADEIRA EXTENSORA + CADEIRA FLEXORA (maquinas adjacentes). Exemplos INVIÁVEIS em academia lotada: supino barra livre + remada triangulo (estacoes opostas), leg press + puxada (andares diferentes). Priorize combinações que o aluno consiga executar sem perder o equipamento.\n';
     if (bisetInstrucoes) prompt += 'Instrucoes especificas do coach para as combinacoes: ' + bisetInstrucoes + '\n';
   } else {

@@ -1425,9 +1425,15 @@
         <div id="meso-man-dias-chk" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
       </div>
       <div id="meso-man-dias" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+      <div class="fl" style="margin-top:8px;border-top:0.5px dashed var(--border2);padding-top:8px;">
+        <label style="font-weight:600;">Misturar com IA <span style="font-weight:400;color:var(--text3);">(opcional)</span></label>
+        <textarea id="meso-man-ia-instr" rows="2" placeholder="Ex.: mantenha o que montei e complete os dias que faltam da divisão ABC; adicione 2 exercícios de ombro na quinta." style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
+        <div style="font-size:10px;color:var(--text3);line-height:1.4;">Use o botão "Completar com IA" para manter exatamente o que você montou e deixar a IA preencher o resto.</div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="document.getElementById(&#39;meso-manual-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-ghost" onclick="completarMesoComIA()" style="margin-right:auto;">🤝 Completar com IA</button>
       <button class="btn-green" onclick="gerarPreviewMesoManual()">✨ Gerar preview</button>
     </div>
   </div>
@@ -4262,6 +4268,127 @@ function gerarPreviewMesoManual() {
   window._previewCardio = [];
   window._previewCombinacoes = combinacoes; // o preview mostra e aplicarCombinacoesPreviews() grava em observacoes
   publicarPreviewNovoMeso({ aba: aba, exercicios: exercicios, cardio: [] });
+}
+
+// Coleta os exercícios do builder manual, embutindo as combinações em "observacoes"
+// (formato padrão: texto no 1º exercício do grupo, próximos do MESMO dia).
+function _mmanColetarComObs() {
+  var porDia = {}, ordem = [];
+  DIAS_VALIDOS.forEach(function(dia) {
+    var cont = document.getElementById('mman-ex-' + dia);
+    if (!cont) return;
+    var itens = [];
+    cont.querySelectorAll('.mman-exrow').forEach(function(row) {
+      var nome = (row.querySelector('.mman-nome').value || '').trim();
+      if (!nome) return;
+      itens.push({
+        dia: dia,
+        nome: nome.toUpperCase(),
+        series: parseInt(row.querySelector('.mman-series').value) || 3,
+        repeticoes: (row.querySelector('.mman-reps').value || '').trim(),
+        rir: (row.querySelector('.mman-rir').value || '').trim(),
+        cadencia: (row.querySelector('.mman-cad').value || '').trim(),
+        objetivo: (row.querySelector('.mman-obj').value || '').trim(),
+        ultimaSerie: '', criterio: '', observacoes: '', link: '',
+        _combo: (row.querySelector('.mman-combo') || {}).value || ''
+      });
+    });
+    if (itens.length) { porDia[dia] = itens; ordem.push(dia); }
+  });
+  // embute combos no 1º exercício do grupo
+  ordem.forEach(function(dia) {
+    var itens = porDia[dia];
+    itens.forEach(function(it, i) {
+      if (it._combo) {
+        var need = (it._combo === 'tri-set') ? 2 : 1;
+        if (i + need <= itens.length - 1) {
+          if (need === 1) it.observacoes = it._combo + ' com ' + itens[i + 1].nome + ' — execute em sequencia sem descanso';
+          else it.observacoes = it._combo + ' com ' + itens[i + 1].nome + ' e ' + itens[i + 2].nome + ' — sem descanso entre eles';
+        }
+      }
+      delete it._combo;
+    });
+  });
+  var exs = [];
+  ordem.forEach(function(dia) { exs = exs.concat(porDia[dia]); });
+  return { exercicios: exs, porDia: porDia, ordem: ordem };
+}
+
+// MISTURA: mantém exatamente o que o coach montou e pede à IA que complete o resto.
+// Reaproveita callClaude + getSystemPrompt + tryParseJSON + publicarPreviewNovoMeso (nada travado é alterado).
+async function completarMesoComIA() {
+  var coletado = _mmanColetarComObs();
+  var manualExs = coletado.exercicios;
+  var instr = (document.getElementById('meso-man-ia-instr').value || '').trim();
+  if (!manualExs.length && !instr) {
+    showToast('Monte algo ou escreva uma instrução para a IA', 'err');
+    return;
+  }
+  var aba = window._mesoManAba || window._proximaAba || 'S1';
+
+  var listaManual = coletado.ordem.map(function(dia) {
+    return dia + ': ' + coletado.porDia[dia].map(function(e) {
+      return e.nome + ' ' + e.series + 'x' + (e.repeticoes || '?') + (e.rir !== '' ? (' RiR ' + e.rir) : '');
+    }).join(', ');
+  }).join('\n');
+
+  var prompt = 'Monte um mesociclo para a aba ' + aba + '.\n';
+  prompt += 'O coach JA definiu manualmente os exercicios abaixo. MANTENHA-OS EXATAMENTE, NAO os altere e NAO os repita na sua resposta:\n' +
+            (listaManual || '(nenhum exercicio manual ainda)') + '\n\n';
+  prompt += 'TAREFA: gere em JSON APENAS os exercicios ADICIONAIS necessarios para completar o mesociclo conforme a instrucao do coach. Nao inclua os ja definidos acima. Campo "aba" = "' + aba + '". Use SOMENTE nomes exatos da biblioteca do system prompt. Nao gere cardio aqui.\n';
+  prompt += 'Instrucao do coach: ' + (instr || 'complete os dias/grupos que faltam de forma coerente com o que ja foi montado.') + '\n';
+
+  document.getElementById('meso-manual-modal').style.display = 'none';
+  document.getElementById('tab-treino').style.display = 'block';
+  document.getElementById('tab-ia').style.display = 'none';
+  document.getElementById('tab-macro').style.display = 'none';
+  addMsg('msgs', 'Mantendo seus exercicios e pedindo a IA para completar o meso...', false);
+  addLoading('msgs');
+  try {
+    var reply = await callClaude([{ role: 'user', content: prompt }], getSystemPrompt(), 8000);
+    removeLoading('msgs');
+    var parsed = tryParseJSON(reply);
+    var aiExs = (parsed && parsed.exercicios) ? parsed.exercicios : [];
+
+    var vistos = {};
+    manualExs.forEach(function(e) { vistos[e.dia + '|' + e.nome] = true; });
+    var extras = [];
+    aiExs.forEach(function(e) {
+      if (!e || !e.dia || !e.nome) return;
+      var dia = String(e.dia).toUpperCase();
+      var nome = String(e.nome).toUpperCase();
+      if (DIAS_VALIDOS.indexOf(dia) === -1) return;
+      var k = dia + '|' + nome;
+      if (vistos[k]) return;
+      vistos[k] = true;
+      extras.push({
+        dia: dia, nome: nome,
+        series: parseInt(e.series) || 3,
+        repeticoes: e.repeticoes || e.reps || '',
+        rir: (e.rir !== undefined && e.rir !== null) ? String(e.rir) : '',
+        cadencia: e.cadencia || '',
+        objetivo: e.objetivo || '',
+        ultimaSerie: e.ultimaSerie || '',
+        criterio: e.criterio || '',
+        observacoes: e.observacoes || '',
+        link: e.link || ''
+      });
+    });
+
+    var todos = manualExs.concat(extras);
+    todos.sort(function(a, b) { return DIAS_VALIDOS.indexOf(a.dia) - DIAS_VALIDOS.indexOf(b.dia); });
+    if (!todos.length) { showToast('A IA não retornou exercícios válidos', 'err'); return; }
+
+    window._previewModo = 'novo';
+    window._previewCardio = [];
+    window._previewCombinacoes = {}; // o preview redetecta combinações a partir de "observacoes"
+    addMsg('msgs', 'IA adicionou ' + extras.length + ' exercicio(s). Seus ' + manualExs.length + ' exercicio(s) manuais foram mantidos. Confira o preview.', false);
+    publicarPreviewNovoMeso({ aba: aba, exercicios: todos, cardio: [] });
+  } catch (e) {
+    removeLoading('msgs');
+    addMsg('msgs', 'Erro ao completar com IA: ' + (e && e.message ? e.message : e), false);
+    showToast('Erro ao completar com IA', 'err');
+  }
 }
 
 function toggleBisetOpcoes() {

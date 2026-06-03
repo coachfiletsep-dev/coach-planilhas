@@ -749,6 +749,7 @@
             <div class="macro-actions">
               <button class="btn-green" onclick="gerarMacrociclo(&#39;zero&#39;)">Criar do zero</button>
               <button class="btn-ghost" onclick="gerarMacrociclo(&#39;historico&#39;)">Usar historico</button>
+              <button class="btn-ghost" onclick="abrirMacroManual()" title="Escrever o macrociclo inteiro à mão, sem IA">✍️ Montar manual</button>
             </div>
             <div class="macro-saved">
               <button class="btn-ghost" onclick="salvarMacroAtual()">Salvar macro</button>
@@ -1428,6 +1429,48 @@
     <div class="modal-footer">
       <button class="btn-ghost" onclick="document.getElementById(&#39;meso-manual-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
       <button class="btn-green" onclick="gerarPreviewMesoManual()">✨ Gerar preview</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MACROCICLO MANUAL (builder do zero, sem IA) -->
+<div class="overlay" id="macro-manual-modal" style="display:none;">
+  <div class="modal" style="width:720px;max-width:97vw;">
+    <div class="modal-header">
+      <span class="modal-title">✍️ Montar macrociclo manual</span>
+      <button class="icon-btn" onclick="document.getElementById(&#39;macro-manual-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text3);background:var(--bg2);padding:8px;border-radius:var(--radius);line-height:1.45;">
+        Escreva o plano à mão. Os campos de contexto (duração, objetivo, modelo, cardio…) são lidos do painel do macrociclo. Defina os blocos abaixo; ao gerar, o app monta o mesmo formato que a IA produz e você revisa antes de <strong>Salvar macro</strong>.
+      </div>
+      <div class="fl" style="margin-top:8px;">
+        <label style="font-weight:600;">Diagnóstico / estratégia <span style="font-weight:400;color:var(--text3);">(opcional)</span></label>
+        <textarea id="macroman-diag" rows="2" placeholder="Ex.: atleta intermediário, foco em hipertrofia de costas e ombro; priorizar técnica nos 2 primeiros blocos." style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <div class="fl">
+        <label style="font-weight:600;">Blocos / fases do macrociclo</label>
+        <div id="macroman-blocos" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <button class="btn-ghost" style="font-size:12px;align-self:flex-start;margin-top:4px;" onclick="macromanAddBloco()">+ adicionar bloco</button>
+      </div>
+      <div class="fl">
+        <label style="font-weight:600;">Lógica de progressão <span style="font-weight:400;color:var(--text3);">(opcional)</span></label>
+        <textarea id="macroman-logica" rows="2" placeholder="Ex.: volume sobe semana a semana até a sem3, deload na sem4; intensidade cresce a cada bloco." style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <div class="fl">
+        <label style="font-weight:600;">Próximo mesociclo sugerido <span style="font-weight:400;color:var(--text3);">(opcional)</span></label>
+        <textarea id="macroman-proximo" rows="2" placeholder="Ex.: iniciar pelo Bloco 1 (Acumulação), 4 semanas, divisão ABC." style="padding:7px 9px;font-size:13px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);font-family:inherit;resize:vertical;"></textarea>
+      </div>
+      <datalist id="macroman-dl-modelo">
+        <option value="Linear clássica"><option value="Ondulatória"><option value="Blocos / Issurin"><option value="DUP (ondulatória diária)"><option value="Conjugado / Westside"><option value="Pirâmide"><option value="Platô / manutenção"><option value="Deload">
+      </datalist>
+      <datalist id="macroman-dl-fase">
+        <option value="Acumulação"><option value="Transmutação"><option value="Realização"><option value="Deload"><option value="Adaptação"><option value="Pico"><option value="Off / férias">
+      </datalist>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="document.getElementById(&#39;macro-manual-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-green" onclick="gerarMacrocicloManual()">✨ Gerar macrociclo</button>
     </div>
   </div>
 </div>
@@ -4145,6 +4188,13 @@ function mmanAddExercicio(dia) {
       '<input class="mman-rir" type="text" value="2" title="RiR" style="' + _MMAN_INP + 'width:48px;">' +
       '<input class="mman-cad" type="text" placeholder="Cadência" title="Cadência" style="' + _MMAN_INP + 'width:84px;">' +
       '<input class="mman-obj" type="text" placeholder="Objetivo" title="Objetivo" style="' + _MMAN_INP + 'flex:1;min-width:90px;">' +
+      '<select class="mman-combo" title="Combinar com o(s) próximo(s) exercício(s) deste dia, em sequência sem descanso" style="' + _MMAN_INP + 'width:120px;">' +
+        '<option value="">— sem combo</option>' +
+        '<option value="bi-set">bi-set ↓</option>' +
+        '<option value="super-set">super-set ↓</option>' +
+        '<option value="tri-set">tri-set ↓↓</option>' +
+        '<option value="combinado">combinado ↕</option>' +
+      '</select>' +
     '</div>';
   cont.appendChild(row);
 }
@@ -4158,28 +4208,50 @@ function mmanFillEx(sel) {
 
 function gerarPreviewMesoManual() {
   var exercicios = [];
+  var combinacoes = {}; // índice global -> tipo de combinação (bi-set/super-set/tri-set/combinado)
   var erros = [];
   DIAS_VALIDOS.forEach(function(dia) {
     var cont = document.getElementById('mman-ex-' + dia);
     if (!cont) return;
+    // Itens válidos (com nome) deste dia, em ordem
+    var itens = [];
     cont.querySelectorAll('.mman-exrow').forEach(function(row) {
       var nome = (row.querySelector('.mman-nome').value || '').trim();
       if (!nome) return; // linha vazia: ignora
       var series = parseInt(row.querySelector('.mman-series').value);
       if (!series || isNaN(series)) { erros.push(dia + ': "' + nome + '" sem séries válidas'); }
-      exercicios.push({
-        dia: dia,
-        nome: nome.toUpperCase(),
-        series: series || 3,
-        repeticoes: (row.querySelector('.mman-reps').value || '').trim(),
-        rir: (row.querySelector('.mman-rir').value || '').trim(),
-        cadencia: (row.querySelector('.mman-cad').value || '').trim(),
-        objetivo: (row.querySelector('.mman-obj').value || '').trim(),
-        ultimaSerie: '',
-        criterio: '',
-        observacoes: '',
-        link: ''
+      var comboEl = row.querySelector('.mman-combo');
+      itens.push({
+        ex: {
+          dia: dia,
+          nome: nome.toUpperCase(),
+          series: series || 3,
+          repeticoes: (row.querySelector('.mman-reps').value || '').trim(),
+          rir: (row.querySelector('.mman-rir').value || '').trim(),
+          cadencia: (row.querySelector('.mman-cad').value || '').trim(),
+          objetivo: (row.querySelector('.mman-obj').value || '').trim(),
+          ultimaSerie: '',
+          criterio: '',
+          observacoes: '',
+          link: ''
+        },
+        combo: (comboEl && comboEl.value) || ''
       });
+    });
+    // Empilha no array global, registrando combinações apenas quando há
+    // exercícios suficientes APÓS o item, NO MESMO DIA (evita ligar entre dias).
+    itens.forEach(function(item, i) {
+      var gIdx = exercicios.length;
+      exercicios.push(item.ex);
+      if (item.combo) {
+        var need = (item.combo === 'tri-set') ? 2 : 1; // tri-set precisa de 2 seguintes
+        if (i + need <= itens.length - 1) {
+          combinacoes[gIdx] = item.combo;
+        } else {
+          erros.push(dia + ': "' + item.ex.nome + '" marcado como ' + item.combo +
+            ' mas não há exercício(s) suficiente(s) depois dele neste dia.');
+        }
+      }
     });
   });
   if (!exercicios.length) { showToast('Adicione ao menos um exercício', 'err'); return; }
@@ -4188,7 +4260,7 @@ function gerarPreviewMesoManual() {
   document.getElementById('meso-manual-modal').style.display = 'none';
   window._previewModo = 'novo';
   window._previewCardio = [];
-  window._previewCombinacoes = {};
+  window._previewCombinacoes = combinacoes; // o preview mostra e aplicarCombinacoesPreviews() grava em observacoes
   publicarPreviewNovoMeso({ aba: aba, exercicios: exercicios, cardio: [] });
 }
 
@@ -5289,6 +5361,109 @@ function coletarContextoMacro() {
 
 function salvarContextoMacro(ctx) {
   lsSet(chaveMacroAluno(), JSON.stringify(ctx), 7 * 24 * 60);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MACROCICLO MANUAL — escreve o plano à mão (sem IA) e produz o MESMO markdown
+// que a IA gera: seções (Diagnóstico, Mapa do macrociclo em tabela, Lógica de
+// progressão, Próximo mesociclo) + ctx idêntico ao coletarContextoMacro(). A
+// tabela usa cabeçalho com "Bloco" e "Objetivo", reconhecido por
+// extrairBlocosDoMacro(). Depois é só "Salvar macro" — o resto do app não muda.
+// ─────────────────────────────────────────────────────────────────────────────
+var _MACROMAN_INP = 'padding:5px 7px;font-size:12px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text);';
+
+function abrirMacroManual() {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  document.getElementById('macro-manual-modal').style.display = 'flex';
+  document.getElementById('macroman-blocos').innerHTML = '';
+  document.getElementById('macroman-diag').value = '';
+  document.getElementById('macroman-logica').value = '';
+  document.getElementById('macroman-proximo').value = '';
+  macromanAddBloco();
+}
+
+function macromanAddBloco() {
+  var cont = document.getElementById('macroman-blocos');
+  if (!cont) return;
+  var n = cont.querySelectorAll('.macroman-bloco').length + 1;
+  var row = document.createElement('div');
+  row.className = 'macroman-bloco';
+  row.style.cssText = 'border:0.5px dashed var(--border2);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:4px;background:var(--bg2);';
+  row.innerHTML =
+    '<div style="display:flex;gap:4px;align-items:center;">' +
+      '<input class="mb-nome" type="text" placeholder="Nome do bloco" value="Bloco ' + n + '" style="' + _MACROMAN_INP + 'flex:1;">' +
+      '<input class="mb-sem" type="text" placeholder="Semanas (ex: 1-4)" title="Semanas" style="' + _MACROMAN_INP + 'width:110px;">' +
+      '<button class="icon-btn" title="Remover bloco" onclick="this.closest(\'.macroman-bloco\').remove()" style="font-size:13px;">✕</button>' +
+    '</div>' +
+    '<div style="display:flex;gap:4px;flex-wrap:wrap;">' +
+      '<input class="mb-fase" list="macroman-dl-fase" placeholder="Fase" title="Fase" style="' + _MACROMAN_INP + 'width:140px;">' +
+      '<input class="mb-modelo" list="macroman-dl-modelo" placeholder="Modelo de periodização" title="Modelo" style="' + _MACROMAN_INP + 'flex:1;min-width:160px;">' +
+    '</div>' +
+    '<div style="display:flex;gap:4px;flex-wrap:wrap;">' +
+      '<input class="mb-obj" type="text" placeholder="Objetivo do bloco" title="Objetivo" style="' + _MACROMAN_INP + 'flex:1;min-width:150px;">' +
+      '<input class="mb-estr" type="text" placeholder="Estratégia / observações" title="Estratégia" style="' + _MACROMAN_INP + 'flex:1;min-width:150px;">' +
+    '</div>';
+  cont.appendChild(row);
+}
+
+function _macromanCel(v) { return String(v || '').replace(/\|/g, '/').replace(/\s+/g, ' ').trim(); }
+
+function gerarMacrocicloManual() {
+  var ctx = coletarContextoMacro();
+  var blocos = [];
+  document.querySelectorAll('#macroman-blocos .macroman-bloco').forEach(function(row) {
+    var nome = _macromanCel(row.querySelector('.mb-nome').value);
+    if (!nome) return;
+    blocos.push({
+      nome: nome,
+      semanas: _macromanCel(row.querySelector('.mb-sem').value),
+      fase: _macromanCel(row.querySelector('.mb-fase').value),
+      modelo: _macromanCel(row.querySelector('.mb-modelo').value),
+      objetivo: _macromanCel(row.querySelector('.mb-obj').value),
+      estrategia: _macromanCel(row.querySelector('.mb-estr').value)
+    });
+  });
+  if (!blocos.length) { showToast('Adicione ao menos um bloco', 'err'); return; }
+
+  var md = '';
+  md += '## Macrociclo — ' + (ctx.aluno || '') + '\n\n';
+  var diag = (document.getElementById('macroman-diag').value || '').trim();
+  if (!diag) {
+    diag = 'Objetivo: ' + (ctx.objetivo || '-') + ' · Nível: ' + (ctx.nivel || '-') +
+           ' · Duração: ' + (ctx.duracao || '-') + (ctx.periodoEstimado ? ' (' + ctx.periodoEstimado + ')' : '') +
+           ' · Dias/semana: ' + (ctx.dias || '-') + ' · Divisão: ' + (ctx.divisao || '-') + '.';
+  }
+  md += '## Diagnóstico estratégico\n' + diag + '\n\n';
+
+  md += '## Mapa do macrociclo\n';
+  md += '| Bloco | Semanas | Fase | Modelo | Objetivo | Estratégia |\n';
+  md += '| --- | --- | --- | --- | --- | --- |\n';
+  blocos.forEach(function(b) {
+    md += '| ' + b.nome + ' | ' + (b.semanas || '-') + ' | ' + (b.fase || '-') + ' | ' +
+          (b.modelo || '-') + ' | ' + (b.objetivo || '-') + ' | ' + (b.estrategia || '-') + ' |\n';
+  });
+  md += '\n';
+
+  var logica = (document.getElementById('macroman-logica').value || '').trim();
+  md += '## Lógica de progressão\n' + (logica || 'Progressão por bloco conforme o modelo indicado em cada fase; deload ao fim de cada bloco quando previsto.') + '\n\n';
+
+  var prox = (document.getElementById('macroman-proximo').value || '').trim();
+  md += '## Próximo mesociclo sugerido\n' + (prox || ('Iniciar pelo bloco "' + blocos[0].nome + '"' + (blocos[0].semanas ? ' (semanas ' + blocos[0].semanas + ')' : '') + '.')) + '\n';
+
+  if (ctx.cardioObjetivo || ctx.cardioFrequencia || ctx.cardioDuracao || ctx.cardioModelo) {
+    md += '\n## Condicionamento (cardio)\n- Objetivo: ' + (ctx.cardioObjetivo || '-') +
+          ' · Frequência: ' + (ctx.cardioFrequencia || '-') + 'x/sem' +
+          ' · Duração: ' + (ctx.cardioDuracao || '-') +
+          ' · Modelo: ' + (ctx.cardioModelo || '-') + '\n';
+  }
+
+  var meta = { aluno: ctx.aluno, duracao: ctx.duracao, dias: ctx.dias, nivel: ctx.nivel, modo: 'Manual', manual: true };
+  window._macroAtual = { markdown: md, ctx: ctx, meta: meta, manual: true, criadoEm: new Date().toISOString() };
+  try { salvarContextoMacro(ctx); } catch (e) {}
+  renderMacroMarkdown(md, meta);
+  document.getElementById('macro-manual-modal').style.display = 'none';
+  showToast('Macrociclo manual gerado. Revise e clique em "Salvar macro" para usá-lo nos mesos.', 'ok');
 }
 
 async function carregarAbasMacrociclo(forcar) {

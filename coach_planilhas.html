@@ -449,6 +449,7 @@
           <button class="icon-btn" onclick="gerarLinkAluno()" title="Gerar link do App Aluno">📱</button>
           <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;">✏️ Editar aba</button>
           <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
+          <button class="btn-green" onclick="abrirMesoManual()" title="Montar o meso do zero, escolhendo cada exercício">✍️ Meso manual</button>
         </div>
       </div>
       <!-- Sprint 3 #15 — Painel de Análise Automática por IA -->
@@ -1399,6 +1400,34 @@
       <button class="btn-ghost" onclick="document.getElementById(&#39;meso-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
       <button class="btn-ghost" onclick="abrirTemplates()" style="margin-right:auto;">📌 Templates</button>
       <button class="btn-green" onclick="confirmarNovoMeso()">✨ Gerar preview</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MESO MANUAL (builder do zero) -->
+<div class="overlay" id="meso-manual-modal" style="display:none;">
+  <div class="modal" style="width:560px;max-width:96vw;">
+    <div class="modal-header">
+      <span class="modal-title">✍️ Montar meso manual</span>
+      <button class="icon-btn" onclick="document.getElementById(&#39;meso-manual-modal&#39;).style.display=&#39;none&#39;" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text3);background:var(--bg2);padding:8px;border-radius:var(--radius);line-height:1.45;">
+        Monte o treino do zero: marque os dias, adicione exercícios da biblioteca e defina séries/reps/RiR/cadência/objetivo. Ao gerar o preview você ainda pode ajustar tudo antes de gravar — inclusive pedir ajuda da IA depois.
+      </div>
+      <div class="fl" style="margin-top:8px;">
+        <label style="font-weight:600;">Aba de destino <span style="font-weight:400;color:var(--text3);">(próxima do aluno)</span></label>
+        <div id="meso-man-aba" style="font-weight:700;color:var(--green);">—</div>
+      </div>
+      <div class="fl">
+        <label style="font-weight:600;">Dias do treino</label>
+        <div id="meso-man-dias-chk" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+      </div>
+      <div id="meso-man-dias" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="document.getElementById(&#39;meso-manual-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
+      <button class="btn-green" onclick="gerarPreviewMesoManual()">✨ Gerar preview</button>
     </div>
   </div>
 </div>
@@ -4019,6 +4048,148 @@ function publicarPreviewNovoMeso(parsed) {
   window._previewModo = 'novo';
   window._previewCardio = parsed.cardio || [];
   mostrarPreview(parsed.exercicios, parsed.aba);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MESO MANUAL — builder do zero (escolhe dias e exercícios da biblioteca).
+// Não usa IA: monta o array de exercícios e reaproveita publicarPreviewNovoMeso,
+// então o preview/edição/escrita existentes continuam valendo. Misturável: depois
+// de gerar o preview o coach ainda pode editar tudo (e usar a IA pelo outro botão).
+// ─────────────────────────────────────────────────────────────────────────────
+var _MMAN_INP = 'padding:5px 7px;font-size:12px;border:0.5px solid var(--border2);border-radius:6px;background:var(--bg);color:var(--text);';
+var _mmanSeq = 0;
+
+async function abrirMesoManual() {
+  var s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  document.getElementById('meso-manual-modal').style.display = 'flex';
+  document.getElementById('meso-man-dias').innerHTML = '';
+  var abaEl = document.getElementById('meso-man-aba');
+  abaEl.textContent = 'carregando...';
+
+  // Garante a biblioteca carregada (grupo -> nomes)
+  if (!window._bibliotecaBrainering) {
+    try {
+      var rb = await fetch(APPS_SCRIPT_URL + '?action=getBiblioteca');
+      var db = await rb.json();
+      if (db.biblioteca) window._bibliotecaBrainering = db.biblioteca;
+      if (db.bibliotecaDetalhes) window._bibliotecaDetalhes = db.bibliotecaDetalhes;
+    } catch (e) { /* segue mesmo sem biblioteca: nomes ficam livres */ }
+  }
+  mmanRenderDiasChk();
+
+  // Próxima aba do aluno
+  try {
+    var estado = await atualizarAbasDoAlunoAtual();
+    window._mesoManAba = estado.proximaAba || window._proximaAba || 'S1';
+  } catch (e) {
+    window._mesoManAba = window._proximaAba || 'S1';
+  }
+  abaEl.textContent = window._mesoManAba;
+}
+
+function mmanRenderDiasChk() {
+  var box = document.getElementById('meso-man-dias-chk');
+  box.innerHTML = '';
+  DIAS_VALIDOS.forEach(function(d) {
+    var lbl = document.createElement('label');
+    lbl.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:12px;border:0.5px solid var(--border2);border-radius:6px;padding:3px 7px;cursor:pointer;background:var(--bg2);';
+    lbl.innerHTML = '<input type="checkbox" id="mman-chk-' + d + '" onchange="mmanToggleDia(\'' + d + '\')"> ' + d;
+    box.appendChild(lbl);
+  });
+}
+
+function mmanToggleDia(dia) {
+  var chk = document.getElementById('mman-chk-' + dia);
+  if (chk && chk.checked) mmanAddDiaBloco(dia);
+  else { var b = document.getElementById('mman-dia-' + dia); if (b) b.remove(); }
+}
+
+function mmanAddDiaBloco(dia) {
+  if (document.getElementById('mman-dia-' + dia)) return;
+  var wrap = document.createElement('div');
+  wrap.id = 'mman-dia-' + dia;
+  wrap.style.cssText = 'border:0.5px solid var(--border2);border-radius:var(--radius);padding:8px;background:var(--bg2);';
+  wrap.innerHTML =
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+      '<strong style="font-size:13px;">' + dia + '</strong>' +
+      '<button class="btn-ghost" style="margin-left:auto;font-size:11px;padding:2px 8px;" onclick="mmanAddExercicio(\'' + dia + '\')">+ exercício</button>' +
+    '</div>' +
+    '<div id="mman-ex-' + dia + '" style="display:flex;flex-direction:column;gap:6px;"></div>';
+  document.getElementById('meso-man-dias').appendChild(wrap);
+  mmanAddExercicio(dia);
+}
+
+function mmanGruposOptions() {
+  var grupos = window._bibliotecaBrainering ? Object.keys(window._bibliotecaBrainering).sort() : [];
+  return '<option value="">Grupo…</option>' + grupos.map(function(g){ return '<option value="' + g + '">' + g + '</option>'; }).join('');
+}
+
+function mmanAddExercicio(dia) {
+  var cont = document.getElementById('mman-ex-' + dia);
+  if (!cont) return;
+  var row = document.createElement('div');
+  row.className = 'mman-exrow';
+  row.style.cssText = 'border:0.5px dashed var(--border2);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:4px;';
+  var _uid = 'mman-dl-' + (++_mmanSeq);
+  row.innerHTML =
+    '<div style="display:flex;gap:4px;align-items:center;">' +
+      '<select class="mman-grupo" onchange="mmanFillEx(this)" style="' + _MMAN_INP + 'width:120px;">' + mmanGruposOptions() + '</select>' +
+      '<input class="mman-nome" list="' + _uid + '" placeholder="Exercício…" style="' + _MMAN_INP + 'flex:1;">' +
+      '<datalist id="' + _uid + '"></datalist>' +
+      '<button class="icon-btn" title="Remover" onclick="this.closest(\'.mman-exrow\').remove()" style="font-size:13px;">✕</button>' +
+    '</div>' +
+    '<div style="display:flex;gap:4px;flex-wrap:wrap;">' +
+      '<input class="mman-series" type="number" min="1" max="12" value="3" title="Séries" style="' + _MMAN_INP + 'width:58px;">' +
+      '<input class="mman-reps" type="text" value="8-12" title="Repetições" style="' + _MMAN_INP + 'width:70px;">' +
+      '<input class="mman-rir" type="text" value="2" title="RiR" style="' + _MMAN_INP + 'width:48px;">' +
+      '<input class="mman-cad" type="text" placeholder="Cadência" title="Cadência" style="' + _MMAN_INP + 'width:84px;">' +
+      '<input class="mman-obj" type="text" placeholder="Objetivo" title="Objetivo" style="' + _MMAN_INP + 'flex:1;min-width:90px;">' +
+    '</div>';
+  cont.appendChild(row);
+}
+
+function mmanFillEx(sel) {
+  var grupo = sel.value;
+  var dl = sel.closest('.mman-exrow').querySelector('datalist');
+  var lista = (window._bibliotecaBrainering && window._bibliotecaBrainering[grupo]) || [];
+  if (dl) dl.innerHTML = lista.map(function(n){ return '<option value="' + n + '">'; }).join('');
+}
+
+function gerarPreviewMesoManual() {
+  var exercicios = [];
+  var erros = [];
+  DIAS_VALIDOS.forEach(function(dia) {
+    var cont = document.getElementById('mman-ex-' + dia);
+    if (!cont) return;
+    cont.querySelectorAll('.mman-exrow').forEach(function(row) {
+      var nome = (row.querySelector('.mman-nome').value || '').trim();
+      if (!nome) return; // linha vazia: ignora
+      var series = parseInt(row.querySelector('.mman-series').value);
+      if (!series || isNaN(series)) { erros.push(dia + ': "' + nome + '" sem séries válidas'); }
+      exercicios.push({
+        dia: dia,
+        nome: nome.toUpperCase(),
+        series: series || 3,
+        repeticoes: (row.querySelector('.mman-reps').value || '').trim(),
+        rir: (row.querySelector('.mman-rir').value || '').trim(),
+        cadencia: (row.querySelector('.mman-cad').value || '').trim(),
+        objetivo: (row.querySelector('.mman-obj').value || '').trim(),
+        ultimaSerie: '',
+        criterio: '',
+        observacoes: '',
+        link: ''
+      });
+    });
+  });
+  if (!exercicios.length) { showToast('Adicione ao menos um exercício', 'err'); return; }
+  if (erros.length) { showToast(erros[0], 'err'); return; }
+  var aba = window._mesoManAba || window._proximaAba || 'S1';
+  document.getElementById('meso-manual-modal').style.display = 'none';
+  window._previewModo = 'novo';
+  window._previewCardio = [];
+  window._previewCombinacoes = {};
+  publicarPreviewNovoMeso({ aba: aba, exercicios: exercicios, cardio: [] });
 }
 
 function toggleBisetOpcoes() {
@@ -7340,6 +7511,13 @@ function mostrarPreview(exercicios, nomeAba) {
           '<div><label>RiR</label><input id="pe-rir-' + previewIdx + '" type="number" min="0" max="5" value="' + (ex.rir||'') + '" placeholder="RiR"></div>' +
           '<div><label>Tipo</label><select id="pe-tipo-' + previewIdx + '">' + tipoOpts + '</select></div>' +
         '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:4px;">' +
+          '<div><label>Card do aluno</label><select id="pe-card-' + previewIdx + '" style="border-color:' + (ex.tipo_card==='mobilidade'?'#0369A1':'') + '">' +
+            '<option value=""' + (!ex.tipo_card||ex.tipo_card!=='mobilidade'?' selected':'') + '>Força (padrão)</option>' +
+            '<option value="mobilidade"' + (ex.tipo_card==='mobilidade'?' selected':'') + '>🧘 Mobilidade (tempo/lados)</option>' +
+          '</select></div>' +
+          '<div><label>Cadência</label><input id="pe-cad-' + previewIdx + '" type="text" value="' + (ex.cadencia||'') + '" placeholder="Ex: 3-1-2"></div>' +
+        '</div>' +
         '<div style="display:flex;gap:6px;">' +
           '<button onclick="aplicarEdicaoPreview(' + previewIdx + ')" style="padding:4px 12px;font-size:12px;background:var(--green);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;">✅ Aplicar</button>' +
           '<button onclick="toggleEdicaoPreview(' + previewIdx + ')" style="padding:4px 10px;font-size:12px;background:none;border:.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;color:var(--text2);">✕ Cancelar</button>' +
@@ -7453,21 +7631,27 @@ function aplicarEdicaoPreview(idx) {
   var ex = window._previewExercicios[idx];
   var nome = ((document.getElementById('pe-nome-' + idx) || {}).value || '').trim();
   if (!nome) { showToast('Informe o nome do exercício', 'warn'); return; }
-  var seriesEl = document.getElementById('pe-ser-' + idx);
-  var repsEl   = document.getElementById('pe-reps-' + idx);
-  var rirEl    = document.getElementById('pe-rir-' + idx);
-  var tipoEl   = document.getElementById('pe-tipo-' + idx);
-  var series = parseInt((seriesEl||{}).value) || ex.series;
-  var reps = ((repsEl||{}).value || '').trim() || ex.reps || ex.repeticoes;
-  var rir = ((rirEl||{}).value || '').trim();
-  var tipo = ((tipoEl||{}).value) || ex.tipo;
+  var seriesEl  = document.getElementById('pe-ser-' + idx);
+  var repsEl    = document.getElementById('pe-reps-' + idx);
+  var rirEl     = document.getElementById('pe-rir-' + idx);
+  var tipoEl    = document.getElementById('pe-tipo-' + idx);
+  var cardEl    = document.getElementById('pe-card-' + idx);
+  var cadEl     = document.getElementById('pe-cad-' + idx);
+  var series    = parseInt((seriesEl||{}).value) || ex.series;
+  var reps      = ((repsEl||{}).value || '').trim() || ex.reps || ex.repeticoes;
+  var rir       = ((rirEl||{}).value || '').trim();
+  var tipo      = ((tipoEl||{}).value) || ex.tipo;
+  var tipoCard  = (cardEl||{}).value || '';
+  var cadencia  = ((cadEl||{}).value || '').trim();
   window._previewExercicios[idx] = Object.assign({}, ex, {
     nome: nome.toUpperCase(),
     series: series,
     reps: reps,
     repeticoes: reps,
     rir: rir !== '' ? rir : ex.rir,
-    tipo: tipo
+    tipo: tipo,
+    tipo_card: tipoCard || ex.tipo_card || '',
+    cadencia: cadencia !== '' ? cadencia : (ex.cadencia || '')
   });
   mostrarPreview(window._previewExercicios, window._previewAba);
 }
@@ -8226,9 +8410,85 @@ async function gerarRelatorioHTML() {
       var html = montarHTMLRelatorio(s.name, data);
       conteudo.innerHTML = html;
     }
+    // Seção de bem-estar pré-treino — todos os tipos de relatório
+    try {
+      var _preSec = _buildPreTreinoTrendSection(data);
+      if (_preSec) conteudo.insertAdjacentHTML('beforeend', _preSec);
+    } catch(_e) {}
   } catch(e) {
     conteudo.innerHTML = '<div style="color:var(--red);padding:20px;">Erro: ' + e.message + '</div>';
   }
+}
+
+
+// ── Helper: seção de bem-estar pré-treino para relatórios ────────────────────
+function _buildPreTreinoTrendSection(data) {
+  var abas = (data && data.abas) || [];
+  var diasOrdem = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+  var semanas = abas.map(function(aba) {
+    var itens = [];
+    diasOrdem.forEach(function(dia) {
+      var d = aba.dias && aba.dias[dia];
+      if (!d || !d.preTreino) return;
+      var pt = d.preTreino;
+      if (pt.fadiga||pt.sono||pt.humor||pt.dor||pt.estresse) itens.push(pt);
+    });
+    if (!itens.length) return null;
+    var avgs = {};
+    ['fadiga','sono','humor','dor','estresse'].forEach(function(dim) {
+      var vals = itens.filter(function(p){ return p[dim]; }).map(function(p){ return parseFloat(p[dim])||0; });
+      avgs[dim] = vals.length ? vals.reduce(function(a,b){return a+b;},0)/vals.length : null;
+    });
+    return { aba: aba.aba, avgs: avgs };
+  }).filter(Boolean);
+  if (!semanas.length) return '';
+
+  var hasMulti = semanas.length > 1;
+  var svgHtml = '';
+  if (hasMulti) {
+    var cW=440,cH=110,pL=26,pR=14,pT=10,pB=26,iW=cW-pL-pR,iH=cH-pT-pB,n=semanas.length;
+    function xP(i){return pL+(n>1?(i/(n-1))*iW:iW/2);}
+    function yP(v){return pT+iH-((v-1)/4)*iH;}
+    var grid='';
+    [1,2,3,4,5].forEach(function(v){
+      var y=yP(v).toFixed(1);
+      grid+='<line x1="'+pL+'" y1="'+y+'" x2="'+(cW-pR)+'" y2="'+y+'" stroke="#ECEAE4" stroke-width="0.5"/>';
+      grid+='<text x="'+(pL-3)+'" y="'+y+'" text-anchor="end" dominant-baseline="middle" font-size="7.5" fill="#9B9B96">'+v+'</text>';
+    });
+    var lines='';
+    [{dim:'sono',c:'#3B82F6'},{dim:'humor',c:'#1D9E75'},{dim:'fadiga',c:'#F59E0B'}].forEach(function(dl){
+      var pts=semanas.map(function(w,i){var v=w.avgs[dl.dim];return v!=null?{x:xP(i),y:yP(v)}:null;}).filter(Boolean);
+      if(!pts.length) return;
+      lines+='<path d="'+pts.map(function(p,i){return(i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1);}).join(' ')+'" stroke="'+dl.c+'" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>';
+      var lp=pts[pts.length-1];
+      lines+='<circle cx="'+lp.x.toFixed(1)+'" cy="'+lp.y.toFixed(1)+'" r="3.5" fill="'+dl.c+'"/>';
+    });
+    var xlbls=semanas.map(function(s,i){return '<text x="'+xP(i).toFixed(1)+'" y="'+(cH-5)+'" text-anchor="middle" font-size="8" fill="#9B9B96">'+s.aba+'</text>';}).join('');
+    svgHtml='<svg viewBox="0 0 '+cW+' '+cH+'" style="width:100%;max-height:'+cH+'px;display:block;margin-bottom:10px;">'+grid+lines+xlbls+'</svg>';
+  }
+  var last=semanas[semanas.length-1];
+  var badges=[{dim:'sono',ic:'😴',lbl:'Sono'},{dim:'humor',ic:'😊',lbl:'Humor'},{dim:'fadiga',ic:'🔋',lbl:'Fadiga'},{dim:'dor',ic:'💪',lbl:'Dor'},{dim:'estresse',ic:'🧠',lbl:'Estresse'}]
+    .filter(function(d){return last.avgs[d.dim]!=null;})
+    .map(function(d){
+      var v=last.avgs[d.dim],col=v>=4?'#059669':v>=3?'#D97706':'#DC2626',bg=v>=4?'#F0FAF5':v>=3?'#FFFBF0':'#FEF2F2';
+      return '<div style="flex:1;text-align:center;padding:10px 5px;background:'+bg+';border-radius:8px;min-width:52px;">'+
+        '<div style="font-size:13px;margin-bottom:2px">'+d.ic+'</div>'+
+        '<div style="font-size:9px;color:#6B6B66;margin-bottom:2px">'+d.lbl+'</div>'+
+        '<div style="font-size:17px;font-weight:700;color:'+col+'">'+v.toFixed(1)+'</div>'+
+      '</div>';
+    }).join('');
+  var legend = hasMulti
+    ? '<div style="display:flex;gap:14px;margin-bottom:10px;font-size:10px;color:#6B6B66;">'+
+        '<span><span style="display:inline-block;width:16px;height:2px;background:#3B82F6;vertical-align:middle;margin-right:3px;"></span>Sono</span>'+
+        '<span><span style="display:inline-block;width:16px;height:2px;background:#1D9E75;vertical-align:middle;margin-right:3px;"></span>Humor</span>'+
+        '<span><span style="display:inline-block;width:16px;height:2px;background:#F59E0B;vertical-align:middle;margin-right:3px;"></span>Fadiga</span>'+
+      '</div>' : '';
+  return '<div style="background:#fff;border:1px solid #ECEAE4;border-radius:12px;padding:22px 28px;margin-top:16px;max-width:700px;margin-left:auto;margin-right:auto;font-family:\'DM Sans\',\'Segoe UI\',sans-serif;">'+
+    '<div style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#1D9E75;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #ECEAE4">🧠 Bem-estar no pré-treino</div>'+
+    legend+svgHtml+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+badges+'</div>'+
+    '<div style="font-size:9px;color:#9B9B96;margin-top:10px;text-align:right">'+(hasMulti?'Tendência ao longo do período':'Dados da semana')+ ' · Escala 1–5</div>'+
+  '</div>';
 }
 
 

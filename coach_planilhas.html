@@ -7877,6 +7877,16 @@ function mostrarPreview(exercicios, nomeAba) {
     row.appendChild(antesEl);
     row.appendChild(arrow);
     row.appendChild(depoisEl);
+    // Botão excluir exercício (Fase 2A: só no novo meso; manual fica para a 2B)
+    if (_modoNovoSo) {
+      var delBtn = document.createElement('button');
+      delBtn.className = 'preview-del-btn';
+      delBtn.title = 'Excluir exercício';
+      delBtn.innerHTML = '🗑';
+      delBtn.style.cssText = 'background:none;border:none;cursor:pointer;font-size:14px;opacity:.6;padding:2px 6px;align-self:flex-start;';
+      delBtn.addEventListener('click', (function(i){ return function(e){ e.stopPropagation(); excluirExercicioPreview(i); }; })(previewIdx));
+      row.appendChild(delBtn);
+    }
     lista.appendChild(row);
 
     // CSS de grupo nos rows
@@ -7958,6 +7968,20 @@ function mostrarPreview(exercicios, nomeAba) {
           lista.appendChild(connDiv);
         }
       }
+    }
+
+    // Botão "Adicionar exercício" ao fim de cada dia (Fase 2A: só no novo meso)
+    var _proximoEx = exercicios[previewIdx + 1];
+    var _fimDoDia = !_proximoEx || String(_proximoEx.dia || '').toUpperCase() !== String(ex.dia || '').toUpperCase();
+    if (_modoNovoSo && _fimDoDia) {
+      var addRow = document.createElement('div');
+      addRow.style.cssText = 'display:flex;justify-content:center;margin:2px 0 10px;';
+      var addBtn = document.createElement('button');
+      addBtn.innerHTML = '➕ Adicionar exercício em ' + ex.dia;
+      addBtn.style.cssText = 'font-size:12px;padding:5px 12px;border:1px dashed #1D9E75;background:none;color:#1D9E75;border-radius:6px;cursor:pointer;';
+      addBtn.addEventListener('click', (function(dia){ return function(e){ e.stopPropagation(); adicionarExercicioPreview(dia); }; })(ex.dia));
+      addRow.appendChild(addBtn);
+      lista.appendChild(addRow);
     }
   });
 
@@ -8101,6 +8125,43 @@ function remapearLinhasPorDia(exercicios) {
   });
 }
 
+// ── Fase 2A: adicionar / excluir exercicio no preview ───────────────────────
+function excluirExercicioPreview(idx) {
+  if (!Array.isArray(window._previewExercicios)) return;
+  var ex = window._previewExercicios[idx];
+  if (!ex) return;
+  var nome = (ex.nome || '').trim() || 'este exercício';
+  if (!confirm('Excluir ' + nome + ' (' + (ex.dia || '') + ')?')) return;
+  window._previewExercicios.splice(idx, 1);
+  // Combinacoes sao por indice; apos remover, reseta para nao apontar errado
+  window._previewCombinacoes = {};
+  mostrarPreview(window._previewExercicios, window._previewAba);
+}
+
+function adicionarExercicioPreview(dia) {
+  if (!Array.isArray(window._previewExercicios)) return;
+  var diaUp = String(dia || '').toUpperCase();
+  var noDia = window._previewExercicios.filter(function(e){ return String(e.dia || '').toUpperCase() === diaUp; }).length;
+  var MAX = 15;
+  if (noDia >= MAX) { showToast('Limite de ' + MAX + ' exercícios em ' + dia, 'warn'); return; }
+  // Inserir logo depois do ultimo exercicio desse dia
+  var ultimo = -1;
+  for (var i = 0; i < window._previewExercicios.length; i++) {
+    if (String(window._previewExercicios[i].dia || '').toUpperCase() === diaUp) ultimo = i;
+  }
+  var novo = { dia: dia, nome: '', series: 3, reps: '8-12', repeticoes: '8-12', rir: '', cadencia: '', objetivo: '', tipo: 'Forca', tipo_card: '' };
+  var posIns = (ultimo >= 0) ? ultimo + 1 : window._previewExercicios.length;
+  window._previewExercicios.splice(posIns, 0, novo);
+  window._previewCombinacoes = {};
+  mostrarPreview(window._previewExercicios, window._previewAba);
+  // Abrir o form de edicao do novo exercicio para escolher no dropdown
+  setTimeout(function(){
+    toggleEdicaoPreview(posIns);
+    var el = document.getElementById('pe-nome-' + posIns);
+    if (el) el.focus();
+  }, 50);
+}
+
 // ── Funções de conexão de bloco no preview ──────────────────────────────────
 
 function abrirMenuConectar(idx) {
@@ -8189,7 +8250,9 @@ async function confirmarPreview() {
   }), 10);
   fecharPreview();
   if (modo === 'novo') {
-    await escreverNaPlanilha(exercicios, aba);
+    // Fase 2A: ignora exercicios adicionados que ficaram sem nome
+    var exsLimpos = exercicios.filter(function(e){ return e && String(e.nome || '').trim(); });
+    await escreverNaPlanilha(exsLimpos, aba);
   } else {
     // Registrar no histórico antes de escrever
     registrarHistorico(exercicios, aba);

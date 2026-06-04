@@ -7853,8 +7853,10 @@ function mostrarPreview(exercicios, nomeAba) {
       (ultimaSerie ? '<br><span style="color:#0F3460;font-size:11px;">Ultima serie: ' + ultimaSerie + '</span>' : '') +
       (observacoes ? '<br><span style="color:#596672;font-size:11px;">Obs: ' + observacoes + '</span>' : '');
 
-    // Botão 🔗 — conectar com próximo (apenas modo novo, exceto último exercício)
-    if (window._previewModo === 'novo' && previewIdx < exercicios.length - 1) {
+    // Botão 🔗 — conectar com próximo (novo meso + edicao-manual; só dentro do mesmo dia)
+    var _proxLink = exercicios[previewIdx + 1];
+    var _mesmoDiaLink = _proxLink && String(_proxLink.dia||'').toUpperCase() === String(ex.dia||'').toUpperCase();
+    if (_modoEdita && previewIdx < exercicios.length - 1 && _mesmoDiaLink) {
       var isConnStart = window._previewCombinacoes[previewIdx] !== undefined;
       var linkBtn = document.createElement('button');
       linkBtn.className = 'preview-link-btn' + (isConnStart ? ' connected' : '');
@@ -7889,8 +7891,8 @@ function mostrarPreview(exercicios, nomeAba) {
     }
     lista.appendChild(row);
 
-    // CSS de grupo nos rows
-    if (window._previewModo === 'novo') {
+    // CSS de grupo nos rows (novo meso + edicao-manual)
+    if (_modoEdita) {
       var _grpStart = _prvGrpOf[previewIdx];
       if (_grpStart >= 0) {
         var _grpSz = _prvGrpSize[_grpStart] || 2;
@@ -7912,6 +7914,17 @@ function mostrarPreview(exercicios, nomeAba) {
       var tipoOpts = ['Forca','Metabolico','Misto','Mobilidade'].map(function(t) {
         return '<option value="' + t + '"' + (ex.tipo === t ? ' selected' : '') + '>' + t + '</option>';
       }).join('');
+      // Técnica avançada (última série) — detecta preset a partir do texto atual
+      var _tecVal = (ultimaSerie && !/sem\s*t[ée]cnica/i.test(ultimaSerie)) ? ultimaSerie : '';
+      var _tecPreset = '';
+      if      (/drop.?set/i.test(_tecVal))            _tecPreset = 'drop-set';
+      else if (/rest.?pause/i.test(_tecVal))          _tecPreset = 'rest-pause';
+      else if (/cluster/i.test(_tecVal))              _tecPreset = 'cluster';
+      else if (/parciais|partial/i.test(_tecVal))     _tecPreset = 'parciais';
+      else if (/gvt|10\s*x\s*10/i.test(_tecVal))      _tecPreset = 'GVT';
+      else if (_tecVal)                               _tecPreset = 'outra';
+      var _tecSelOpts = [['','Sem técnica avançada'],['drop-set','Drop-set'],['rest-pause','Rest-pause'],['cluster','Cluster'],['parciais','Parciais'],['GVT','GVT (10x10)'],['outra','Outra…']]
+        .map(function(o){ return '<option value="' + o[0] + '"' + (_tecPreset===o[0]?' selected':'') + '>' + o[1] + '</option>'; }).join('');
       editForm.innerHTML =
         '<datalist id="' + dlId + '">' + exSugestoes + '</datalist>' +
         '<div style="font-size:11px;font-weight:700;color:var(--green);">✏️ ' + ex.dia + ' — exercício ' + (previewIdx+1) + '</div>' +
@@ -7932,14 +7945,22 @@ function mostrarPreview(exercicios, nomeAba) {
           '</select></div>' +
           '<div><label>Cadência</label><input id="pe-cad-' + previewIdx + '" type="text" value="' + (ex.cadencia||'') + '" placeholder="Ex: 3-1-2"></div>' +
         '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:4px;">' +
+          '<div><label>Técnica avançada (última série)</label><select id="pe-tecsel-' + previewIdx + '" onchange="aplicarTecnicaPreset(' + previewIdx + ')">' + _tecSelOpts + '</select></div>' +
+          '<div><label>Parâmetros da técnica</label><input id="pe-tec-' + previewIdx + '" type="text" value="' + _tecVal.replace(/"/g,'&quot;') + '" placeholder="Ex: drop-set 2x | rest-pause 2x 15s"></div>' +
+        '</div>' +
+        '<div style="margin-top:4px;">' +
+          '<label>Observações / combinação</label>' +
+          '<input id="pe-obs-' + previewIdx + '" type="text" value="' + observacoes.replace(/"/g,'&quot;') + '" placeholder="Notas livres (para bi-set/tri-set use o botão 🔗)">' +
+        '</div>' +
         '<div style="display:flex;gap:6px;">' +
           '<button onclick="aplicarEdicaoPreview(' + previewIdx + ')" style="padding:4px 12px;font-size:12px;background:var(--green);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;">✅ Aplicar</button>' +
           '<button onclick="toggleEdicaoPreview(' + previewIdx + ')" style="padding:4px 10px;font-size:12px;background:none;border:.5px solid var(--border2);border-radius:var(--radius);cursor:pointer;color:var(--text2);">✕ Cancelar</button>' +
         '</div>';
       lista.appendChild(editForm);
 
-      // Menu de conexão (bi-set etc.) — apenas no novo meso
-      if (_modoNovoSo && previewIdx < exercicios.length - 1) {
+      // Menu de conexão (bi-set etc.) — novo meso + edicao-manual, só dentro do mesmo dia
+      if (_modoEdita && previewIdx < exercicios.length - 1 && _mesmoDiaLink) {
         var menuEl = document.createElement('div');
         menuEl.className = 'preview-link-menu';
         menuEl.id = 'preview-link-menu-' + previewIdx;
@@ -7957,9 +7978,9 @@ function mostrarPreview(exercicios, nomeAba) {
         lista.appendChild(menuEl);
       }
 
-      // Connector visual entre exercícios de um bloco — apenas no novo meso
+      // Connector visual entre exercícios de um bloco — novo meso + edicao-manual
       var _grpId = _prvGrpOf[previewIdx];
-      if (_modoNovoSo && _grpId >= 0) {
+      if (_modoEdita && _grpId >= 0) {
         var _grpSzConn = _prvGrpSize[_grpId] || 2;
         if (previewIdx < _grpId + _grpSzConn - 1) {
           var connDiv = document.createElement('div');
@@ -8065,12 +8086,16 @@ function aplicarEdicaoPreview(idx) {
   var tipoEl    = document.getElementById('pe-tipo-' + idx);
   var cardEl    = document.getElementById('pe-card-' + idx);
   var cadEl     = document.getElementById('pe-cad-' + idx);
+  var tecEl     = document.getElementById('pe-tec-' + idx);
+  var obsEl     = document.getElementById('pe-obs-' + idx);
   var series    = parseInt((seriesEl||{}).value) || ex.series;
   var reps      = ((repsEl||{}).value || '').trim() || ex.reps || ex.repeticoes;
   var rir       = ((rirEl||{}).value || '').trim();
   var tipo      = ((tipoEl||{}).value) || ex.tipo;
   var tipoCard  = (cardEl||{}).value || '';
   var cadencia  = ((cadEl||{}).value || '').trim();
+  var ultimaSer = ((tecEl||{}).value || '').trim();   // técnica avançada (offset 8)
+  var observ    = ((obsEl||{}).value || '').trim();   // observações / combinação (offset 10)
   window._previewExercicios[idx] = Object.assign({}, ex, {
     nome: nome.toUpperCase(),
     series: series,
@@ -8079,9 +8104,29 @@ function aplicarEdicaoPreview(idx) {
     rir: rir !== '' ? rir : ex.rir,
     tipo: tipo,
     tipo_card: tipoCard || ex.tipo_card || '',
-    cadencia: cadencia !== '' ? cadencia : (ex.cadencia || '')
+    cadencia: cadencia !== '' ? cadencia : (ex.cadencia || ''),
+    ultimaSerie: ultimaSer,
+    observacoes: observ
   });
   mostrarPreview(window._previewExercicios, window._previewAba);
+}
+
+// Preenche o campo de parâmetros com um template ao escolher a técnica no select
+function aplicarTecnicaPreset(idx) {
+  var sel = document.getElementById('pe-tecsel-' + idx);
+  var inp = document.getElementById('pe-tec-' + idx);
+  if (!sel || !inp) return;
+  var v = sel.value;
+  var presets = {
+    'drop-set':   'drop-set 2x',
+    'rest-pause': 'rest-pause 2x 15s',
+    'cluster':    'cluster 4x2 10s',
+    'parciais':   'parciais 6 reps',
+    'GVT':        'GVT 10x10'
+  };
+  if (v === '')           { inp.value = ''; }
+  else if (v === 'outra') { inp.focus(); }
+  else                    { inp.value = presets[v] || v; }
 }
 
 function fecharPreview() {
@@ -8232,9 +8277,9 @@ function aplicarCombinacoesPreviews() {
 
 async function confirmarPreview() {
   if (!window._previewExercicios || !window._previewAba) return;
-  // Aplicar conexões de bloco ao campo observacoes antes de escrever
-  if (window._previewModo === 'novo') aplicarCombinacoesPreviews();
-  // Edicao manual: reordenar exige reatribuir as linhas reais por dia
+  // Aplicar conexões de bloco ao campo observacoes antes de escrever (novo meso + edicao-manual)
+  if (window._previewModo === 'novo' || window._previewModo === 'edicao-manual') aplicarCombinacoesPreviews();
+  // Edicao manual: reordenar exige reatribuir as linhas reais por dia (depois de aplicar combinações)
   if (window._previewModo === 'edicao-manual') remapearLinhasPorDia(window._previewExercicios);
   var exercicios = window._previewExercicios;
   var aba = window._previewAba;

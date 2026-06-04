@@ -7412,6 +7412,7 @@ async function editarAbaManual() {
     var exercicios = window._dadosAbaAtual.map(function(ex) {
       return Object.assign({}, ex, {
         _linha: ex.linha,
+        _origLinha: ex.linha,   // linha de origem fixa — usada p/ mover o log junto ao reordenar
         _tipo: divisaoSemana[ex.dia] || '?',
         reps: ex.repeticoes,
         tipo_card: (/^(mobilidade|flexibilidade|alongamento)$/i.test(ex.objetivo || '')) ? 'mobilidade' : (ex.tipo_card || '')
@@ -7581,7 +7582,7 @@ async function confirmarEdicao() {
 // ============================================================
 // editarNaPlanilha — FIX BUG 1: NUNCA cria nova aba, só edita
 // ============================================================
-async function editarNaPlanilha(exercicios, nomeAba, cardio, linhasLimpar) {
+async function editarNaPlanilha(exercicios, nomeAba, cardio, linhasLimpar, moverResultados) {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
   exercicios = (Array.isArray(exercicios) ? exercicios : []).map(function(ex) {
@@ -7628,6 +7629,7 @@ async function editarNaPlanilha(exercicios, nomeAba, cardio, linhasLimpar) {
     const payload = { acao: 'editarNaPlanilha', aba: nomeAba, exercicios: exercicios, modoEdicao: true };
     if (Array.isArray(cardio) && cardio.length > 0) payload.cardio = cardio;
     if (Array.isArray(linhasLimpar) && linhasLimpar.length > 0) payload.linhasLimpar = linhasLimpar;
+    if (Array.isArray(moverResultados) && moverResultados.length > 0) payload.moverResultados = moverResultados;
     if (sheetId) payload.spreadsheetId = sheetId;
     const res = await gsPost(payload);
     const data = await res.json();
@@ -8321,6 +8323,15 @@ async function confirmarPreview() {
     window._previewExercicios = window._previewExercicios.filter(function(e){ return e && String(e.nome || '').trim(); });
     remapearLinhasPorDia(window._previewExercicios);
   }
+  // Mapa para mover o log junto: exercicio cuja linha mudou leva os resultados registrados
+  var moverResultados = [];
+  if (window._previewModo === 'edicao-manual') {
+    window._previewExercicios.forEach(function(e){
+      if (e && e._origLinha && e._linha && String(e._origLinha) !== String(e._linha)) {
+        moverResultados.push({ de: parseInt(e._origLinha), para: parseInt(e._linha) });
+      }
+    });
+  }
   var exercicios = window._previewExercicios;
   var aba = window._previewAba;
   var modo = window._previewModo;
@@ -8344,7 +8355,7 @@ async function confirmarPreview() {
     var exsEdit = exercicios.filter(function(e){ return e && String(e.nome || '').trim(); });
     // Registrar no histórico antes de escrever
     registrarHistorico(exsEdit, aba);
-    await editarNaPlanilha(exsEdit, aba, window._previewCardio || [], linhasLimpar);
+    await editarNaPlanilha(exsEdit, aba, window._previewCardio || [], linhasLimpar, moverResultados);
   }
 }
 

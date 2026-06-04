@@ -7422,6 +7422,8 @@ async function editarAbaManual() {
     // Fase 1 foca nos exercicios; nao reescreve cardio pelo editor manual
     window._previewCardio = [];
     window._previewCombinacoes = {};
+    window._previewLinhasLimpar = [];
+    window._previewEstruturaAlterada = false;
     window._previewModo = 'edicao-manual';
     mostrarPreview(exercicios, abaAtual);
   } catch(e) {
@@ -7579,7 +7581,7 @@ async function confirmarEdicao() {
 // ============================================================
 // editarNaPlanilha — FIX BUG 1: NUNCA cria nova aba, só edita
 // ============================================================
-async function editarNaPlanilha(exercicios, nomeAba, cardio) {
+async function editarNaPlanilha(exercicios, nomeAba, cardio, linhasLimpar) {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
   exercicios = (Array.isArray(exercicios) ? exercicios : []).map(function(ex) {
@@ -7625,6 +7627,7 @@ async function editarNaPlanilha(exercicios, nomeAba, cardio) {
     // modoEdicao:true instrui o Apps Script a EDITAR (não criar) a aba
     const payload = { acao: 'editarNaPlanilha', aba: nomeAba, exercicios: exercicios, modoEdicao: true };
     if (Array.isArray(cardio) && cardio.length > 0) payload.cardio = cardio;
+    if (Array.isArray(linhasLimpar) && linhasLimpar.length > 0) payload.linhasLimpar = linhasLimpar;
     if (sheetId) payload.spreadsheetId = sheetId;
     const res = await gsPost(payload);
     const data = await res.json();
@@ -7879,8 +7882,8 @@ function mostrarPreview(exercicios, nomeAba) {
     row.appendChild(antesEl);
     row.appendChild(arrow);
     row.appendChild(depoisEl);
-    // Botão excluir exercício (Fase 2A: só no novo meso; manual fica para a 2B)
-    if (_modoNovoSo) {
+    // Botão excluir exercício (novo meso + editor manual — Fase 2B exclusão "no lugar")
+    if (_modoEdita) {
       var delBtn = document.createElement('button');
       delBtn.className = 'preview-del-btn';
       delBtn.title = 'Excluir exercício';
@@ -7991,10 +7994,10 @@ function mostrarPreview(exercicios, nomeAba) {
       }
     }
 
-    // Botão "Adicionar exercício" ao fim de cada dia (Fase 2A: só no novo meso)
+    // Botão "Adicionar exercício" ao fim de cada dia (novo meso + editor manual — Fase 2B)
     var _proximoEx = exercicios[previewIdx + 1];
     var _fimDoDia = !_proximoEx || String(_proximoEx.dia || '').toUpperCase() !== String(ex.dia || '').toUpperCase();
-    if (_modoNovoSo && _fimDoDia) {
+    if (_modoEdita && _fimDoDia) {
       var addRow = document.createElement('div');
       addRow.style.cssText = 'display:flex;justify-content:center;margin:2px 0 10px;';
       var addBtn = document.createElement('button');
@@ -8135,6 +8138,8 @@ function fecharPreview() {
   window._previewAba = null;
   window._previewModo = null;
   window._previewCombinacoes = {};
+  window._previewLinhasLimpar = [];
+  window._previewEstruturaAlterada = false;
 }
 
 // ── Edicao manual: reatribui as linhas reais conforme a nova ordem visual ──
@@ -8177,6 +8182,14 @@ function excluirExercicioPreview(idx) {
   if (!ex) return;
   var nome = (ex.nome || '').trim() || 'este exercício';
   if (!confirm('Excluir ' + nome + ' (' + (ex.dia || '') + ')?')) return;
+  // Editor manual (Fase 2B): exclusao "no lugar" — marca a linha real para o backend
+  // limpar o slot; os demais exercicios ficam onde estao (sem reordenar).
+  if (window._previewModo === 'edicao-manual') {
+    if (!Array.isArray(window._previewLinhasLimpar)) window._previewLinhasLimpar = [];
+    var _lnDel = ex._linha || ex.linha;
+    if (_lnDel) window._previewLinhasLimpar.push(parseInt(_lnDel));
+    window._previewEstruturaAlterada = true;
+  }
   window._previewExercicios.splice(idx, 1);
   // Combinacoes sao por indice; apos remover, reseta para nao apontar errado
   window._previewCombinacoes = {};
@@ -8189,6 +8202,9 @@ function adicionarExercicioPreview(dia) {
   var noDia = window._previewExercicios.filter(function(e){ return String(e.dia || '').toUpperCase() === diaUp; }).length;
   var MAX = 15;
   if (noDia >= MAX) { showToast('Limite de ' + MAX + ' exercícios em ' + dia, 'warn'); return; }
+  // Editor manual (Fase 2B): o novo exercicio NAO recebe _linha — o backend aloca o
+  // proximo slot livre do dia. Marca estrutura alterada para nao remapear (compactar).
+  if (window._previewModo === 'edicao-manual') window._previewEstruturaAlterada = true;
   // Inserir logo depois do ultimo exercicio desse dia
   var ultimo = -1;
   for (var i = 0; i < window._previewExercicios.length; i++) {
@@ -8279,11 +8295,16 @@ async function confirmarPreview() {
   if (!window._previewExercicios || !window._previewAba) return;
   // Aplicar conexões de bloco ao campo observacoes antes de escrever (novo meso + edicao-manual)
   if (window._previewModo === 'novo' || window._previewModo === 'edicao-manual') aplicarCombinacoesPreviews();
-  // Edicao manual: reordenar exige reatribuir as linhas reais por dia (depois de aplicar combinações)
-  if (window._previewModo === 'edicao-manual') remapearLinhasPorDia(window._previewExercicios);
+  // Edicao manual: reordenar (sem add/excluir) remapeia 1:1 os slots por dia.
+  // Com add/excluir (Fase 2B), mantemos a posicao real: sobreviventes ficam no proprio
+  // _linha, exercicios novos vao sem _linha (backend aloca slot) e os excluidos sao limpos.
+  if (window._previewModo === 'edicao-manual' && !window._previewEstruturaAlterada) {
+    remapearLinhasPorDia(window._previewExercicios);
+  }
   var exercicios = window._previewExercicios;
   var aba = window._previewAba;
   var modo = window._previewModo;
+  var linhasLimpar = (window._previewLinhasLimpar || []).slice();
   // Salvar snapshot para desfazer (TTL 10 min)
   var studentId = selectedId || 'sem_aluno';
   lsSet('coach_undo_snapshot_' + studentId, JSON.stringify({
@@ -8299,9 +8320,11 @@ async function confirmarPreview() {
     var exsLimpos = exercicios.filter(function(e){ return e && String(e.nome || '').trim(); });
     await escreverNaPlanilha(exsLimpos, aba);
   } else {
+    // Ignora exercicios adicionados que ficaram sem nome (Fase 2B no editor manual)
+    var exsEdit = exercicios.filter(function(e){ return e && String(e.nome || '').trim(); });
     // Registrar no histórico antes de escrever
-    registrarHistorico(exercicios, aba);
-    await editarNaPlanilha(exercicios, aba, window._previewCardio || []);
+    registrarHistorico(exsEdit, aba);
+    await editarNaPlanilha(exsEdit, aba, window._previewCardio || [], linhasLimpar);
   }
 }
 

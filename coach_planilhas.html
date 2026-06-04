@@ -412,6 +412,7 @@
 
     <div style="flex-shrink:0;padding:.5rem;display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--border);">
       <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
+      <button class="add-btn" style="border-style:solid;color:#1D4ED8;border-color:#1D4ED8;" onclick="abrirRadarCoach()" title="Quem treinou hoje e quem sumiu">📡 Radar do dia</button>
       <button class="add-btn" style="border-style:solid;color:#4285f4;border-color:#4285f4;" onclick="importarBrainering()">📥 Importar Brainering</button>
       <div style="font-size:10px;color:var(--text3);padding:2px 4px;font-weight:600;margin-top:4px;">WHATSAPP</div>
       <button class="add-btn" style="border-style:solid;color:#25D366;border-color:#25D366;" onclick="dispararRelatorios()">📊 Relatórios domingo</button>
@@ -890,7 +891,10 @@
         <div style="font-size:18px;font-weight:800;">📚 Biblioteca de Exercícios</div>
         <div style="font-size:12px;color:var(--text3);margin-top:2px;">Padrão de movimento e nível de dificuldade por exercício</div>
       </div>
-      <button onclick="carregarBibliotecaPage(true)" style="padding:7px 16px;border-radius:var(--radius);border:.5px solid var(--green);background:var(--green-light);color:var(--green);font-size:12px;font-weight:700;cursor:pointer;">↺ Recarregar</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="auditarVideosBib()" style="padding:7px 16px;border-radius:var(--radius);border:.5px solid #1D4ED8;background:#EFF6FF;color:#1D4ED8;font-size:12px;font-weight:700;cursor:pointer;">🔎 Auditar vídeos</button>
+        <button onclick="carregarBibliotecaPage(true)" style="padding:7px 16px;border-radius:var(--radius);border:.5px solid var(--green);background:var(--green-light);color:var(--green);font-size:12px;font-weight:700;cursor:pointer;">↺ Recarregar</button>
+      </div>
     </div>
 
     <!-- Filtros -->
@@ -919,6 +923,7 @@
       </select>
     </div>
 
+    <div id="bib-auditoria" style="display:none;margin-bottom:14px;padding:12px 14px;border-radius:var(--radius);border:.5px solid var(--border2);background:var(--bg2);font-size:12px;line-height:1.5;"></div>
     <div id="bib-info" style="font-size:12px;color:var(--text3);margin-bottom:10px;"></div>
     <div id="bib-loading" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;display:none;">⏳ Carregando...</div>
     <div id="bib-empty" style="text-align:center;padding:40px;color:var(--text3);font-size:13px;display:none;">
@@ -1649,6 +1654,18 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
 </div>
 
 <!-- MODAL APP ALUNO LINK -->
+<div class="overlay" id="radar-modal" style="display:none;">
+  <div class="modal" style="width:560px;max-width:95vw;">
+    <div class="modal-header">
+      <span class="modal-title">📡 Radar do dia</span>
+      <button class="icon-btn" onclick="document.getElementById('radar-modal').style.display='none'" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body" id="radar-body" style="max-height:70vh;overflow-y:auto;">
+      <div style="text-align:center;color:var(--text3);padding:30px;">⏳ Carregando…</div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="link-aluno-modal" style="display:none;">
   <div class="modal" style="width:480px;max-width:95vw;">
     <div class="modal-header">
@@ -6562,6 +6579,82 @@ async function carregarBibliotecaPage(forcar) {
     document.getElementById('bib-loading').style.display = 'none';
     showToast('Erro: ' + e.message, 'err');
   }
+}
+
+async function auditarVideosBib(){
+  var box=document.getElementById('bib-auditoria');
+  if(!box) return;
+  box.style.display='block';
+  box.innerHTML='⏳ Auditando vídeos (pode levar alguns segundos)...';
+  try{
+    var res=await gsPost({acao:'auditarVideos'});
+    var data=await res.json();
+    if(!data.sucesso){ box.innerHTML='⚠️ Erro: '+(data.erro||'desconhecido'); return; }
+    var h='<div style="font-weight:800;font-size:13px;margin-bottom:6px;">🔎 Auditoria de vídeos</div>';
+    h+='<div style="color:var(--text3);margin-bottom:8px;">'+(data.totalComLink||0)+' exercício(s) com vídeo · '+(data.totalSemLink||0)+' sem vídeo</div>';
+    var dup=data.duplicados||[];
+    if(dup.length){
+      h+='<div style="margin:8px 0 4px;font-weight:700;color:#b45309;">⚠️ Vídeos repetidos em 2+ exercícios ('+dup.length+'):</div>';
+      dup.forEach(function(d){
+        h+='<div style="margin:4px 0;padding:6px 8px;background:#FEF3C7;border-radius:6px;"><a href="'+d.url+'" target="_blank" style="color:#1D4ED8;word-break:break-all;">'+d.url+'</a><br><span style="color:#92400E;">'+d.exercicios.join(' · ')+'</span></div>';
+      });
+    } else {
+      h+='<div style="margin:6px 0;color:#15803D;">✅ Nenhum vídeo repetido.</div>';
+    }
+    if(data.semChave){
+      h+='<div style="margin:10px 0 0;padding:8px 10px;background:#EFF6FF;border-radius:6px;color:#1D4ED8;">⏱ Duração não verificada — falta a chave da API do YouTube. Configure <code>YOUTUBE_API_KEY</code> nas Propriedades do Script para checar vídeos acima de 3 min.</div>';
+    } else {
+      var lon=data.longos||[];
+      if(lon.length){
+        h+='<div style="margin:10px 0 4px;font-weight:700;color:#b91c1c;">⏱ Vídeos com mais de 3 min ('+lon.length+'):</div>';
+        lon.forEach(function(l){
+          h+='<div style="margin:4px 0;padding:6px 8px;background:#FEF2F2;border-radius:6px;"><strong>'+l.exercicio+'</strong> — '+l.duracao+' min<br><a href="'+l.url+'" target="_blank" style="color:#1D4ED8;word-break:break-all;">'+l.url+'</a></div>';
+        });
+      } else {
+        h+='<div style="margin:6px 0;color:#15803D;">✅ Todos os vídeos têm 3 min ou menos.</div>';
+      }
+    }
+    box.innerHTML=h;
+  }catch(e){ box.innerHTML='⚠️ Erro: '+e.message; }
+}
+
+async function abrirRadarCoach(){
+  var modal=document.getElementById('radar-modal');
+  var body=document.getElementById('radar-body');
+  if(!modal||!body) return;
+  function _esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  modal.style.display='flex';
+  body.innerHTML='<div style="text-align:center;color:var(--text3);padding:30px;">⏳ Carregando…</div>';
+  try{
+    var res=await gsPost({acao:'treinaramHoje', diasSumido:5});
+    var data=await res.json();
+    if(!data.sucesso){ body.innerHTML='<div style="color:#b91c1c;padding:16px;">Erro: '+_esc(data.erro||'desconhecido')+'</div>'; return; }
+    var hoje=data.hoje||[], sumiram=data.sumiram||[];
+    var h='';
+    h+='<div style="font-weight:800;font-size:14px;margin-bottom:8px;">✅ Treinaram hoje ('+hoje.length+')</div>';
+    if(hoje.length){
+      h+='<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:18px;">';
+      hoje.forEach(function(x){
+        h+='<div style="display:flex;justify-content:space-between;padding:7px 10px;background:#ECFDF5;border:.5px solid #BBF7D0;border-radius:8px;"><span style="font-weight:600;color:#065F46;">'+_esc(x.aluno)+'</span><span style="color:#059669;font-size:12px;">'+_esc(x.hora||'')+'</span></div>';
+      });
+      h+='</div>';
+    } else {
+      h+='<div style="color:var(--text3);margin-bottom:18px;padding:8px;">Ninguém registrou treino hoje ainda.</div>';
+    }
+    h+='<div style="font-weight:800;font-size:14px;margin-bottom:8px;">🚨 Sumiram (sem treinar há ≥ '+(data.diasSumido||5)+' dias) — '+sumiram.length+'</div>';
+    if(sumiram.length){
+      h+='<div style="display:flex;flex-direction:column;gap:4px;">';
+      sumiram.forEach(function(x){
+        var lbl = (x.dias<0) ? 'nunca treinou' : (x.dias+' dias · último '+x.ultimo);
+        h+='<div style="display:flex;justify-content:space-between;padding:7px 10px;background:#FEF2F2;border:.5px solid #FCA5A5;border-radius:8px;"><span style="font-weight:600;color:#991B1B;">'+_esc(x.aluno)+'</span><span style="color:#b91c1c;font-size:12px;">'+_esc(lbl)+'</span></div>';
+      });
+      h+='</div>';
+    } else {
+      h+='<div style="color:#15803D;padding:8px;">Ninguém sumido. 🎉</div>';
+    }
+    h+='<div style="margin-top:16px;font-size:11px;color:var(--text3);">Fonte: registros de treino (Logs_App). Estagnação e fadiga exigem abrir cada aluno (passo futuro).</div>';
+    body.innerHTML=h;
+  }catch(e){ body.innerHTML='<div style="color:#b91c1c;padding:16px;">Erro: '+e.message+'</div>'; }
 }
 
 var CORE_NIVEL_COR = { 'Basico':'#22c55e','Intermediario':'#f59e0b','Avancado':'#f97316','Master':'#ef4444' };

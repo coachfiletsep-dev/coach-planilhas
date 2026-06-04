@@ -8142,36 +8142,57 @@ function fecharPreview() {
   window._previewEstruturaAlterada = false;
 }
 
-// ── Edicao manual: reatribui as linhas reais conforme a nova ordem visual ──
-// Cada dia tem slots de linha fixos (lidos da aba). Ao reordenar, distribui os
-// exercicios do dia (na ordem atual de _previewExercicios) nesses slots, de cima
-// para baixo. Fase 1 nao adiciona/exclui, entao a contagem por dia bate 1:1.
+// ── Edicao manual: reatribui as linhas reais conforme a nova ordem visual (WYSIWYG) ──
+// Distribui os exercicios de cada dia (na ordem atual do preview) nos slots fisicos do
+// dia, de cima para baixo (slot k = linhaInicio + k*PASSO). Reordenar, adicionar e excluir
+// passam a refletir EXATAMENTE o preview: exercicios novos recebem o proximo slot livre do
+// dia; os slots originais que sobraram (apos excluir/compactar) vao para window._previewLinhasLimpar
+// para o backend limpar. PASSO=14 espelha cfg.LINHAS_POR_EXERCICIO do backend.
 function remapearLinhasPorDia(exercicios) {
   if (!Array.isArray(exercicios) || !Array.isArray(window._dadosAbaAtual)) return;
+  var PASSO = 14; // LINHAS_POR_EXERCICIO (estrutural)
   // Slots de linha originais, por dia, em ordem crescente
-  var slotsPorDia = {};
+  var slotsPorDia = {}, originaisPorDia = {};
   window._dadosAbaAtual.forEach(function(o) {
     var dia = String(o.dia || '').toUpperCase();
     if (o.linha === undefined || o.linha === null) return;
     if (!slotsPorDia[dia]) slotsPorDia[dia] = [];
-    slotsPorDia[dia].push(o.linha);
+    slotsPorDia[dia].push(Number(o.linha));
   });
   Object.keys(slotsPorDia).forEach(function(dia) {
-    slotsPorDia[dia].sort(function(a, b) { return Number(a) - Number(b); });
+    slotsPorDia[dia].sort(function(a, b) { return a - b; });
+    originaisPorDia[dia] = slotsPorDia[dia].slice();
   });
-  // Consome os slots de cada dia na ordem visual atual dos exercicios
-  var ptr = {};
+  // Atribui cada exercicio (na ordem visual) a um slot do seu dia
+  var ptr = {}, usados = {};
   exercicios.forEach(function(ex) {
     var dia = String(ex.dia || '').toUpperCase();
-    if (!slotsPorDia[dia]) return;
+    if (!slotsPorDia[dia]) slotsPorDia[dia] = [];
     if (ptr[dia] === undefined) ptr[dia] = 0;
     var linha = slotsPorDia[dia][ptr[dia]];
-    if (linha !== undefined) {
+    if (linha === undefined) {
+      // Exercicio novo alem dos slots existentes: proximo slot = ultimo do dia + PASSO
+      var arr = slotsPorDia[dia];
+      if (arr.length) { linha = arr[arr.length - 1] + PASSO; arr.push(linha); }
+    }
+    if (linha !== undefined && linha !== null) {
       ex._linha = String(linha);
       ex.linha = linha;
       ex.posicao = ptr[dia] + 1;
-      ptr[dia]++;
+      if (!usados[dia]) usados[dia] = {};
+      usados[dia][linha] = true;
+    } else {
+      // Dia sem nenhum slot original (ex.: dia de descanso) — backend aloca pelo DIAS_LINHAS
+      delete ex._linha; delete ex.linha;
     }
+    ptr[dia]++;
+  });
+  // Slots originais que nao foram reutilizados (apos excluir/compactar) -> limpar no backend
+  window._previewLinhasLimpar = [];
+  Object.keys(originaisPorDia).forEach(function(dia) {
+    originaisPorDia[dia].forEach(function(ln) {
+      if (!(usados[dia] && usados[dia][ln])) window._previewLinhasLimpar.push(ln);
+    });
   });
 }
 
@@ -8182,12 +8203,9 @@ function excluirExercicioPreview(idx) {
   if (!ex) return;
   var nome = (ex.nome || '').trim() || 'este exercício';
   if (!confirm('Excluir ' + nome + ' (' + (ex.dia || '') + ')?')) return;
-  // Editor manual (Fase 2B): exclusao "no lugar" — marca a linha real para o backend
-  // limpar o slot; os demais exercicios ficam onde estao (sem reordenar).
+  // Editor manual: só marca que a estrutura mudou. O remap (em confirmarPreview)
+  // recompõe os slots por ordem visual e gera window._previewLinhasLimpar dos que sobraram.
   if (window._previewModo === 'edicao-manual') {
-    if (!Array.isArray(window._previewLinhasLimpar)) window._previewLinhasLimpar = [];
-    var _lnDel = ex._linha || ex.linha;
-    if (_lnDel) window._previewLinhasLimpar.push(parseInt(_lnDel));
     window._previewEstruturaAlterada = true;
   }
   window._previewExercicios.splice(idx, 1);
@@ -8293,12 +8311,14 @@ function aplicarCombinacoesPreviews() {
 
 async function confirmarPreview() {
   if (!window._previewExercicios || !window._previewAba) return;
-  // Aplicar conexões de bloco ao campo observacoes antes de escrever (novo meso + edicao-manual)
+  // 1) Aplicar conexões de bloco (bi-set etc.) na ordem EXIBIDA — os índices ainda
+  //    casam com window._previewCombinacoes. Grava o texto em observacoes de cada start.
   if (window._previewModo === 'novo' || window._previewModo === 'edicao-manual') aplicarCombinacoesPreviews();
-  // Edicao manual: reordenar (sem add/excluir) remapeia 1:1 os slots por dia.
-  // Com add/excluir (Fase 2B), mantemos a posicao real: sobreviventes ficam no proprio
-  // _linha, exercicios novos vao sem _linha (backend aloca slot) e os excluidos sao limpos.
-  if (window._previewModo === 'edicao-manual' && !window._previewEstruturaAlterada) {
+  // 2) Editor manual: descarta exercicios sem nome e SEMPRE remapeia por ordem visual
+  //    (WYSIWYG) — reordenar + adicionar + excluir refletem exatamente o preview; o remap
+  //    atribui o _linha de cada exercicio e gera window._previewLinhasLimpar dos slots que sobraram.
+  if (window._previewModo === 'edicao-manual') {
+    window._previewExercicios = window._previewExercicios.filter(function(e){ return e && String(e.nome || '').trim(); });
     remapearLinhasPorDia(window._previewExercicios);
   }
   var exercicios = window._previewExercicios;

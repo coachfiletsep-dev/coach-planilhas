@@ -148,9 +148,11 @@
   .news-field label { display: block; font-size: 10px; color: var(--text3); text-transform: uppercase; font-weight: 800; letter-spacing: .05em; margin-bottom: 4px; }
   .news-field input, .news-field select, .news-field textarea { width: 100%; border: .5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); padding: 8px 9px; font-size: 12px; font-family: inherit; outline: none; }
   .news-field textarea { min-height: 70px; resize: vertical; line-height: 1.4; }
-  .news-checks { display: grid; grid-template-columns: 1fr; gap: 5px; }
+  .news-checks { display: grid; grid-template-columns: 1fr; gap: 10px; }
   .news-checks label { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); text-transform: none; letter-spacing: 0; font-weight: 500; margin: 0; }
   .news-checks input { width: auto; }
+  .news-checks .news-area-row { display: flex; flex-direction: column; gap: 4px; }
+  .news-checks input.news-area-kw { width: 100%; box-sizing: border-box; font-size: 11px; padding: 6px 8px; margin-left: 24px; max-width: calc(100% - 24px); }
   .news-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .news-preview { min-height: 680px; background: #f4f6f8; color: #17202a; border: .5px solid var(--border); border-radius: var(--radius-lg); padding: 0; overflow: auto; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
   .fs-newsletter { background:#f4f6f8; font-family: Arial, sans-serif; color:#17202a; }
@@ -447,7 +449,8 @@
           <button class="icon-btn" onclick="ativarLinksAluno()" title="Ativar troca automática dos links">🔗</button>
           <button class="icon-btn" onclick="corrigirLinksAbaAtual()" title="Corrigir links da aba atual">↻</button>
           <button class="icon-btn" onclick="gerarLinkAluno()" title="Gerar link do App Aluno">📱</button>
-          <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;">✏️ Editar aba</button>
+          <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;" title="Descrever a correção e a IA aplica">✏️ Editar com IA</button>
+          <button class="btn-ghost" onclick="editarAbaManual()" style="display:flex;align-items:center;gap:5px;" title="Editar a aba atual manualmente: trocar, reordenar e ajustar exercícios">✋ Editar manual</button>
           <button class="btn-green" onclick="runAction(&#39;zero&#39;)">🔄 Novo meso IA</button>
           <button class="btn-green" onclick="abrirMesoManual()" title="Montar o meso do zero, escolhendo cada exercício">✍️ Meso manual</button>
         </div>
@@ -1086,13 +1089,32 @@
       <div class="news-field">
         <label>Areas</label>
         <div class="news-checks" id="news-areas">
-          <label><input type="checkbox" value="hipertrofia" checked=""> Hipertrofia e treino de forca</label>
-          <label><input type="checkbox" value="emagrecimento" checked=""> Emagrecimento e composicao corporal</label>
-          <label><input type="checkbox" value="nutricao" checked=""> Nutricao esportiva</label>
-          <label><input type="checkbox" value="suplementacao" checked=""> Suplementacao</label>
-          <label><input type="checkbox" value="cardio" checked=""> Cardio e condicionamento</label>
-          <label><input type="checkbox" value="recuperacao"> Recuperacao, sono e aderencia</label>
+          <div class="news-area-row">
+            <label><input type="checkbox" value="hipertrofia" checked=""> Hipertrofia e treino de forca</label>
+            <input type="text" class="news-area-kw" data-area="hipertrofia" placeholder="Palavras-chave: creatina, volume, falha muscular...">
+          </div>
+          <div class="news-area-row">
+            <label><input type="checkbox" value="emagrecimento" checked=""> Emagrecimento e composicao corporal</label>
+            <input type="text" class="news-area-kw" data-area="emagrecimento" placeholder="Palavras-chave: jejum, deficit calorico, gordura...">
+          </div>
+          <div class="news-area-row">
+            <label><input type="checkbox" value="nutricao" checked=""> Nutricao esportiva</label>
+            <input type="text" class="news-area-kw" data-area="nutricao" placeholder="Palavras-chave: proteina, jejum intermitente...">
+          </div>
+          <div class="news-area-row">
+            <label><input type="checkbox" value="suplementacao" checked=""> Suplementacao</label>
+            <input type="text" class="news-area-kw" data-area="suplementacao" placeholder="Palavras-chave: creatina, cafeina, whey...">
+          </div>
+          <div class="news-area-row">
+            <label><input type="checkbox" value="cardio" checked=""> Cardio e condicionamento</label>
+            <input type="text" class="news-area-kw" data-area="cardio" placeholder="Palavras-chave: hiit, resistencia, aerobico...">
+          </div>
+          <div class="news-area-row">
+            <label><input type="checkbox" value="recuperacao"> Recuperacao, sono e aderencia</label>
+            <input type="text" class="news-area-kw" data-area="recuperacao" placeholder="Palavras-chave: sono, dor muscular, aderencia...">
+          </div>
         </div>
+        <div class="news-hint" style="font-size:11px;color:var(--text2);margin-top:6px;line-height:1.4;">Deixe em branco para usar o tema geral da area. Pode digitar em portugues (ex.: creatina, jejum) que o sistema traduz para a busca cientifica. Separe varias palavras por virgula.</div>
       </div>
       <div class="news-field">
         <label>Orientacao editorial</label>
@@ -6695,10 +6717,16 @@ function newsStatus(txt, erro) {
 
 function getNewsletterConfig() {
   var areas = [];
-  document.querySelectorAll('#news-areas input:checked').forEach(function(cb){ areas.push(cb.value); });
-  var diasBusca = parseInt(document.getElementById('news-dias').value, 10) || 14;
+  document.querySelectorAll('#news-areas input[type=checkbox]:checked').forEach(function(cb){ areas.push(cb.value); });
+  var keywords = {};
+  document.querySelectorAll('#news-areas .news-area-kw').forEach(function(inp){
+    var v = (inp.value || '').trim();
+    var area = inp.getAttribute('data-area');
+    if (v && areas.indexOf(area) > -1) keywords[area] = v;
+  });
+  var diasBusca = parseInt(document.getElementById('news-dias').value, 10) || 60;
   var limiteArtigos = parseInt(document.getElementById('news-limite').value, 10) || 6;
-  diasBusca = Math.max(1, Math.min(diasBusca, 365));
+  diasBusca = Math.max(60, Math.min(diasBusca, 365));
   limiteArtigos = Math.max(1, Math.min(limiteArtigos, 20));
   return {
     titulo: (document.getElementById('news-titulo').value || 'Radar Cientifico FS').trim(),
@@ -6707,6 +6735,7 @@ function getNewsletterConfig() {
     dias: diasBusca,
     limite: limiteArtigos,
     areas: areas,
+    keywords: keywords,
     extra: document.getElementById('news-extra').value.trim()
   };
 }
@@ -7334,6 +7363,73 @@ async function editarAbaAtual() {
 }
 
 // ============================================================
+// editarAbaManual — abre a aba ATUAL no preview para edicao manual
+// (trocar exercicio, reordenar, ajustar series/reps/RiR), SEM IA.
+// Fase 1: nao adiciona nem exclui exercicio. Grava via editarNaPlanilha,
+// preservando a linha real de cada exercicio.
+// ============================================================
+async function editarAbaManual() {
+  const s = students.find(function(x){ return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno primeiro', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Aluno sem planilha vinculada', 'err'); return; }
+
+  // Descobrir a aba atual (a existente, nao a proxima)
+  var abaAtual = 'S1';
+  try {
+    var resA = await fetch(APPS_SCRIPT_URL + '?action=getAbaAtual&spreadsheetId=' + sheetId);
+    var dataA = await resA.json();
+    if (dataA.aba) abaAtual = dataA.aba;
+  } catch(e) {}
+  window._sheetIdAtual = sheetId;
+  window._abaAtual = abaAtual;
+  window._nomeAluno = s.name;
+  window._obsAluno = s.obs || '';
+
+  showToast('Lendo aba ' + abaAtual + '...', 'ok');
+  try {
+    const [resAba, resBib] = await Promise.all([
+      gsPost({ lerPeriodizacao: true, spreadsheetId: sheetId, abasSelecionadas: [abaAtual] }),
+      fetch(APPS_SCRIPT_URL + '?action=getBiblioteca')
+    ]);
+    const dataAba = await resAba.json();
+    const dataBib = await resBib.json();
+
+    if (!dataAba.sucesso || !dataAba.abas || !dataAba.abas.length) {
+      showToast('Nao consegui ler a aba ' + abaAtual, 'err'); return;
+    }
+    var aba = dataAba.abas[0];
+    window._dadosAbaAtual = aba.exercicios || [];
+    var divisaoSemana = aba.divisaoSemana || {};
+
+    // Biblioteca para os dropdowns de troca de exercicio
+    if (dataBib.sucesso && dataBib.biblioteca) {
+      window._bibliotecaBrainering = dataBib.biblioteca;
+      window._bibliotecaDetalhes = dataBib.bibliotecaDetalhes || {};
+    }
+
+    // Montar a lista para o preview, preservando a linha real (_linha)
+    var exercicios = window._dadosAbaAtual.map(function(ex) {
+      return Object.assign({}, ex, {
+        _linha: ex.linha,
+        _tipo: divisaoSemana[ex.dia] || '?',
+        reps: ex.repeticoes,
+        tipo_card: (/^(mobilidade|flexibilidade|alongamento)$/i.test(ex.objetivo || '')) ? 'mobilidade' : (ex.tipo_card || '')
+      });
+    });
+    if (!exercicios.length) { showToast('A aba nao tem exercicios para editar', 'warn'); return; }
+
+    // Fase 1 foca nos exercicios; nao reescreve cardio pelo editor manual
+    window._previewCardio = [];
+    window._previewCombinacoes = {};
+    window._previewModo = 'edicao-manual';
+    mostrarPreview(exercicios, abaAtual);
+  } catch(e) {
+    showToast('Erro ao abrir editor manual: ' + e.message, 'err');
+  }
+}
+
+// ============================================================
 // confirmarEdicao — FIX BUG 2 (grupo muscular) + BUG 3 (linha)
 // ============================================================
 async function confirmarEdicao() {
@@ -7604,6 +7700,12 @@ function mostrarPreview(exercicios, nomeAba) {
   window._previewExercicios = exercicios;
   window._previewAba = nomeAba;
 
+  // Fase 1: 'edicao-manual' reaproveita os controles de edicao/arrastar do
+  // modo 'novo'. _modoEdita liga edicao inline + reordenar; _modoNovoSo mantem
+  // bi-set/combinacoes e o rotulo "Novo meso" exclusivos do novo meso.
+  var _modoEdita = (window._previewModo === 'novo' || window._previewModo === 'edicao-manual');
+  var _modoNovoSo = (window._previewModo === 'novo');
+
   var lista = document.getElementById('preview-lista');
   lista.innerHTML = '';
 
@@ -7650,8 +7752,8 @@ function mostrarPreview(exercicios, nomeAba) {
 
     var row = document.createElement('div');
     row.className = 'preview-row';
-    // Drag-and-drop (only in novo mode where order matters)
-    if (window._previewModo === 'novo') {
+    // Drag-and-drop (modo novo e edicao-manual, onde a ordem importa)
+    if (_modoEdita) {
       row.draggable = true;
       row.dataset.idx = previewIdx;
       row.addEventListener('dragstart', function(e) {
@@ -7738,7 +7840,7 @@ function mostrarPreview(exercicios, nomeAba) {
     var repeticoesPreview = obterCampoTextoExercicioApp(ex, ['repeticoes','reps']) || (original && original.repeticoes) || '?';
     var ultimaSerie = obterCampoTextoExercicioApp(ex, ['ultimaSerie','ultima_serie','serieAvancada','tecnicaAvancada','seriesAvancadas','tecnicaUltimaSerie']) || '';
     var observacoes = obterCampoTextoExercicioApp(ex, ['observacoes','observacao','combinacao','seriesCombinadas','serieCombinada','grupoCombinado']) || '';
-    var editBtnHtml = window._previewModo === 'novo'
+    var editBtnHtml = _modoEdita
       ? '<button class="preview-edit-btn" onclick="toggleEdicaoPreview(' + previewIdx + ')">✏️ editar</button>'
       : '';
     var exIsMobi = ex.tipo_card === 'mobilidade' || /^(mobilidade|flexibilidade|alongamento)$/i.test(ex.objetivo||'');
@@ -7764,7 +7866,7 @@ function mostrarPreview(exercicios, nomeAba) {
       depoisEl.appendChild(linkBtn);
     }
 
-    if (window._previewModo === 'novo') {
+    if (_modoEdita) {
       var handle = document.createElement('div');
       handle.className = 'preview-drag-handle';
       handle.title = 'Arrastar para reordenar';
@@ -7788,8 +7890,8 @@ function mostrarPreview(exercicios, nomeAba) {
       }
     }
 
-    // Form de edição inline (apenas no modo 'novo')
-    if (window._previewModo === 'novo') {
+    // Form de edição inline (modo novo e edicao-manual)
+    if (_modoEdita) {
       var editForm = document.createElement('div');
       editForm.className = 'preview-edit-form';
       editForm.id = 'preview-edit-' + previewIdx;
@@ -7826,8 +7928,8 @@ function mostrarPreview(exercicios, nomeAba) {
         '</div>';
       lista.appendChild(editForm);
 
-      // Menu de conexão (para todos exceto o último exercício)
-      if (previewIdx < exercicios.length - 1) {
+      // Menu de conexão (bi-set etc.) — apenas no novo meso
+      if (_modoNovoSo && previewIdx < exercicios.length - 1) {
         var menuEl = document.createElement('div');
         menuEl.className = 'preview-link-menu';
         menuEl.id = 'preview-link-menu-' + previewIdx;
@@ -7845,9 +7947,9 @@ function mostrarPreview(exercicios, nomeAba) {
         lista.appendChild(menuEl);
       }
 
-      // Connector visual entre exercícios de um bloco (aparece se este exercício pertence a grupo e não é o último)
+      // Connector visual entre exercícios de um bloco — apenas no novo meso
       var _grpId = _prvGrpOf[previewIdx];
-      if (_grpId >= 0) {
+      if (_modoNovoSo && _grpId >= 0) {
         var _grpSzConn = _prvGrpSize[_grpId] || 2;
         if (previewIdx < _grpId + _grpSzConn - 1) {
           var connDiv = document.createElement('div');
@@ -7877,8 +7979,8 @@ function mostrarPreview(exercicios, nomeAba) {
 
   document.getElementById('preview-modal').style.display = 'flex';
 
-  // FIX: se a biblioteca não estiver carregada (fluxo novo meso), buscar e atualizar os datalists
-  if (window._previewModo === 'novo' && !window._bibliotecaBrainering) {
+  // FIX: se a biblioteca não estiver carregada, buscar e atualizar os datalists (novo meso e edicao-manual)
+  if (_modoEdita && !window._bibliotecaBrainering) {
     fetch(APPS_SCRIPT_URL + '?action=getBiblioteca')
       .then(function(r){ return r.json(); })
       .then(function(data){
@@ -7966,6 +8068,39 @@ function fecharPreview() {
   window._previewCombinacoes = {};
 }
 
+// ── Edicao manual: reatribui as linhas reais conforme a nova ordem visual ──
+// Cada dia tem slots de linha fixos (lidos da aba). Ao reordenar, distribui os
+// exercicios do dia (na ordem atual de _previewExercicios) nesses slots, de cima
+// para baixo. Fase 1 nao adiciona/exclui, entao a contagem por dia bate 1:1.
+function remapearLinhasPorDia(exercicios) {
+  if (!Array.isArray(exercicios) || !Array.isArray(window._dadosAbaAtual)) return;
+  // Slots de linha originais, por dia, em ordem crescente
+  var slotsPorDia = {};
+  window._dadosAbaAtual.forEach(function(o) {
+    var dia = String(o.dia || '').toUpperCase();
+    if (o.linha === undefined || o.linha === null) return;
+    if (!slotsPorDia[dia]) slotsPorDia[dia] = [];
+    slotsPorDia[dia].push(o.linha);
+  });
+  Object.keys(slotsPorDia).forEach(function(dia) {
+    slotsPorDia[dia].sort(function(a, b) { return Number(a) - Number(b); });
+  });
+  // Consome os slots de cada dia na ordem visual atual dos exercicios
+  var ptr = {};
+  exercicios.forEach(function(ex) {
+    var dia = String(ex.dia || '').toUpperCase();
+    if (!slotsPorDia[dia]) return;
+    if (ptr[dia] === undefined) ptr[dia] = 0;
+    var linha = slotsPorDia[dia][ptr[dia]];
+    if (linha !== undefined) {
+      ex._linha = String(linha);
+      ex.linha = linha;
+      ex.posicao = ptr[dia] + 1;
+      ptr[dia]++;
+    }
+  });
+}
+
 // ── Funções de conexão de bloco no preview ──────────────────────────────────
 
 function abrirMenuConectar(idx) {
@@ -8038,6 +8173,8 @@ async function confirmarPreview() {
   if (!window._previewExercicios || !window._previewAba) return;
   // Aplicar conexões de bloco ao campo observacoes antes de escrever
   if (window._previewModo === 'novo') aplicarCombinacoesPreviews();
+  // Edicao manual: reordenar exige reatribuir as linhas reais por dia
+  if (window._previewModo === 'edicao-manual') remapearLinhasPorDia(window._previewExercicios);
   var exercicios = window._previewExercicios;
   var aba = window._previewAba;
   var modo = window._previewModo;

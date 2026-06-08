@@ -58,8 +58,13 @@
   .si-av.off { background: var(--bg3); color: var(--text3); }
   .si-name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .si-meta { font-size: 10px; color: var(--text3); }
-  .si-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; margin-left: auto; }
+  .si-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; margin-left: 6px; }
   .si-dot.off { background: var(--border2); }
+  .si-pause { flex-shrink:0; margin-left:auto; border:none; background:transparent; cursor:pointer; font-size:12px; opacity:.32; padding:2px 5px; border-radius:5px; line-height:1; }
+  .si-pause:hover { opacity:.85; background:var(--bg2); }
+  .si-pause.on { opacity:1; color:#D97706; }
+  .si.paused { opacity:.55; }
+  .si.paused .si-dot { background:#D97706; }
   .add-btn { margin: .25rem; padding: 5px 7px; border-radius: var(--radius); border: 0.5px dashed var(--border2); background: transparent; color: var(--text3); font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all .15s; flex-shrink: 0; min-height: 28px; }
   .add-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-light); }
   .sidebar-footer { padding: .5rem .75rem; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--text3); }
@@ -2046,6 +2051,18 @@ function updateConfigStatus() {
 
 function initials(n) { return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
 
+// ── Pausa por aluno: ações COLETIVAS (semana, links, dropdowns, relatórios, boa semana)
+//    pulam quem está pausado. Estado salvo localmente por id (pausa_<id>='1'). ──
+function isPausado(id) { try { return localStorage.getItem('pausa_' + id) === '1'; } catch(e) { return false; } }
+function togglePausa(id, ev) {
+  if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+  var novo = !isPausado(id);
+  try { if (novo) localStorage.setItem('pausa_' + id, '1'); else localStorage.removeItem('pausa_' + id); } catch(e) {}
+  renderList(document.getElementById('search-input').value);
+  var nm = (students.find(function(x){ return x.id === id; }) || {}).name || 'Aluno';
+  if (typeof showToast === 'function') showToast(novo ? '⏸ ' + nm + ' pausado — ações coletivas vão pular' : '▶ ' + nm + ' retomado', novo ? 'warn' : 'ok');
+}
+
 function renderList(filter) {
   filter = filter || '';
   const list = document.getElementById('student-list');
@@ -2055,7 +2072,8 @@ function renderList(filter) {
   list.innerHTML = '';
   f.forEach(function(s) {
     const d = document.createElement('div');
-    d.className = 'si' + (s.id === selectedId ? ' active' : '');
+    var _pausado = isPausado(s.id);
+    d.className = 'si' + (s.id === selectedId ? ' active' : '') + (_pausado ? ' paused' : '');
     d.onclick = function() { selectStudent(s.id); };
     // Badge 🤖 se houver análise IA não lida
     var iaBadge='';
@@ -2063,11 +2081,13 @@ function renderList(filter) {
     // Badge ⚠️ de estagnação/deload
     var stagLevel=localStorage.getItem('stag_'+s.id);
     var stagBadge=stagLevel?'<span class="stag-dot '+stagLevel+'" title="'+(stagLevel==='vermelho'?'Deload urgente':'Próximo do limite de semanas')+'"></span>':'';
-    d.innerHTML = '<div class="si-av' + (s.status==='inativo'?' off':'') + '">' + initials(s.name) + '</div><div style="flex:1;min-width:0;"><div class="si-name" style="display:flex;align-items:center;gap:2px;">' + s.name + iaBadge + stagBadge + '</div><div class="si-meta">' + (s.status==='ativo'?'Ativo':'Inativo') + '</div></div><div class="si-dot' + (s.status==='inativo'?' off':'') + '"></div>';
+    var _pauseBtn = '<button class="si-pause' + (_pausado?' on':'') + '" onclick="togglePausa(\'' + s.id + '\',event)" title="' + (_pausado?'Pausado — ações coletivas pulam este aluno. Clique para retomar.':'Pausar — ações coletivas (semana, links, relatórios) vão ignorar este aluno') + '">⏸</button>';
+    d.innerHTML = '<div class="si-av' + (s.status==='inativo'?' off':'') + '">' + initials(s.name) + '</div><div style="flex:1;min-width:0;"><div class="si-name" style="display:flex;align-items:center;gap:2px;">' + s.name + iaBadge + stagBadge + '</div><div class="si-meta">' + (s.status==='ativo'?'Ativo':'Inativo') + (_pausado?' · ⏸ pausado':'') + '</div></div>' + _pauseBtn + '<div class="si-dot' + (s.status==='inativo'?' off':'') + '"></div>';
     list.appendChild(d);
   });
   const active = students.filter(s=>s.status==='ativo').length;
-  document.getElementById('counter').textContent = students.length + ' alunos · ' + active + ' ativos';
+  const pausados = students.filter(s=>s.status==='ativo' && isPausado(s.id)).length;
+  document.getElementById('counter').textContent = students.length + ' alunos · ' + active + ' ativos' + (pausados?' · ' + pausados + ' pausado' + (pausados>1?'s':''):'');
 }
 
 function filterStudents() { renderList(document.getElementById('search-input').value); }
@@ -7546,8 +7566,9 @@ async function importarBrainering() {
 }
 
 async function atualizarTodos(tipo) {
-  const ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet; });
-  if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha cadastrada', 'err'); return; }
+  const ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet && !isPausado(s.id); });
+  if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha cadastrada (ou todos pausados)', 'err'); return; }
+  var _pausadosBulk = students.filter(function(s){ return s.status === 'ativo' && s.sheet && isPausado(s.id); }).length;
   const labels = { seg_qui:'Seg → qui', qui_dom:'Qui → dom', semana_completa:'Semana completa', restaurar_dropdowns:'Restaurar dropdowns', atualizar_links:'Atualizar links' };
   document.getElementById('progress-title').textContent = 'Atualizando todos — ' + (labels[tipo]||tipo);
   document.getElementById('progress-count').textContent = '0';
@@ -7556,6 +7577,12 @@ async function atualizarTodos(tipo) {
   document.getElementById('progress-log').innerHTML = '';
   document.getElementById('progress-close-btn').style.display = 'none';
   document.getElementById('progress-modal').style.display = 'flex';
+  if (_pausadosBulk > 0) {
+    var pEl = document.createElement('div');
+    pEl.textContent = '⏸ ' + _pausadosBulk + ' aluno(s) pausado(s) — ignorados';
+    pEl.style.cssText = 'color:#D97706;font-size:11px;margin-bottom:4px;';
+    document.getElementById('progress-log').appendChild(pEl);
+  }
   var erros = [];
   for (var i = 0; i < ativos.length; i++) {
     var s = ativos[i];
@@ -10561,8 +10588,8 @@ async function testarZapi() {
 // ENVIO WHATSAPP — delegado ao Apps Script (credenciais ficam no GS)
 // ============================================================
 async function dispararRelatorios() {
-  var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet && s.autoDisparo; });
-  if (ativos.length === 0) { showToast('Nenhum aluno com auto-disparo ativo. Marque a opção "Disparar automaticamente" no cadastro.', 'err'); return; }
+  var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet && s.autoDisparo && !isPausado(s.id); });
+  if (ativos.length === 0) { showToast('Nenhum aluno com auto-disparo ativo (ou todos pausados). Marque "Disparar automaticamente" no cadastro.', 'err'); return; }
   if (!confirm('Disparar relatório para ' + ativos.length + ' aluno(s) com auto-disparo ativado?\n\n' + ativos.map(function(s){return '• '+s.name;}).join('\n'))) return;
   document.getElementById('progress-title').textContent = 'Disparando relatórios WhatsApp...';
   document.getElementById('progress-count').textContent = '0';
@@ -10603,8 +10630,8 @@ async function dispararRelatorios() {
 }
 
 async function dispararBoaSemana() {
-  var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet && s.autoDisparo; });
-  if (ativos.length === 0) { showToast('Nenhum aluno com auto-disparo ativo. Marque a opção "Disparar automaticamente" no cadastro.', 'err'); return; }
+  var ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet && s.autoDisparo && !isPausado(s.id); });
+  if (ativos.length === 0) { showToast('Nenhum aluno com auto-disparo ativo (ou todos pausados). Marque "Disparar automaticamente" no cadastro.', 'err'); return; }
   if (!confirm('Disparar "Boa semana" para ' + ativos.length + ' aluno(s) com auto-disparo ativado?\n\n' + ativos.map(function(s){return '• '+s.name;}).join('\n'))) return;
   document.getElementById('progress-title').textContent = 'Disparando boa semana...';
   document.getElementById('progress-count').textContent = '0';

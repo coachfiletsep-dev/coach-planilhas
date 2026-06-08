@@ -2158,7 +2158,11 @@ async function runSheetAction(type) {
     removeLoading('msgs');
     if (data.sucesso) {
       const novaAba = data.novaAba || '';
-      const msgs = { seg_qui:'Semana seg → qui criada' + (novaAba?' ('+novaAba+')':'') + '!', qui_dom:'Semana qui → dom criada' + (novaAba?' ('+novaAba+')':'') + '!', semana_completa:'Semana completa criada' + (novaAba?' ('+novaAba+')':'') + '!', planilha_zero:'Nova aba criada! Use "Novo meso IA" para preencher.' };
+      // qui_dom não cria aba — finaliza a faixa SEX-SAB-DOM da semana já criada pelo seg_qui.
+      var msgQuiDom = (data.faixaFinalizada === false)
+        ? 'Qui → dom: nenhuma semana pendente para finalizar. Rode o "Seg → qui" primeiro (ou use "Semana completa"). Nada foi alterado.'
+        : 'Faixa qui → dom finalizada (sex/sáb/dom): resultados movidos para "anterior" e questionário zerado!';
+      const msgs = { seg_qui:'Semana seg → qui criada' + (novaAba?' ('+novaAba+')':'') + ' — faixa seg/ter/qua/qui finalizada!', qui_dom:msgQuiDom, semana_completa:'Semana completa criada' + (novaAba?' ('+novaAba+')':'') + '!', planilha_zero:'Nova aba criada! Use "Novo meso IA" para preencher.' };
       addMsg('msgs', (msgs[type]||'Feito!') + ' Abra a planilha para conferir.', false);
       showToast('Feito!', 'ok');
       if ((type === 'seg_qui' || type === 'qui_dom' || type === 'semana_completa') && novaAba) {
@@ -4444,6 +4448,7 @@ function gerarPreviewMesoManual() {
         var need = (item.combo === 'tri-set') ? 2 : 1; // tri-set precisa de 2 seguintes
         if (i + need <= itens.length - 1) {
           combinacoes[gIdx] = item.combo;
+          item.ex._comboTipo = item.combo; // FIX: combinação grudada no exercício (sobrevive a reorder no preview)
         } else {
           erros.push(dia + ': "' + item.ex.nome + '" marcado como ' + item.combo +
             ' mas não há exercício(s) suficiente(s) depois dele neste dia.');
@@ -7964,16 +7969,27 @@ function mostrarPreview(exercicios, nomeAba) {
   lista.innerHTML = '';
 
   // ── Conexões de bloco (bi-set, super-set, tri-set, giant-set, combinado) ──
-  if (!window._previewCombinacoes) { window._previewCombinacoes = {}; }
+  // FIX: o mapa por índice é RECONSTRUÍDO a cada render a partir do _comboTipo
+  // gravado em cada exercício (fonte da verdade). Isso mantém as conexões alinhadas
+  // mesmo depois de reordenar/adicionar/excluir (índices antigos não "grudam" mais).
+  var _combRebuild = {};
+  exercicios.forEach(function(ex, idx) { if (ex && ex._comboTipo) _combRebuild[idx] = ex._comboTipo; });
+  window._previewCombinacoes = _combRebuild;
   // Parsear observacoes existentes para pré-popular conexões ainda não definidas
+  // (ex.: editar uma aba que já tinha bi-set salvo em observacoes, sem _comboTipo)
   exercicios.forEach(function(ex, idx) {
     var obs = obterCampoTextoExercicioApp(ex, ['observacoes','observacao','combinacao']) || '';
     if (obs && window._previewCombinacoes[idx] === undefined) {
-      if      (/tri.?set/i.test(obs))   window._previewCombinacoes[idx] = 'tri-set';
-      else if (/giant.?set/i.test(obs)) window._previewCombinacoes[idx] = 'giant-set';
-      else if (/super.?set/i.test(obs)) window._previewCombinacoes[idx] = 'super-set';
-      else if (/bi.?set/i.test(obs))    window._previewCombinacoes[idx] = 'bi-set';
-      else if (/combinado/i.test(obs))  window._previewCombinacoes[idx] = 'combinado';
+      var _tpDetectado =
+        /tri.?set/i.test(obs)   ? 'tri-set'   :
+        /giant.?set/i.test(obs) ? 'giant-set' :
+        /super.?set/i.test(obs) ? 'super-set' :
+        /bi.?set/i.test(obs)    ? 'bi-set'    :
+        /combinado/i.test(obs)  ? 'combinado' : '';
+      if (_tpDetectado) {
+        window._previewCombinacoes[idx] = _tpDetectado;
+        if (ex) ex._comboTipo = _tpDetectado; // persiste p/ sobreviver a reorder
+      }
     }
   });
   // Precompute _prvGrpOf[]: mapeia cada exercício ao índice-start do seu grupo (-1 = sem grupo)
@@ -8120,6 +8136,19 @@ function mostrarPreview(exercicios, nomeAba) {
       linkBtn.innerHTML = '🔗';
       linkBtn.addEventListener('click', (function(i){ return function(e){ e.stopPropagation(); abrirMenuConectar(i); }; })(previewIdx));
       depoisEl.appendChild(linkBtn);
+    }
+    // FIX: botão de desfazer em QUALQUER exercício que faça parte de um bloco
+    // (start ou membro). Antes só dava para desfazer pelo menu do start — clicar no
+    // 2º exercício do bi-set não oferecia como voltar atrás. desconectarPreview()
+    // localiza o start do grupo sozinho.
+    if (_modoEdita && _prvGrpOf[previewIdx] >= 0) {
+      var unlinkBtn = document.createElement('button');
+      unlinkBtn.className = 'preview-link-btn';
+      unlinkBtn.title = 'Desfazer esta combinação';
+      unlinkBtn.style.cssText = 'border-color:var(--red,#e55);color:var(--red,#e55);';
+      unlinkBtn.innerHTML = '✕🔗';
+      unlinkBtn.addEventListener('click', (function(i){ return function(e){ e.stopPropagation(); desconectarPreview(i); }; })(previewIdx));
+      depoisEl.appendChild(unlinkBtn);
     }
 
     if (_modoEdita) {
@@ -8508,21 +8537,63 @@ function abrirMenuConectar(idx) {
 function conectarPreview(idx, tipo) {
   window._previewCombinacoes = window._previewCombinacoes || {};
   window._previewCombinacoes[idx] = tipo;
+  // FIX: grava a combinação no PRÓPRIO exercício (não só por índice). Assim ela
+  // sobrevive a reordenar/adicionar/excluir — mostrarPreview reconstrói o mapa.
+  if (window._previewExercicios && window._previewExercicios[idx]) {
+    window._previewExercicios[idx]._comboTipo = tipo;
+  }
   mostrarPreview(window._previewExercicios, window._previewAba);
 }
 
 function desconectarPreview(idx) {
   window._previewCombinacoes = window._previewCombinacoes || {};
-  delete window._previewCombinacoes[idx];
+  // idx pode ser um membro do bloco (não o start): localizar o start e desfazer nele.
+  var start = idx;
+  if (window._previewExercicios && !(window._previewExercicios[idx] && window._previewExercicios[idx]._comboTipo)) {
+    var s = _previewStartDoGrupo(idx);
+    if (s >= 0) start = s;
+  }
+  delete window._previewCombinacoes[start];
+  if (window._previewExercicios && window._previewExercicios[start]) {
+    delete window._previewExercicios[start]._comboTipo;
+  }
   mostrarPreview(window._previewExercicios, window._previewAba);
+}
+
+// Dado o índice de um exercício, retorna o índice-start do bloco (bi/tri/giant-set)
+// ao qual ele pertence, ou -1 se não fizer parte de nenhum bloco. Usa _comboTipo.
+function _previewStartDoGrupo(idx) {
+  var exs = window._previewExercicios;
+  if (!Array.isArray(exs)) return -1;
+  for (var si = idx; si >= 0; si--) {
+    var tp = exs[si] && exs[si]._comboTipo;
+    if (si === idx && tp) return si; // o próprio é start
+    if (!tp) continue;
+    var sz = 2;
+    if (/tri.?set/i.test(tp)) sz = 3;
+    else if (/giant.?set/i.test(tp)) sz = Math.min(4, exs.length - si);
+    // mesmo dia e dentro do alcance do bloco?
+    if (si + sz - 1 >= idx && String(exs[si].dia||'').toUpperCase() === String(exs[idx].dia||'').toUpperCase()) return si;
+  }
+  return -1;
 }
 
 // Aplica as conexões definidas no _previewCombinacoes ao campo observacoes de cada exercício
 // Chamado antes de escrever na planilha para garantir formato correto
 function aplicarCombinacoesPreviews() {
   var exs = window._previewExercicios;
-  if (!exs || !window._previewCombinacoes) return;
-  var comb = window._previewCombinacoes;
+  if (!exs) return;
+  // FIX: reconstruir o mapa por índice a partir do _comboTipo gravado em cada
+  // exercício (fonte da verdade). Garante alinhamento mesmo após reordenar/add/excluir.
+  var comb = {};
+  exs.forEach(function(ex, idx) { if (ex && ex._comboTipo) comb[idx] = ex._comboTipo; });
+  // Compatibilidade: se algum índice antigo ainda só existir no mapa global, preserva.
+  if (window._previewCombinacoes) {
+    Object.keys(window._previewCombinacoes).forEach(function(k){
+      if (comb[k] === undefined && exs[parseInt(k)]) comb[k] = window._previewCombinacoes[k];
+    });
+  }
+  window._previewCombinacoes = comb;
   // Primeiro limpar observacoes de combinações em exercícios que não são mais start
   exs.forEach(function(ex, idx) {
     var obs = (ex.observacoes || '').trim();

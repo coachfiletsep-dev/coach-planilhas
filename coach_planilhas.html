@@ -421,6 +421,8 @@
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;seg_qui&#39;)">📅 Seg → qui</button>
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;qui_dom&#39;)">📆 Qui → dom</button>
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;semana_completa&#39;)">🗓️ Semana completa</button>
+      <button class="add-btn" style="border-style:solid;color:#7C3AED;border-color:#7C3AED;" onclick="atualizarTodos(&#39;restaurar_dropdowns&#39;)" title="Recria a aba BD_Links e os dropdowns de exercício em TODOS os alunos ativos">🔧 Restaurar dropdowns (todos)</button>
+      <button class="add-btn" style="border-style:solid;color:#7C3AED;border-color:#7C3AED;" onclick="atualizarTodos(&#39;atualizar_links&#39;)" title="Atualiza os links de vídeo da semana atual em TODOS os alunos ativos (puxa do bd_exercicios)">🔗 Atualizar links (todos)</button>
     </div>
     <div class="sidebar-footer" id="counter" style="flex-shrink:0;">57 alunos · 20 ativos</div>
   </div>
@@ -7546,7 +7548,7 @@ async function importarBrainering() {
 async function atualizarTodos(tipo) {
   const ativos = students.filter(function(s){ return s.status === 'ativo' && s.sheet; });
   if (ativos.length === 0) { showToast('Nenhum aluno ativo com planilha cadastrada', 'err'); return; }
-  const labels = { seg_qui:'Seg → qui', qui_dom:'Qui → dom', semana_completa:'Semana completa' };
+  const labels = { seg_qui:'Seg → qui', qui_dom:'Qui → dom', semana_completa:'Semana completa', restaurar_dropdowns:'Restaurar dropdowns', atualizar_links:'Atualizar links' };
   document.getElementById('progress-title').textContent = 'Atualizando todos — ' + (labels[tipo]||tipo);
   document.getElementById('progress-count').textContent = '0';
   document.getElementById('progress-total').textContent = ativos.length;

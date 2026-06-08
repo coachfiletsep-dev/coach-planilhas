@@ -421,8 +421,8 @@
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;seg_qui&#39;)">📅 Seg → qui</button>
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;qui_dom&#39;)">📆 Qui → dom</button>
       <button class="add-btn" style="border-style:solid;color:var(--green);border-color:var(--green);" onclick="atualizarTodos(&#39;semana_completa&#39;)">🗓️ Semana completa</button>
-      <button class="add-btn" style="border-style:solid;color:#7C3AED;border-color:#7C3AED;" onclick="atualizarTodos(&#39;restaurar_dropdowns&#39;)" title="Recria a aba BD_Links e os dropdowns de exercício em TODOS os alunos ativos">🔧 Restaurar dropdowns (todos)</button>
-      <button class="add-btn" style="border-style:solid;color:#7C3AED;border-color:#7C3AED;" onclick="atualizarTodos(&#39;atualizar_links&#39;)" title="Atualiza os links de vídeo da semana atual em TODOS os alunos ativos (puxa do bd_exercicios)">🔗 Atualizar links (todos)</button>
+      <button class="add-btn" style="border-style:solid;color:#7C3AED;border-color:#7C3AED;" onclick="atualizarTodos(&#39;links_rapido&#39;)" title="Empurra os links novos do bd_exercicios para TODOS os alunos (reescreve só o BD_Links — rápido)">⚡ Atualizar links (todos)</button>
+      <button class="add-btn" style="border-style:solid;color:#7C3AED;border-color:#7C3AED;" onclick="atualizarTodos(&#39;restaurar_dropdowns&#39;)" title="Recria BD_Links + dropdowns + fórmulas em TODOS os alunos (use na 1ª vez ou se o dropdown sumir — é mais lento)">🔧 Restaurar dropdowns (todos)</button>
     </div>
     <div class="sidebar-footer" id="counter" style="flex-shrink:0;">57 alunos · 20 ativos</div>
   </div>
@@ -7580,7 +7580,9 @@ async function atualizarTodos(tipo) {
     document.getElementById('progress-count').textContent = i + 1;
     document.getElementById('progress-bar').style.width = Math.round(((i+1)/ativos.length)*100) + '%';
     document.getElementById('progress-log').scrollTop = document.getElementById('progress-log').scrollHeight;
-    if (i < ativos.length - 1) await new Promise(function(r){ setTimeout(r, 1500); });
+    // Ações leves (só reescrevem BD_Links / 1 célula) toleram pausa menor entre alunas.
+    var _pausa = (tipo === 'links_rapido' || tipo === 'atualizar_links') ? 400 : 1500;
+    if (i < ativos.length - 1) await new Promise(function(r){ setTimeout(r, _pausa); });
   }
   document.getElementById('progress-title').textContent = erros.length === 0 ? '✅ Todos atualizados!' : '⚠️ Concluído com ' + erros.length + ' erro(s)';
   document.getElementById('progress-close-btn').style.display = 'block';

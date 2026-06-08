@@ -7669,7 +7669,7 @@ async function editarAbaManual() {
         _origLinha: ex.linha,   // linha de origem fixa — usada p/ mover o log junto ao reordenar
         _tipo: divisaoSemana[ex.dia] || '?',
         reps: ex.repeticoes,
-        tipo_card: (/^(mobilidade|flexibilidade|alongamento)$/i.test(ex.objetivo || '')) ? 'mobilidade' : (ex.tipo_card || '')
+        tipo_card: (/^(mobilidade|flexibilidade|alongamento|pri|postural|respirat)/i.test(ex.objetivo || '')) ? 'mobilidade' : (ex.tipo_card || '')
       });
     });
     if (!exercicios.length) { showToast('A aba nao tem exercicios para editar', 'warn'); return; }
@@ -8208,6 +8208,10 @@ function mostrarPreview(exercicios, nomeAba) {
       else if (_tecVal)                               _tecPreset = 'outra';
       var _tecSelOpts = [['','Sem técnica avançada'],['drop-set','Drop-set'],['rest-pause','Rest-pause'],['cluster','Cluster'],['parciais','Parciais'],['GVT','GVT (10x10)'],['outra','Outra…']]
         .map(function(o){ return '<option value="' + o[0] + '"' + (_tecPreset===o[0]?' selected':'') + '>' + o[1] + '</option>'; }).join('');
+      // Categoria do exercício (vai para o app do aluno via "objetivo", offset 2): treino/mobilidade/alongamento/PRI
+      var _catCard = categoriaDoExercicioPreview(ex);
+      var _catSelOpts = [['','💪 Força (treino)'],['mobilidade','🧘 Mobilidade (tempo/lados)'],['alongamento','🤸 Alongamento (tempo/lados)'],['pri','🫁 PRI (respiração/postura)']]
+        .map(function(o){ return '<option value="' + o[0] + '"' + (_catCard===o[0]?' selected':'') + '>' + o[1] + '</option>'; }).join('');
       editForm.innerHTML =
         '<datalist id="' + dlId + '">' + exSugestoes + '</datalist>' +
         '<div style="font-size:11px;font-weight:700;color:var(--green);">✏️ ' + ex.dia + ' — exercício ' + (previewIdx+1) + '</div>' +
@@ -8222,10 +8226,7 @@ function mostrarPreview(exercicios, nomeAba) {
           '<div><label>Tipo</label><select id="pe-tipo-' + previewIdx + '">' + tipoOpts + '</select></div>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:4px;">' +
-          '<div><label>Card do aluno</label><select id="pe-card-' + previewIdx + '" style="border-color:' + (ex.tipo_card==='mobilidade'?'#0369A1':'') + '">' +
-            '<option value=""' + (!ex.tipo_card||ex.tipo_card!=='mobilidade'?' selected':'') + '>Força (padrão)</option>' +
-            '<option value="mobilidade"' + (ex.tipo_card==='mobilidade'?' selected':'') + '>🧘 Mobilidade (tempo/lados)</option>' +
-          '</select></div>' +
+          '<div><label>Card do aluno / categoria</label><select id="pe-card-' + previewIdx + '" style="border-color:' + (_catCard?'#0369A1':'') + '">' + _catSelOpts + '</select></div>' +
           '<div><label>Cadência</label><input id="pe-cad-' + previewIdx + '" type="text" value="' + (ex.cadencia||'') + '" placeholder="Ex: 3-1-2"></div>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:4px;">' +
@@ -8375,10 +8376,25 @@ function aplicarEdicaoPreview(idx) {
   var reps      = ((repsEl||{}).value || '').trim() || ex.reps || ex.repeticoes;
   var rir       = ((rirEl||{}).value || '').trim();
   var tipo      = ((tipoEl||{}).value) || ex.tipo;
-  var tipoCard  = (cardEl||{}).value || '';
+  var categoria = (cardEl||{}).value || '';            // ''=força | mobilidade | alongamento | pri
   var cadencia  = ((cadEl||{}).value || '').trim();
   var ultimaSer = ((tecEl||{}).value || '').trim();   // técnica avançada (offset 8)
   var observ    = ((obsEl||{}).value || '').trim();   // observações / combinação (offset 10)
+  // A categoria do card é gravada no "objetivo" (offset 2 — é o que PERSISTE na planilha
+  // e o que o app do aluno lê para separar Treino/Mobilidade/Alongamento/PRI).
+  //  - mobilidade/alongamento/PRI -> objetivo recebe o rótulo da categoria + tipo_card='mobilidade'
+  //    (reaproveita o card de tempo/lados, sem RiR);
+  //  - força (treino) -> NÃO sobrescreve um objetivo de treino (Hipertrofia etc.); só limpa
+  //    o objetivo se ele estava com um rótulo de categoria antigo.
+  var objetivoNovo = ex.objetivo || '';
+  var tipoCardNovo = ex.tipo_card || '';
+  if (categoria === 'mobilidade')      { objetivoNovo = 'Mobilidade';  tipoCardNovo = 'mobilidade'; }
+  else if (categoria === 'alongamento'){ objetivoNovo = 'Alongamento'; tipoCardNovo = 'mobilidade'; }
+  else if (categoria === 'pri')        { objetivoNovo = 'PRI';         tipoCardNovo = 'mobilidade'; }
+  else { // força (treino)
+    if (/^(mobilidade|alongamento|flexibilidade|pri|postural|respirat)/i.test(objetivoNovo)) objetivoNovo = '';
+    tipoCardNovo = '';
+  }
   window._previewExercicios[idx] = Object.assign({}, ex, {
     nome: nome.toUpperCase(),
     series: series,
@@ -8386,12 +8402,23 @@ function aplicarEdicaoPreview(idx) {
     repeticoes: reps,
     rir: rir !== '' ? rir : ex.rir,
     tipo: tipo,
-    tipo_card: tipoCard || ex.tipo_card || '',
+    objetivo: objetivoNovo,
+    tipo_card: tipoCardNovo,
     cadencia: cadencia !== '' ? cadencia : (ex.cadencia || ''),
     ultimaSerie: ultimaSer,
     observacoes: observ
   });
   mostrarPreview(window._previewExercicios, window._previewAba);
+}
+
+// Detecta a categoria atual de um exercício do preview (treino/mobilidade/alongamento/PRI)
+// a partir do objetivo (fonte persistente) e do tipo_card. Usada no dropdown "Card do aluno".
+function categoriaDoExercicioPreview(ex) {
+  var obj = String((ex && ex.objetivo) || '');
+  if (/^\s*(pri|postural|respirat)/i.test(obj)) return 'pri';
+  if (/along|flexib/i.test(obj)) return 'alongamento';
+  if ((ex && ex.tipo_card === 'mobilidade') || /mobilid|mobility/i.test(obj)) return 'mobilidade';
+  return '';
 }
 
 // Preenche o campo de parâmetros com um template ao escolher a técnica no select

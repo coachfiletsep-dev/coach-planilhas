@@ -768,6 +768,7 @@
               <button class="btn-ghost" onclick="exportarMacroPdf()">Exportar PDF</button>
               <button class="btn-ghost" onclick="protegerPlanilhaAluno()">Proteger planilha</button>
               <button class="btn-ghost" onclick="toggleGantt()" title="Abrir Gantt de macrociclo">📅 Gantt</button>
+              <button class="btn-ghost" onclick="abrirPlanoPeriod()" title="Opcional: revisar/ajustar à mão o plano numérico (o normal é o macro já alimentar isso ao salvar). Use ↻ Carregar salvo para ver o plano atual do aluno.">⚙️ Revisar plano (opcional)</button>
             </div>
 
             <div class="macro-field" style="margin-top:12px;">
@@ -1517,6 +1518,39 @@
     <div class="modal-footer">
       <button class="btn-ghost" onclick="document.getElementById(&#39;macro-manual-modal&#39;).style.display=&#39;none&#39;">Cancelar</button>
       <button class="btn-green" onclick="gerarMacrocicloManual()">✨ Gerar macrociclo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PLANO AUTOMATICO DE PERIODIZACAO (Fase 12) -->
+<div class="overlay" id="plano-period-modal" style="display:none;">
+  <div class="modal" style="width:760px;max-width:97vw;">
+    <div class="modal-header">
+      <span class="modal-title">⚙️ Plano automático de periodização</span>
+      <button class="icon-btn" onclick="fecharPlanoPeriod()" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text3);background:var(--bg2);padding:8px;border-radius:var(--radius);line-height:1.45;">
+        Defina como <strong>reps, RiR e séries</strong> mudam a cada semana. Ao copiar a semana (Seg→qui / Qui→dom / Semana completa), o app reescreve só a prescrição da aba nova conforme o bloco — sem tocar no que a aluna registrou. Sem plano salvo, a cópia continua como antes.
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap;">
+        <div style="flex:0 0 180px;">
+          <label style="display:block;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Âncora (1ª aba do plano)</label>
+          <input id="pp-ancora" type="text" value="S1" style="width:100%;border:.5px solid var(--border2);border-radius:var(--radius);padding:7px 8px;font-size:12px;background:var(--bg2);color:var(--text);" oninput="ppSetAncora(this.value)">
+          <div style="font-size:10px;color:var(--text3);margin-top:3px;">Ex.: se o plano começa em S1, deixe S1. A posição de cada semana = nº da aba − âncora.</div>
+        </div>
+        <button class="btn-ghost" style="font-size:12px;" onclick="ppExemploLinear()" title="Preenche 2 blocos lineares: S1-S4 a 10-12 reps, S5-S8 a 8-10 reps">📋 Exemplo: 2 blocos lineares</button>
+        <button class="btn-ghost" style="font-size:12px;" onclick="ppCarregarSalvo()" title="Ler o plano já salvo na planilha do aluno">↻ Carregar salvo</button>
+      </div>
+      <div id="pp-blocos" style="display:flex;flex-direction:column;gap:12px;margin-top:12px;"></div>
+      <button class="btn-ghost" style="font-size:12px;align-self:flex-start;margin-top:8px;" onclick="ppAddBloco()">+ adicionar bloco</button>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between;">
+      <button class="btn-ghost" style="color:var(--red)" onclick="ppLimparSalvo()" title="Remove o plano da planilha do aluno (volta ao comportamento de fotocópia)">🗑 Remover plano do aluno</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost" onclick="fecharPlanoPeriod()">Fechar</button>
+        <button class="btn-green" onclick="salvarPlanoPeriod()">💾 Salvar plano na planilha do aluno</button>
+      </div>
     </div>
   </div>
 </div>
@@ -4183,7 +4217,12 @@ async function abrirMesoManual() {
   var s = students.find(function(x){ return x.id === selectedId; });
   if (!s) { showToast('Selecione um aluno', 'err'); return; }
   document.getElementById('meso-manual-modal').style.display = 'flex';
-  document.getElementById('meso-man-dias').innerHTML = '';
+  window._mesoManPlanoPos = null; window._mesoManPlano = null;
+  document.getElementById('meso-man-dias').innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:4px;border:0.5px solid var(--border2);border-radius:var(--radius);padding:8px;background:var(--bg2);margin-bottom:6px;">' +
+      '<div id="mman-macro-nota" style="font-size:11px;color:var(--text3);">Verificando plano do macro…</div>' +
+      '<div id="mman-total-geral" style="font-size:12px;color:var(--text2);"><span style="color:var(--text3);">Adicione exercícios para ver volume e tempo estimado.</span></div>' +
+    '</div>';
   var cdChk = document.getElementById('mman-cardio-ativo');
   if (cdChk) { cdChk.checked = false; }
   var cdBox = document.getElementById('mman-cardio-box');
@@ -4210,6 +4249,48 @@ async function abrirMesoManual() {
     window._mesoManAba = window._proximaAba || 'S1';
   }
   abaEl.textContent = window._mesoManAba;
+
+  // [FASE 12B] Carrega o plano de periodização do aluno e resolve a semana da aba alvo,
+  // para que os exercícios adicionados já nasçam com reps/RiR/séries do macro.
+  var nota = document.getElementById('mman-macro-nota');
+  try {
+    var sid = getSheetId(s.sheet);
+    if (sid) {
+      var rp = await gsPost({ acao: 'lerPlanoPeriodizacao', spreadsheetId: sid });
+      var dp = await rp.json();
+      if (dp && dp.plano) {
+        window._mesoManPlano = dp.plano;
+        window._mesoManPlanoPos = _resolverSemanaPlano(dp.plano, window._mesoManAba);
+      }
+    }
+  } catch (e) { /* sem plano: segue com os defaults */ }
+  if (nota) {
+    var pos = window._mesoManPlanoPos;
+    if (pos) {
+      var resumo = _mmanResumoAlvo(pos);
+      nota.innerHTML = '🔗 <strong>Reps/RiR vêm do macro</strong> para ' + window._mesoManAba +
+        ' (bloco "' + (pos.bloco.id || '') + '", semana ' + (pos.semana.n != null ? pos.semana.n : '?') + ')' +
+        (resumo ? ' · ' + resumo : '') + '. Você ainda pode ajustar à mão.';
+    } else if (window._mesoManPlano) {
+      nota.innerHTML = '⚠️ Há um plano de macro salvo, mas ele não cobre a aba ' + window._mesoManAba +
+        ' (fora do intervalo/âncora). Os exercícios usarão os valores padrão.';
+    } else {
+      nota.innerHTML = 'ℹ️ Sem plano de periodização salvo para este aluno. Salve um macro com números para os reps virem do macro automaticamente.';
+    }
+  }
+}
+// Resumo curto do alvo da semana (para a nota do topo)
+function _mmanResumoAlvo(pos) {
+  try {
+    var b = pos.bloco, s = pos.semana, g = b.granularidade || 'global';
+    if (g === 'dia' && s.dias) {
+      return Object.keys(s.dias).map(function (d) {
+        var a = s.dias[d]; return d + ' ' + (a.reps || '?') + (a.rir != null && a.rir !== '' ? '/RiR' + a.rir : '');
+      }).join(' · ');
+    }
+    if (s.global) { var a = s.global; return (a.reps || '?') + (a.rir != null && a.rir !== '' ? ' RiR' + a.rir : '') + (a.series ? ' ' + a.series + 'x' : ''); }
+  } catch (e) {}
+  return '';
 }
 
 function mmanRenderDiasChk() {
@@ -4226,7 +4307,7 @@ function mmanRenderDiasChk() {
 function mmanToggleDia(dia) {
   var chk = document.getElementById('mman-chk-' + dia);
   if (chk && chk.checked) mmanAddDiaBloco(dia);
-  else { var b = document.getElementById('mman-dia-' + dia); if (b) b.remove(); }
+  else { var b = document.getElementById('mman-dia-' + dia); if (b) b.remove(); mmanAtualizarTotais(); }
 }
 
 function mmanAddDiaBloco(dia) {
@@ -4254,8 +4335,8 @@ function mmanRenumerar(dia) {
     var n = row.querySelector('.mman-num');
     if (n) n.textContent = (i + 1);
   });
-  var c = document.getElementById('mman-count-' + dia);
-  if (c) c.textContent = rows.length ? '— ' + rows.length + ' exercício' + (rows.length > 1 ? 's' : '') : '';
+  // O texto do contador (séries + tempo) é montado por mmanAtualizarTotais.
+  mmanAtualizarTotais();
 }
 
 function mmanRemoveEx(btn) {
@@ -4311,6 +4392,7 @@ function mmanTecPreset(sel) {
   if (sel.value === '')           { inp.value = ''; }
   else if (sel.value === 'outra') { inp.value = ''; inp.focus(); }
   else                            { inp.value = presets[sel.value] || sel.value; }
+  try { mmanAtualizarTotais(); } catch (e) {}
 }
 
 function mmanGruposOptions() {
@@ -4335,8 +4417,8 @@ function mmanAddExercicio(dia) {
       '<button class="icon-btn" title="Remover" onclick="mmanRemoveEx(this)" style="font-size:13px;">✕</button>' +
     '</div>' +
     '<div style="display:flex;gap:4px;flex-wrap:wrap;">' +
-      '<input class="mman-series" type="number" min="1" max="12" value="3" title="Séries" style="' + _MMAN_INP + 'width:58px;">' +
-      '<input class="mman-reps" type="text" value="8-12" title="Repetições" style="' + _MMAN_INP + 'width:70px;">' +
+      '<input class="mman-series" type="number" min="1" max="12" value="3" title="Séries" oninput="mmanAtualizarTotais()" style="' + _MMAN_INP + 'width:58px;">' +
+      '<input class="mman-reps" type="text" value="8-12" title="Repetições" oninput="mmanAtualizarTotais()" style="' + _MMAN_INP + 'width:70px;">' +
       '<input class="mman-rir" type="text" value="2" title="RiR" style="' + _MMAN_INP + 'width:48px;">' +
       '<input class="mman-cad" type="text" placeholder="Cadência" title="Cadência" style="' + _MMAN_INP + 'width:84px;">' +
       '<select class="mman-tecsel" onchange="mmanTecPreset(this)" title="Técnica avançada na última série" style="' + _MMAN_INP + 'width:118px;">' +
@@ -4348,14 +4430,15 @@ function mmanAddExercicio(dia) {
         '<option value="GVT">GVT (10x10)</option>' +
         '<option value="outra">Outra…</option>' +
       '</select>' +
-      '<input class="mman-tec" type="text" placeholder="Parâmetros da técnica" title="Parâmetros da técnica (ex: drop-set 2x | rest-pause 2x 15s)" style="' + _MMAN_INP + 'flex:1;min-width:110px;">' +
-      '<select class="mman-combo" title="Combinar com o(s) próximo(s) exercício(s) deste dia, em sequência sem descanso" style="' + _MMAN_INP + 'width:120px;">' +
+      '<input class="mman-tec" type="text" placeholder="Parâmetros da técnica" title="Parâmetros da técnica (ex: drop-set 2x | rest-pause 2x 15s)" oninput="mmanAtualizarTotais()" style="' + _MMAN_INP + 'flex:1;min-width:110px;">' +
+      '<select class="mman-combo" onchange="mmanAtualizarTotais()" title="Combinar com o(s) próximo(s) exercício(s) deste dia, em sequência sem descanso" style="' + _MMAN_INP + 'width:120px;">' +
         '<option value="">— sem combo</option>' +
         '<option value="bi-set">bi-set ↓</option>' +
         '<option value="super-set">super-set ↓</option>' +
         '<option value="tri-set">tri-set ↓↓</option>' +
         '<option value="combinado">combinado ↕</option>' +
       '</select>' +
+      '<span class="mman-rest" title="Descanso sugerido (derivado das reps)" style="font-size:10px;color:var(--text3);align-self:center;white-space:nowrap;"></span>' +
     '</div>';
   // Drag: a alça habilita o draggable da linha (evita conflito com inputs)
   var handle = row.querySelector('.mman-handle');
@@ -4366,6 +4449,8 @@ function mmanAddExercicio(dia) {
   row.addEventListener('drop', function(ev) { ev.preventDefault(); });
   row.addEventListener('dragend', mmanDragEnd);
   cont.appendChild(row);
+  // [FASE 12B] Se há plano do macro para a aba alvo, prefilla reps/RiR/séries deste dia
+  try { _mmanAplicarAlvoNaLinha(row, dia); } catch (eAlvo) {}
   mmanRenumerar(dia);
 }
 
@@ -4374,6 +4459,140 @@ function mmanFillEx(sel) {
   var dl = sel.closest('.mman-exrow').querySelector('datalist');
   var lista = (window._bibliotecaBrainering && window._bibliotecaBrainering[grupo]) || [];
   if (dl) dl.innerHTML = lista.map(function(n){ return '<option value="' + n + '">'; }).join('');
+}
+
+// ====================================================================
+// [FASE 12B/12D] Meso manual: puxar reps/RiR/séries do macro + totais de volume/tempo
+// ====================================================================
+// --- Resolver, em JS, qual semana do plano corresponde à aba alvo (espelha o backend) ---
+function _planoNumAba(txt) { var m = String(txt || '').match(/\d+/); return m ? parseInt(m[0], 10) : null; }
+function _resolverSemanaPlano(plano, nomeAba) {
+  if (!plano || !plano.blocos) return null;
+  var anc = (plano.ancora && plano.ancora.aba) ? _planoNumAba(plano.ancora.aba) : null;
+  var n = _planoNumAba(nomeAba);
+  if (anc == null || n == null) return null;
+  var idx = n - anc;
+  var flat = [];
+  plano.blocos.forEach(function (b) { (b.semanas || []).forEach(function (s) { flat.push({ bloco: b, semana: s }); }); });
+  if (idx < 0 || idx >= flat.length) return null;
+  return flat[idx];
+}
+function _alvoPlanoDia(pos, dia) {
+  if (!pos) return null;
+  var b = pos.bloco, s = pos.semana, g = b.granularidade || 'global';
+  if (g === 'dia') return (s.dias && s.dias[dia]) || s.global || null;
+  if (g === 'exercicio') return s.global || null; // por exercício resolve depois (nome); cai no global aqui
+  return s.global || null;
+}
+// --- Tabela de descanso (mesma lógica da Fase 3B do app do aluno), a partir do ponto médio das reps ---
+function _mmanRepsMidpoint(reps) {
+  var nums = (String(reps || '').match(/\d+/g) || []).map(Number);
+  if (!nums.length) return null;
+  if (nums.length === 1) return nums[0];
+  return (nums[0] + nums[nums.length - 1]) / 2;
+}
+function _mmanDescansoSeg(reps) {
+  var m = _mmanRepsMidpoint(reps);
+  if (m == null) return 90;
+  if (m <= 5) return 180;
+  if (m <= 7) return 150;
+  if (m <= 9) return 120;
+  if (m <= 11) return 90;
+  if (m <= 14) return 75;
+  return 60;
+}
+var MMAN_SEG_POR_REP = 3;     // ~3s por repetição (execução controlada) — ajustável
+var MMAN_SEG_TRANSICAO = 15;  // troca/preparação entre exercícios
+function _mmanTempoExecSerieSeg(reps) {
+  var m = _mmanRepsMidpoint(reps);
+  if (m == null) return 30;
+  return Math.max(20, Math.round(m * MMAN_SEG_POR_REP));
+}
+function _fmtMin(seg) {
+  var min = seg / 60;
+  if (min < 1) return '<1 min';
+  return Math.round(min) + ' min';
+}
+// Prefill de reps/RiR/séries de uma linha a partir do alvo do macro para o dia
+function _mmanAplicarAlvoNaLinha(row, dia) {
+  var pos = window._mesoManPlanoPos;
+  if (!pos) return false;
+  var alvo = _alvoPlanoDia(pos, dia);
+  if (!alvo) return false;
+  if (alvo.reps) { var r = row.querySelector('.mman-reps'); if (r) r.value = alvo.reps; }
+  if (alvo.rir != null && alvo.rir !== '') { var rr = row.querySelector('.mman-rir'); if (rr) rr.value = alvo.rir; }
+  if (alvo.series) { var ss = row.querySelector('.mman-series'); if (ss) ss.value = alvo.series; }
+  return true;
+}
+// Agrupa as linhas de um dia em BLOCOS: um combo (bi/super/tri/combinado) puxa as
+// linhas seguintes para o mesmo bloco — entre elas NÃO há descanso (só ao fim do bloco).
+function _mmanBlocosDoDia(rows) {
+  var arr = Array.prototype.slice.call(rows), blocos = [], i = 0;
+  while (i < arr.length) {
+    var combo = ((arr[i].querySelector('.mman-combo') || {}).value || '');
+    var size = (combo === 'tri-set') ? 3 : ((combo === 'bi-set' || combo === 'super-set' || combo === 'combinado') ? 2 : 1);
+    size = Math.min(size, arr.length - i);
+    blocos.push(arr.slice(i, i + size));
+    i += size;
+  }
+  return blocos;
+}
+// Tempo extra (uma vez por exercício, na última série) das técnicas avançadas — ajustável.
+var MMAN_TEC_EXTRA = { 'drop-set': 35, 'rest-pause': 30, 'cluster': 40, 'parciais': 15, 'GVT': 0, 'outra': 20 };
+function _mmanExtraTecnicaSeg(row) {
+  var sel = (row.querySelector('.mman-tecsel') || {}).value || '';
+  if (!sel) {
+    var txt = ((row.querySelector('.mman-tec') || {}).value || '').trim();
+    return txt ? MMAN_TEC_EXTRA['outra'] : 0;
+  }
+  return MMAN_TEC_EXTRA[sel] != null ? MMAN_TEC_EXTRA[sel] : MMAN_TEC_EXTRA['outra'];
+}
+// Recalcula descanso por linha + total de séries e tempo por dia + total geral do meso.
+// Combos: 1 descanso por bloco (o MAIOR entre os membros) e execução somada por rodada.
+// Técnicas avançadas: somam tempo extra (uma vez, na última série).
+function mmanAtualizarTotais() {
+  var totalSeriesGeral = 0, totalSegGeral = 0, totalExGeral = 0;
+  DIAS_VALIDOS.forEach(function (dia) {
+    var cont = document.getElementById('mman-ex-' + dia);
+    if (!cont) return;
+    var rows = cont.querySelectorAll('.mman-exrow');
+    var nEx = rows.length, nSeries = 0, segDia = 0;
+    _mmanBlocosDoDia(rows).forEach(function (membros) {
+      var rounds = 0, execRound = 0, restBlock = 0, extraTec = 0, volume = 0;
+      membros.forEach(function (row) {
+        var reps = (row.querySelector('.mman-reps') || {}).value || '';
+        var sr = parseInt((row.querySelector('.mman-series') || {}).value, 10) || 0;
+        rounds = Math.max(rounds, sr);
+        volume += sr;
+        execRound += _mmanTempoExecSerieSeg(reps);
+        restBlock = Math.max(restBlock, _mmanDescansoSeg(reps));
+        extraTec += _mmanExtraTecnicaSeg(row);
+      });
+      nSeries += volume;
+      if (rounds > 0) segDia += rounds * execRound + Math.max(0, rounds - 1) * restBlock + MMAN_SEG_TRANSICAO + extraTec;
+      membros.forEach(function (row, mi) {
+        var badge = row.querySelector('.mman-rest'); if (!badge) return;
+        var sr = parseInt((row.querySelector('.mman-series') || {}).value, 10) || 0;
+        if (!sr) { badge.textContent = ''; return; }
+        if (membros.length > 1 && mi < membros.length - 1) badge.textContent = '🔗 sem descanso';
+        else badge.textContent = '⏳ ' + _fmtDescansoMMan(restBlock);
+      });
+    });
+    var c = document.getElementById('mman-count-' + dia);
+    if (c) c.textContent = nEx ? ('— ' + nEx + ' ex · ' + nSeries + ' séries · ~' + _fmtMin(segDia)) : '';
+    totalExGeral += nEx; totalSeriesGeral += nSeries; totalSegGeral += segDia;
+  });
+  var g = document.getElementById('mman-total-geral');
+  if (g) {
+    g.innerHTML = totalExGeral
+      ? ('<strong>Meso:</strong> ' + totalExGeral + ' exercícios · <strong>' + totalSeriesGeral + ' séries</strong> · tempo estimado <strong>~' + _fmtMin(totalSegGeral) + '</strong> <span style="color:var(--text3);">(execução + descansos + técnicas; combos descansam 1x)</span>')
+      : '<span style="color:var(--text3);">Adicione exercícios para ver volume e tempo estimado.</span>';
+  }
+}
+function _fmtDescansoMMan(seg) {
+  if (seg >= 60 && seg % 60 === 0) return (seg / 60) + 'min';
+  if (seg > 60) return Math.floor(seg / 60) + ':' + ('0' + (seg % 60)).slice(-2);
+  return seg + 's';
 }
 
 // ── Cardio do meso manual: sessões por dia (tipo/duração/ergômetro) ──
@@ -4558,6 +4777,16 @@ async function completarMesoComIA() {
   prompt += 'O coach JA definiu manualmente os exercicios abaixo. MANTENHA-OS EXATAMENTE, NAO os altere e NAO os repita na sua resposta:\n' +
             (listaManual || '(nenhum exercicio manual ainda)') + '\n\n';
   prompt += 'TAREFA: gere em JSON APENAS os exercicios ADICIONAIS necessarios para completar o mesociclo conforme a instrucao do coach. Nao inclua os ja definidos acima. Campo "aba" = "' + aba + '". Use SOMENTE nomes exatos da biblioteca do system prompt. Nao gere cardio aqui.\n';
+  // [FASE 12B] O meso manual passa a DIALOGAR com o macro: a IA deve usar reps/RiR do
+  // plano de periodizacao (quando houver) ou do macro salvo, em vez de inventar numeros.
+  var pos = window._mesoManPlanoPos;
+  if (pos) {
+    var alvoTxt = _mmanResumoAlvo(pos);
+    prompt += 'PERIODIZACAO (macro) PARA ESTA SEMANA — bloco "' + (pos.bloco.id || '') + '", semana ' + (pos.semana.n != null ? pos.semana.n : '?') + ': ' + (alvoTxt || 'definida no plano') + '.\n';
+    prompt += 'Use ESTES alvos de reps/RiR (e series quando indicado) em CADA exercicio que voce adicionar, respeitando o dia da semana. NAO use faixas genericas — siga a periodizacao acima.\n';
+  } else if (window._macroAtual && window._macroAtual.markdown) {
+    prompt += 'MACROCICLO SALVO DO ALUNO (use como plano-mae para definir reps/RiR/intensidade dos exercicios que adicionar, coerente com a fase atual):\n' + window._macroAtual.markdown.slice(0, 4000) + '\n';
+  }
   prompt += 'Instrucao do coach: ' + (instr || 'complete os dias/grupos que faltam de forma coerente com o que ja foi montado.') + '\n';
 
   document.getElementById('meso-manual-modal').style.display = 'none';
@@ -5732,18 +5961,24 @@ function abrirMacroManual() {
   macromanAddBloco();
 }
 
+var _mmGrids = {};
+var _mmGidSeq = 1;
+
 function macromanAddBloco() {
   var cont = document.getElementById('macroman-blocos');
   if (!cont) return;
   var n = cont.querySelectorAll('.macroman-bloco').length + 1;
+  var gid = 'g' + (_mmGidSeq++);
+  _mmGrids[gid] = { dias: 'SEG,QUA,SEX', semanas: [] };
   var row = document.createElement('div');
   row.className = 'macroman-bloco';
+  row.dataset.gid = gid;
   row.style.cssText = 'border:0.5px dashed var(--border2);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:4px;background:var(--bg2);';
   row.innerHTML =
     '<div style="display:flex;gap:4px;align-items:center;">' +
       '<input class="mb-nome" type="text" placeholder="Nome do bloco" value="Bloco ' + n + '" style="' + _MACROMAN_INP + 'flex:1;">' +
-      '<input class="mb-sem" type="text" placeholder="Semanas (ex: 1-4)" title="Semanas" style="' + _MACROMAN_INP + 'width:110px;">' +
-      '<button class="icon-btn" title="Remover bloco" onclick="this.closest(\'.macroman-bloco\').remove()" style="font-size:13px;">✕</button>' +
+      '<input class="mb-sem" type="text" placeholder="Abas (ex: S1-S4)" title="Abas/semanas deste bloco — use os nomes reais das abas, ex: S1-S4" style="' + _MACROMAN_INP + 'width:120px;">' +
+      '<button class="icon-btn" title="Remover bloco" onclick="mmRemoverBloco(this)" style="font-size:13px;">✕</button>' +
     '</div>' +
     '<div style="display:flex;gap:4px;flex-wrap:wrap;">' +
       '<input class="mb-fase" list="macroman-dl-fase" placeholder="Fase" title="Fase" style="' + _MACROMAN_INP + 'width:140px;">' +
@@ -5752,11 +5987,153 @@ function macromanAddBloco() {
     '<div style="display:flex;gap:4px;flex-wrap:wrap;">' +
       '<input class="mb-obj" type="text" placeholder="Objetivo do bloco" title="Objetivo" style="' + _MACROMAN_INP + 'flex:1;min-width:150px;">' +
       '<input class="mb-estr" type="text" placeholder="Estratégia / observações" title="Estratégia" style="' + _MACROMAN_INP + 'flex:1;min-width:150px;">' +
-    '</div>';
+    '</div>' +
+    '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
+      '<button class="btn-ghost" style="font-size:11px;padding:3px 8px;" onclick="mmToggleGrid(\'' + gid + '\',this)">✏️ Números (reps/RiR/séries) por semana e dia</button>' +
+      '<input class="mb-dias" type="text" value="SEG,QUA,SEX" placeholder="Dias de treino" title="Dias de treino deste bloco" style="' + _MACROMAN_INP + 'width:150px;" onchange="mmGridSetDias(\'' + gid + '\',this.value)">' +
+    '</div>' +
+    '<div class="mb-grid" id="mbgrid-' + gid + '" style="display:none;margin-top:2px;border-top:0.5px solid var(--border2);padding-top:4px;"></div>';
   cont.appendChild(row);
 }
 
+function mmRemoverBloco(btn) {
+  var row = btn.closest('.macroman-bloco');
+  if (row) { if (row.dataset.gid) delete _mmGrids[row.dataset.gid]; row.remove(); }
+}
+
 function _macromanCel(v) { return String(v || '').replace(/\|/g, '/').replace(/\s+/g, ' ').trim(); }
+
+var _MM_DIAS = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM'];
+function _mmDiasArr(txt) {
+  return String(txt || '').toUpperCase().split(/[,\s]+/).map(function (d) { return d.trim(); })
+    .filter(function (d) { return _MM_DIAS.indexOf(d) >= 0; });
+}
+// Extrai inicio/fim/quantidade de uma faixa de abas: "S1-S4" -> {start:1,end:4,count:4}; "4" -> {count:4}
+function _mmParseSemanas(txt) {
+  var nums = (String(txt || '').match(/\d+/g) || []).map(Number);
+  if (!nums.length) return { start: null, end: null, count: 0 };
+  if (nums.length === 1) return { start: null, end: null, count: nums[0] };
+  var start = nums[0], end = nums[nums.length - 1];
+  if (end < start) { var t = start; start = end; end = t; }
+  return { start: start, end: end, count: (end - start + 1) };
+}
+function mmGridSetDias(gid, val) {
+  var g = _mmGrids[gid] || (_mmGrids[gid] = { dias: '', semanas: [] });
+  g.dias = val;
+  var wrap = document.getElementById('mbgrid-' + gid);
+  if (wrap && wrap.style.display !== 'none') mmRenderGrid(gid);
+}
+function mmToggleGrid(gid, btn) {
+  var wrap = document.getElementById('mbgrid-' + gid); if (!wrap) return;
+  if (wrap.style.display === 'none') { mmRenderGrid(gid); wrap.style.display = 'block'; if (btn) btn.textContent = '▾ Números (reps/RiR/séries) por semana e dia'; }
+  else { wrap.style.display = 'none'; if (btn) btn.textContent = '✏️ Números (reps/RiR/séries) por semana e dia'; }
+}
+function mmGridSet(gid, si, dia, campo, val) {
+  var g = _mmGrids[gid]; if (!g) return;
+  var s = g.semanas[si]; if (!s) return;
+  s.dias = s.dias || {}; s.dias[dia] = s.dias[dia] || {};
+  s.dias[dia][campo] = String(val == null ? '' : val).trim();
+}
+function mmGridRepetir(gid) {
+  var g = _mmGrids[gid]; if (!g || !g.semanas.length) return;
+  var first = JSON.stringify(g.semanas[0].dias || {});
+  for (var i = 1; i < g.semanas.length; i++) g.semanas[i] = { dias: JSON.parse(first) };
+  mmRenderGrid(gid);
+}
+function mmRenderGrid(gid) {
+  var wrap = document.getElementById('mbgrid-' + gid); if (!wrap) return;
+  var row = document.querySelector('.macroman-bloco[data-gid="' + gid + '"]');
+  var info = _mmParseSemanas(row ? row.querySelector('.mb-sem').value : '');
+  var count = info.count || 4;
+  var g = _mmGrids[gid] || (_mmGrids[gid] = { dias: 'SEG,QUA,SEX', semanas: [] });
+  while (g.semanas.length < count) g.semanas.push({ dias: {} });
+  if (g.semanas.length > count) g.semanas = g.semanas.slice(0, count);
+  g.semanas.forEach(function (s) { s.dias = s.dias || {}; });
+  var dias = _mmDiasArr(g.dias);
+  var h = '<div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Deixe em branco o que não varia. ' +
+    '<a href="#" onclick="mmGridRepetir(\'' + gid + '\');return false;" style="color:var(--green);">↓ repetir 1ª semana em todas</a></div>';
+  h += '<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr>' +
+    '<th style="text-align:left;padding:2px 4px;color:var(--text3);">Sem</th>' +
+    '<th style="text-align:left;padding:2px 4px;color:var(--text3);">Dia</th>' +
+    '<th style="text-align:left;padding:2px 4px;color:var(--text3);">Reps</th>' +
+    '<th style="text-align:left;padding:2px 4px;color:var(--text3);">RiR</th>' +
+    '<th style="text-align:left;padding:2px 4px;color:var(--text3);">Séries</th></tr></thead><tbody>';
+  g.semanas.forEach(function (s, si) {
+    if (!dias.length) { h += '<tr><td style="padding:2px 4px;font-weight:700;">' + (si + 1) + '</td><td colspan="4" style="padding:2px 4px;color:var(--red);">defina os dias de treino</td></tr>'; return; }
+    dias.forEach(function (dia, di) {
+      var a = s.dias[dia] || {};
+      h += '<tr>';
+      if (di === 0) h += '<td rowspan="' + dias.length + '" style="padding:2px 4px;font-weight:700;vertical-align:top;">' + (si + 1) + '</td>';
+      h += '<td style="padding:2px 4px;color:var(--text2);">' + dia + '</td>';
+      ['reps', 'rir', 'series'].forEach(function (campo) {
+        var ph = campo === 'reps' ? '10-12' : '3';
+        var v = (a[campo] == null ? '' : String(a[campo])).replace(/"/g, '&quot;');
+        h += '<td style="padding:1px 3px;"><input type="text" value="' + v + '" placeholder="' + ph + '" ' +
+          'oninput="mmGridSet(\'' + gid + '\',' + si + ',\'' + dia + '\',\'' + campo + '\',this.value)" style="width:64px;' + _MACROMAN_INP + '"></td>';
+      });
+      h += '</tr>';
+    });
+  });
+  h += '</tbody></table>';
+  wrap.innerHTML = h;
+}
+
+// Monta o plano de periodizacao a partir dos blocos do builder manual.
+// Usa as faixas de abas (ex.: S1-S4) para ancora e contagem; gaps viram blocos vazios
+// (sem sobrescrever), garantindo que o indice por numero de aba fique alinhado.
+function _planoDoMacroManual() {
+  var rows = document.querySelectorAll('#macroman-blocos .macroman-bloco');
+  var raw = [];
+  rows.forEach(function (row) {
+    var gid = row.dataset.gid;
+    var info = _mmParseSemanas(row.querySelector('.mb-sem').value);
+    if (info.start == null) return; // sem faixa de abas real, nao entra no plano
+    var g = _mmGrids[gid] || { dias: 'SEG,QUA,SEX', semanas: [] };
+    raw.push({ nome: _macromanCel(row.querySelector('.mb-nome').value),
+      modelo: _macromanCel(row.querySelector('.mb-modelo').value) || 'outro',
+      start: info.start, count: info.count || (g.semanas.length || 1), grid: g });
+  });
+  if (!raw.length) return null;
+  raw.sort(function (a, b) { return a.start - b.start; });
+  var ancora = raw[0].start;
+  var blocos = [];
+  var cursor = ancora;
+  raw.forEach(function (b, bi) {
+    if (b.start > cursor) { // intervalo nao coberto -> filler vazio (mantem alinhamento)
+      var gap = b.start - cursor, fs = [];
+      for (var k = 0; k < gap; k++) fs.push({ n: k + 1 });
+      blocos.push({ id: '(intervalo)', modelo: 'outro', granularidade: 'global', varia: [], semanas: fs });
+    }
+    var dias = _mmDiasArr(b.grid.dias);
+    var semanas = [];
+    for (var i = 0; i < b.count; i++) {
+      var src = (b.grid.semanas && b.grid.semanas[i]) ? b.grid.semanas[i] : { dias: {} };
+      var wk = { n: i + 1, dias: {} };
+      dias.forEach(function (d) {
+        var a = (src.dias && src.dias[d]) || {}, o = {}, tem = false;
+        ['reps', 'rir', 'series'].forEach(function (c) { if (a[c] != null && String(a[c]).trim() !== '') { o[c] = String(a[c]).trim(); tem = true; } });
+        if (tem) wk.dias[d] = o;
+      });
+      semanas.push(wk);
+    }
+    blocos.push({ id: b.nome || ('bloco' + (bi + 1)), modelo: b.modelo, granularidade: 'dia', varia: ['reps', 'rir', 'series'], semanas: semanas });
+    cursor = b.start + b.count;
+  });
+  return { ancora: { aba: 'S' + ancora }, blocos: blocos };
+}
+
+// Extrai um bloco ```periodizacao {json}``` do markdown da IA. Retorna {plano, markdown(limpo)}.
+function _extrairPlanoDoMarkdown(md) {
+  var out = { plano: null, markdown: md };
+  try {
+    var m = String(md || '').match(/```periodizacao\s*([\s\S]*?)```/i);
+    if (m && m[1]) {
+      var p = JSON.parse(m[1].trim());
+      if (p && p.blocos && p.blocos.length) { out.plano = p; out.markdown = md.replace(m[0], '').trim(); }
+    }
+  } catch (e) {}
+  return out;
+}
 
 function gerarMacrocicloManual() {
   var ctx = coletarContextoMacro();
@@ -5808,11 +6185,288 @@ function gerarMacrocicloManual() {
   }
 
   var meta = { aluno: ctx.aluno, duracao: ctx.duracao, dias: ctx.dias, nivel: ctx.nivel, modo: 'Manual', manual: true };
-  window._macroAtual = { markdown: md, ctx: ctx, meta: meta, manual: true, criadoEm: new Date().toISOString() };
+  var planoPeriod = null;
+  try { planoPeriod = _planoDoMacroManual(); } catch (ePl) { console.warn('plano periodizacao manual:', ePl); }
+  window._macroAtual = { markdown: md, ctx: ctx, meta: meta, manual: true, plano: planoPeriod, criadoEm: new Date().toISOString() };
   try { salvarContextoMacro(ctx); } catch (e) {}
   renderMacroMarkdown(md, meta);
   document.getElementById('macro-manual-modal').style.display = 'none';
-  showToast('Macrociclo manual gerado. Revise e clique em "Salvar macro" para usá-lo nos mesos.', 'ok');
+  var aviso = planoPeriod && planoPeriod.blocos && planoPeriod.blocos.length
+    ? 'Macrociclo gerado com periodização numérica. Clique em "Salvar macro" — o plano vai pra planilha do aluno e a cópia de semana passa a seguir o macro.'
+    : 'Macrociclo manual gerado. (Sem números por semana/dia: preencha "✏️ Números" nos blocos para a cópia de semana seguir o macro.) Clique em "Salvar macro".';
+  showToast(aviso, 'ok');
+}
+
+// ============================================================
+// FASE 12 — PLANO AUTOMATICO DE PERIODIZACAO (frontend, aditivo)
+// Autoria do "plano de ondas" + salvamento na planilha do aluno (aba BD_Periodizacao).
+// Estado em memoria (_ppState) para nao perder valores ao re-renderizar a grade.
+// ============================================================
+var _ppState = { ancora: 'S1', blocos: [] };
+var PP_DIAS = ['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+
+function ppBlocoNovo() {
+  return { id: '', modelo: 'linear', granularidade: 'global',
+    varia: { reps: true, rir: false, series: false },
+    numSemanas: 4, diasTreino: 'SEG,QUA,SEX', semanas: [] };
+}
+function ppNormalizeBloco(b) {
+  b.varia = b.varia || { reps: true };
+  b.numSemanas = Math.max(1, parseInt(b.numSemanas, 10) || 1);
+  b.semanas = b.semanas || [];
+  while (b.semanas.length < b.numSemanas) b.semanas.push({ global: {}, dias: {} });
+  if (b.semanas.length > b.numSemanas) b.semanas = b.semanas.slice(0, b.numSemanas);
+  b.semanas.forEach(function (s) { s.global = s.global || {}; s.dias = s.dias || {}; });
+  return b;
+}
+function ppDiasTreinoArr(b) {
+  return String(b.diasTreino || '').toUpperCase().split(/[,\s]+/)
+    .map(function (d) { return d.trim(); })
+    .filter(function (d) { return PP_DIAS.indexOf(d) >= 0; });
+}
+
+function abrirPlanoPeriod() {
+  var s = students.find(function (x) { return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno primeiro', 'err'); return; }
+  if (!_ppState.blocos.length) _ppState.blocos = [ppBlocoNovo()];
+  document.getElementById('pp-ancora').value = _ppState.ancora || 'S1';
+  ppRender();
+  document.getElementById('plano-period-modal').style.display = 'flex';
+}
+function fecharPlanoPeriod() { document.getElementById('plano-period-modal').style.display = 'none'; }
+function ppSetAncora(v) { _ppState.ancora = String(v || '').trim().toUpperCase() || 'S1'; }
+
+function ppAddBloco() { _ppState.blocos.push(ppBlocoNovo()); ppRender(); }
+function ppRemoveBloco(bi) { _ppState.blocos.splice(bi, 1); if (!_ppState.blocos.length) _ppState.blocos.push(ppBlocoNovo()); ppRender(); }
+function ppSetBlocoCampo(bi, campo, val) {
+  var b = _ppState.blocos[bi]; if (!b) return;
+  if (campo === 'varia.reps' || campo === 'varia.rir' || campo === 'varia.series') {
+    b.varia[campo.split('.')[1]] = !!val;
+  } else { b[campo] = val; }
+  ppRender();
+}
+// Escreve valor de celula SEM re-render (preserva foco do input)
+function ppSetVal(bi, si, escopo, dia, campo, val) {
+  var b = _ppState.blocos[bi]; if (!b) return;
+  var s = b.semanas[si]; if (!s) return;
+  val = String(val == null ? '' : val).trim();
+  if (escopo === 'dia') { s.dias[dia] = s.dias[dia] || {}; s.dias[dia][campo] = val; }
+  else { s.global[campo] = val; }
+}
+
+function _ppInput(bi, si, escopo, dia, campo, valor, ph) {
+  var v = (valor == null ? '' : String(valor)).replace(/"/g, '&quot;');
+  return '<input type="text" value="' + v + '" placeholder="' + ph + '" ' +
+    'oninput="ppSetVal(' + bi + ',' + si + ',\'' + escopo + '\',\'' + (dia || '') + '\',\'' + campo + '\',this.value)" ' +
+    'style="width:100%;border:.5px solid var(--border2);border-radius:6px;padding:5px 6px;font-size:12px;background:var(--bg2);color:var(--text);">';
+}
+
+function ppRender() {
+  var cont = document.getElementById('pp-blocos');
+  if (!cont) return;
+  cont.innerHTML = '';
+  _ppState.blocos.forEach(function (b, bi) {
+    ppNormalizeBloco(b);
+    var cols = ['reps', 'rir', 'series'].filter(function (f) { return b.varia[f]; });
+    if (!cols.length) { b.varia.reps = true; cols = ['reps']; }
+    var rotulo = { reps: 'Reps', rir: 'RiR', series: 'Séries' };
+    var ph = { reps: '10-12', rir: '3', series: '3' };
+    var box = document.createElement('div');
+    box.style.cssText = 'border:.5px solid var(--border);border-radius:var(--radius-lg);padding:12px;background:var(--bg);';
+    var h = '';
+    // Cabecalho do bloco
+    h += '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+    h += '<strong style="font-size:13px;color:var(--text);">Bloco ' + (bi + 1) + '</strong>';
+    h += '<button class="icon-btn" title="Remover bloco" style="font-size:14px;color:var(--red);" onclick="ppRemoveBloco(' + bi + ')">🗑</button>';
+    h += '</div>';
+    // Linha de config
+    h += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">';
+    h += '<div><label style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;">Nome / id</label>' +
+      '<input type="text" value="' + (b.id || '').replace(/"/g, '&quot;') + '" placeholder="bloco' + (bi + 1) + '" oninput="_ppState.blocos[' + bi + '].id=this.value" style="width:100%;border:.5px solid var(--border2);border-radius:6px;padding:5px 6px;font-size:12px;background:var(--bg2);color:var(--text);"></div>';
+    h += '<div><label style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;">Modelo</label>' +
+      '<select onchange="ppSetBlocoCampo(' + bi + ',\'modelo\',this.value)" style="width:100%;border:.5px solid var(--border2);border-radius:6px;padding:5px 6px;font-size:12px;background:var(--bg2);color:var(--text);">' +
+      ['linear', 'ondulatorio_diario', 'ondulatorio_semanal', 'blocos', 'outro'].map(function (m) {
+        return '<option value="' + m + '"' + (b.modelo === m ? ' selected' : '') + '>' + m + '</option>';
+      }).join('') + '</select></div>';
+    h += '<div><label style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;">Variação</label>' +
+      '<select onchange="ppSetBlocoCampo(' + bi + ',\'granularidade\',this.value)" style="width:100%;border:.5px solid var(--border2);border-radius:6px;padding:5px 6px;font-size:12px;background:var(--bg2);color:var(--text);">' +
+      '<option value="global"' + (b.granularidade === 'global' ? ' selected' : '') + '>Global (semana toda igual)</option>' +
+      '<option value="dia"' + (b.granularidade === 'dia' ? ' selected' : '') + '>Por dia (ondulatório)</option>' +
+      '</select></div>';
+    h += '</div>';
+    // Linha varia + nº semanas + (dias de treino se 'dia')
+    h += '<div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px;">';
+    h += '<div><label style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;display:block;margin-bottom:3px;">O que varia</label>' +
+      '<label style="font-size:12px;margin-right:8px;"><input type="checkbox"' + (b.varia.reps ? ' checked' : '') + ' onchange="ppSetBlocoCampo(' + bi + ',\'varia.reps\',this.checked)"> reps</label>' +
+      '<label style="font-size:12px;margin-right:8px;"><input type="checkbox"' + (b.varia.rir ? ' checked' : '') + ' onchange="ppSetBlocoCampo(' + bi + ',\'varia.rir\',this.checked)"> RiR</label>' +
+      '<label style="font-size:12px;"><input type="checkbox"' + (b.varia.series ? ' checked' : '') + ' onchange="ppSetBlocoCampo(' + bi + ',\'varia.series\',this.checked)"> séries</label>' +
+      '</div>';
+    h += '<div><label style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;display:block;">Nº de semanas</label>' +
+      '<input type="number" min="1" max="12" value="' + b.numSemanas + '" onchange="ppSetBlocoCampo(' + bi + ',\'numSemanas\',this.value)" style="width:80px;border:.5px solid var(--border2);border-radius:6px;padding:5px 6px;font-size:12px;background:var(--bg2);color:var(--text);"></div>';
+    if (b.granularidade === 'dia') {
+      h += '<div style="flex:1;min-width:160px;"><label style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;display:block;">Dias de treino</label>' +
+        '<input type="text" value="' + (b.diasTreino || '').replace(/"/g, '&quot;') + '" placeholder="SEG,QUA,SEX" onchange="ppSetBlocoCampo(' + bi + ',\'diasTreino\',this.value)" style="width:100%;border:.5px solid var(--border2);border-radius:6px;padding:5px 6px;font-size:12px;background:var(--bg2);color:var(--text);"></div>';
+    }
+    h += '</div>';
+    // Grade de semanas
+    h += '<div style="overflow:auto;">';
+    if (b.granularidade === 'dia') {
+      var diasT = ppDiasTreinoArr(b);
+      h += '<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr>' +
+        '<th style="text-align:left;padding:4px 6px;color:var(--text3);">Semana</th>' +
+        '<th style="text-align:left;padding:4px 6px;color:var(--text3);">Dia</th>' +
+        cols.map(function (c) { return '<th style="text-align:left;padding:4px 6px;color:var(--text3);">' + rotulo[c] + '</th>'; }).join('') +
+        '</tr></thead><tbody>';
+      b.semanas.forEach(function (s, si) {
+        diasT.forEach(function (dia, di) {
+          h += '<tr>';
+          if (di === 0) h += '<td rowspan="' + diasT.length + '" style="padding:4px 6px;font-weight:700;color:var(--text2);vertical-align:top;">' + (si + 1) + '</td>';
+          h += '<td style="padding:4px 6px;color:var(--text2);">' + dia + '</td>';
+          cols.forEach(function (c) {
+            var val = (s.dias[dia] && s.dias[dia][c]) || '';
+            h += '<td style="padding:3px 6px;">' + _ppInput(bi, si, 'dia', dia, c, val, ph[c]) + '</td>';
+          });
+          h += '</tr>';
+        });
+        if (!diasT.length) h += '<tr><td style="padding:4px 6px;font-weight:700;">' + (si + 1) + '</td><td colspan="' + (cols.length + 1) + '" style="padding:4px 6px;color:var(--red);">defina os dias de treino acima</td></tr>';
+      });
+      h += '</tbody></table>';
+    } else {
+      h += '<table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr>' +
+        '<th style="text-align:left;padding:4px 6px;color:var(--text3);">Semana</th>' +
+        cols.map(function (c) { return '<th style="text-align:left;padding:4px 6px;color:var(--text3);">' + rotulo[c] + '</th>'; }).join('') +
+        '</tr></thead><tbody>';
+      b.semanas.forEach(function (s, si) {
+        h += '<tr><td style="padding:4px 6px;font-weight:700;color:var(--text2);">' + (si + 1) + '</td>';
+        cols.forEach(function (c) {
+          h += '<td style="padding:3px 6px;">' + _ppInput(bi, si, 'global', '', c, s.global[c] || '', ph[c]) + '</td>';
+        });
+        h += '</tr>';
+      });
+      h += '</tbody></table>';
+    }
+    h += '</div>';
+    box.innerHTML = h;
+    cont.appendChild(box);
+  });
+}
+
+// Constroi o JSON limpo para o backend a partir do estado.
+function ppMontarPlano() {
+  function limpa(a, varia) {
+    if (!a) return null;
+    var o = {}, tem = false;
+    varia.forEach(function (f) { if (a[f] != null && String(a[f]).trim() !== '') { o[f] = String(a[f]).trim(); tem = true; } });
+    return tem ? o : null;
+  }
+  var blocos = _ppState.blocos.map(function (b, bi) {
+    ppNormalizeBloco(b);
+    var varia = ['reps', 'rir', 'series'].filter(function (f) { return b.varia[f]; });
+    if (!varia.length) varia = ['reps'];
+    var diasT = ppDiasTreinoArr(b);
+    var semanas = b.semanas.map(function (s, si) {
+      var wk = { n: si + 1 };
+      if (b.granularidade === 'dia') {
+        wk.dias = {};
+        diasT.forEach(function (d) { var a = limpa(s.dias[d], varia); if (a) wk.dias[d] = a; });
+      } else {
+        var g = limpa(s.global, varia); if (g) wk.global = g;
+      }
+      return wk;
+    });
+    return { id: b.id || ('bloco' + (bi + 1)), modelo: b.modelo || 'outro',
+      granularidade: b.granularidade || 'global', varia: varia, semanas: semanas };
+  });
+  return { ancora: { aba: (_ppState.ancora || 'S1') }, blocos: blocos };
+}
+
+async function salvarPlanoPeriod() {
+  var s = students.find(function (x) { return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno primeiro', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha do aluno não configurada', 'err'); return; }
+  var plano = ppMontarPlano();
+  if (!plano.blocos.length) { showToast('Adicione ao menos um bloco', 'err'); return; }
+  // Aviso se nenhum bloco tem alvo preenchido
+  var temAlgo = plano.blocos.some(function (b) {
+    return (b.semanas || []).some(function (w) { return w.global || (w.dias && Object.keys(w.dias).length); });
+  });
+  if (!temAlgo) { showToast('Preencha ao menos uma faixa de reps/RiR/séries', 'err'); return; }
+  try {
+    var res = await gsPost({ acao: 'salvarPlanoPeriodizacao', spreadsheetId: sheetId, plano: plano });
+    var data = await res.json();
+    if (data && data.sucesso) {
+      showToast('Plano salvo (' + (data.blocos || plano.blocos.length) + ' blocos). A partir de agora a cópia de semana segue o macro.', 'ok');
+    } else {
+      showToast('Erro ao salvar: ' + ((data && data.erro) || 'desconhecido'), 'err');
+    }
+  } catch (e) { showToast('Falha de conexão ao salvar plano', 'err'); }
+}
+
+async function ppCarregarSalvo() {
+  var s = students.find(function (x) { return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno primeiro', 'err'); return; }
+  var sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha do aluno não configurada', 'err'); return; }
+  try {
+    var res = await gsPost({ acao: 'lerPlanoPeriodizacao', spreadsheetId: sheetId });
+    var data = await res.json();
+    var plano = data && data.plano;
+    if (!plano || !plano.blocos || !plano.blocos.length) { showToast('Nenhum plano salvo para este aluno', 'err'); return; }
+    _ppHidratar(plano);
+    document.getElementById('pp-ancora').value = _ppState.ancora;
+    ppRender();
+    showToast('Plano carregado da planilha do aluno', 'ok');
+  } catch (e) { showToast('Falha ao carregar o plano', 'err'); }
+}
+
+// Converte o JSON do backend de volta para o estado editavel.
+function _ppHidratar(plano) {
+  _ppState.ancora = (plano.ancora && plano.ancora.aba) || 'S1';
+  _ppState.blocos = (plano.blocos || []).map(function (b) {
+    var varia = { reps: false, rir: false, series: false };
+    (b.varia || ['reps']).forEach(function (f) { varia[f] = true; });
+    var diasSet = {};
+    var semanas = (b.semanas || []).map(function (w) {
+      var s = { global: {}, dias: {} };
+      if (w.global) s.global = Object.assign({}, w.global);
+      if (w.dias) { Object.keys(w.dias).forEach(function (d) { s.dias[d] = Object.assign({}, w.dias[d]); diasSet[d] = true; }); }
+      return s;
+    });
+    return { id: b.id || '', modelo: b.modelo || 'outro',
+      granularidade: b.granularidade || 'global', varia: varia,
+      numSemanas: semanas.length || 1,
+      diasTreino: Object.keys(diasSet).join(',') || 'SEG,QUA,SEX',
+      semanas: semanas };
+  });
+}
+
+async function ppLimparSalvo() {
+  var s = students.find(function (x) { return x.id === selectedId; });
+  if (!s) { showToast('Selecione um aluno primeiro', 'err'); return; }
+  if (!confirm('Remover o plano de periodização da planilha de ' + (s.name || 'aluno') + '? A cópia de semana volta a ser fotocópia simples.')) return;
+  var sheetId = getSheetId(s.sheet);
+  try {
+    var res = await gsPost({ acao: 'limparPlanoPeriodizacao', spreadsheetId: sheetId });
+    var data = await res.json();
+    if (data && data.sucesso) showToast('Plano removido do aluno', 'ok');
+    else showToast('Erro ao remover: ' + ((data && data.erro) || 'desconhecido'), 'err');
+  } catch (e) { showToast('Falha de conexão ao remover', 'err'); }
+}
+
+// Preenche o exemplo do Felipe: 2 blocos lineares (S1-S4 10-12, S5-S8 8-10).
+function ppExemploLinear() {
+  _ppState.ancora = 'S1';
+  function bloco(id, reps) {
+    var b = { id: id, modelo: 'linear', granularidade: 'global',
+      varia: { reps: true, rir: false, series: false }, numSemanas: 4, diasTreino: 'SEG,QUA,SEX', semanas: [] };
+    for (var i = 0; i < 4; i++) b.semanas.push({ global: { reps: reps }, dias: {} });
+    return b;
+  }
+  _ppState.blocos = [bloco('bloco1', '10-12'), bloco('bloco2', '8-10')];
+  document.getElementById('pp-ancora').value = 'S1';
+  ppRender();
+  showToast('Exemplo carregado: S1-S4 → 10-12, S5-S8 → 8-10. Ajuste e salve.', 'ok');
 }
 
 async function carregarAbasMacrociclo(forcar) {
@@ -5931,14 +6585,31 @@ function renderMacroMarkdown(md, meta) {
   out.innerHTML = '<div class="macro-result">' + kpis + html + '</div>';
 }
 
-function salvarMacroAtual() {
+async function salvarMacroAtual() {
   if (!window._macroAtual || !window._macroAtual.markdown) {
     showToast('Gere um macrociclo antes de salvar', 'err');
     return;
   }
   window._macroAtual.salvoEm = new Date().toISOString();
   lsSet(chaveMacroSalvoAluno(), JSON.stringify(window._macroAtual), 7 * 24 * 60);
-  showToast('Macrociclo salvo!', 'ok');
+
+  // [FASE 12B] Se o macro tem plano de periodizacao (números por semana/dia), grava
+  // automaticamente na planilha do aluno (aba BD_Periodizacao). A partir daí a cópia de
+  // semana segue o macro — sem precisar de nenhum botão a mais.
+  var plano = window._macroAtual.plano;
+  if (plano && plano.blocos && plano.blocos.length) {
+    var s = students.find(function (x) { return x.id === selectedId; });
+    var sheetId = s ? getSheetId(s.sheet) : '';
+    if (!sheetId) { showToast('Macro salvo. (Plano de periodização não enviado: planilha do aluno não configurada.)', 'ok'); return; }
+    try {
+      var res = await gsPost({ acao: 'salvarPlanoPeriodizacao', spreadsheetId: sheetId, plano: plano });
+      var data = await res.json();
+      if (data && data.sucesso) showToast('Macro salvo e periodização ativada (' + (data.blocos || plano.blocos.length) + ' blocos). A cópia de semana agora segue o macro.', 'ok');
+      else showToast('Macro salvo, mas falhou enviar a periodização: ' + ((data && data.erro) || 'desconhecido'), 'err');
+    } catch (e) { showToast('Macro salvo, mas falha de conexão ao enviar a periodização.', 'err'); }
+  } else {
+    showToast('Macrociclo salvo!', 'ok');
+  }
 }
 
 function abrirMacroSalvo() {
@@ -6053,13 +6724,16 @@ async function ajustarMacrociclo() {
       'CONTEXTO ATUAL: ' + JSON.stringify(ctx) + '\n\n' +
       'MACROCICLO ATUAL:\n' + window._macroAtual.markdown + '\n\n' +
       'AJUSTE SOLICITADO:\n' + ajuste + '\n\n' +
-      'Mantenha a mesma estrutura em markdown: Diagnostico estrategico, Mapa do macrociclo em tabela, Logica de progressao e Proximo mesociclo sugerido. Retorne apenas a nova versao.';
+      'Mantenha a mesma estrutura em markdown: Diagnostico estrategico, Mapa do macrociclo em tabela, Logica de progressao e Proximo mesociclo sugerido. ' +
+      'No FINAL, repita o bloco de codigo ```periodizacao``` com o plano numerico atualizado (mesmo formato JSON de antes: ancora + blocos contiguos + semanas com global ou dias). Retorne apenas a nova versao.';
     var system = getSystemPrompt() + '\n\nVoce revisa periodizacao anual com base em autores classicos e contemporaneos da musculacao, sem citar bibliografia longa se isso nao ajudar a decisao pratica.';
     var reply = await callClaude([{ role: 'user', content: prompt }], system, 4500);
+    var extAj = _extrairPlanoDoMarkdown(reply);
     var meta = { duracao: ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: 'Ajustado' };
-    window._macroAtual = { markdown: reply, ctx: ctx, meta: meta, ajuste: ajuste, atualizadoEm: new Date().toISOString() };
-    renderMacroMarkdown(reply, meta);
-    showToast('Macrociclo ajustado!', 'ok');
+    var planoAnterior = window._macroAtual && window._macroAtual.plano;
+    window._macroAtual = { markdown: extAj.markdown, ctx: ctx, meta: meta, ajuste: ajuste, plano: extAj.plano || planoAnterior, atualizadoEm: new Date().toISOString() };
+    renderMacroMarkdown(extAj.markdown, meta);
+    showToast(extAj.plano ? 'Macrociclo ajustado (periodização atualizada). Clique em "Salvar macro".' : 'Macrociclo ajustado!', 'ok');
   } catch(e) {
     out.innerHTML = '<div class="macro-empty" style="color:var(--red)">Erro ao ajustar:<br>' + escapeMacroHtml(e.message) + '</div>';
     showToast('Erro ao ajustar macro', 'err');
@@ -6118,7 +6792,18 @@ function montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCom
     '## Proximo mesociclo sugerido\n' +
     'Exatamente 5 bullets de 1-2 linhas: foco do bloco | divisao semanal | prioridades | o que medir ao final | cuidados.\n\n' +
 
-    'REGRAS GERAIS: cada bloco tem modelo proprio (nao use um modelo para o macro inteiro) com conexao logica ao anterior e ao proximo. Preserve a divisao atual quando solicitado; se propor mudanca, justifique em 1 linha e deixe claro que precisa de confirmacao do coach. Inclua deloads. Use os meses reais do periodo para situar. Tom direto do Coach Felipe. Periodizacao baseada em Bompa, Issurin, Israetel, Helms, Schoenfeld — aplique por contexto, sem aula teorica.';
+    'REGRAS GERAIS: cada bloco tem modelo proprio (nao use um modelo para o macro inteiro) com conexao logica ao anterior e ao proximo. Preserve a divisao atual quando solicitado; se propor mudanca, justifique em 1 linha e deixe claro que precisa de confirmacao do coach. Inclua deloads. Use os meses reais do periodo para situar. Tom direto do Coach Felipe. Periodizacao baseada em Bompa, Issurin, Israetel, Helms, Schoenfeld — aplique por contexto, sem aula teorica.\n\n' +
+
+    '## Plano numerico (OBRIGATORIO)\n' +
+    'Depois de TODO o markdown acima, acrescente um bloco de codigo com a periodizacao em numeros, no formato exato abaixo (uma cerca de codigo iniciada por ```periodizacao). Ele sera lido pelo app para preencher reps/RiR/series semana a semana — entao precisa ser JSON valido.\n' +
+    'Regras do JSON: "ancora.aba" = nome da 1a aba/semana coberta pelo plano (as abas se chamam S1, S2, S3...; se nao souber em que semana o aluno esta, use "S1" e o coach ajusta). Liste os blocos NA ORDEM e de forma contigua (sem buracos entre as semanas). Para cada bloco: "granularidade":"dia" quando os dias da semana tem reps diferentes (ondulatorio diario), ou "global" quando a semana inteira tem o mesmo alvo. "varia" lista o que muda ("reps","rir","series"). Em "semanas", use "global":{reps,rir,series} (granularidade global) OU "dias":{"SEG":{reps,rir,series},...} (granularidade dia). Reps como faixa "8-10". Inclua TODAS as semanas de cada bloco.\n' +
+    'Exemplo:\n' +
+    '```periodizacao\n' +
+    '{"ancora":{"aba":"S1"},"blocos":[' +
+    '{"id":"Bloco 1","modelo":"linear","granularidade":"global","varia":["reps","rir"],"semanas":[{"n":1,"global":{"reps":"10-12","rir":"3"}},{"n":2,"global":{"reps":"10-12","rir":"2"}},{"n":3,"global":{"reps":"8-10","rir":"1"}},{"n":4,"global":{"reps":"12-15","rir":"3"}}]},' +
+    '{"id":"Bloco 2","modelo":"ondulatorio_diario","granularidade":"dia","varia":["reps","rir"],"semanas":[{"n":1,"dias":{"SEG":{"reps":"4-6","rir":"2"},"QUA":{"reps":"10-12","rir":"2"},"SEX":{"reps":"12-15","rir":"1"}}}]}' +
+    ']}\n' +
+    '```';
   return prompt;
 }
 
@@ -6168,10 +6853,11 @@ async function gerarMacrociclo(modo) {
     var system = getSystemPrompt() + '\n\nVoce tambem e especialista em periodizacao anual, macrociclo adaptativo, deloads, reavaliacao e tomada de decisao baseada em historico.';
     if (avisoHistorico) system += '\nAviso operacional: ' + avisoHistorico;
     var reply = await callClaude([{ role: 'user', content: montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCompleto) }], system, 4500, null, true);
+    var ext = _extrairPlanoDoMarkdown(reply); // separa o bloco ```periodizacao``` do markdown exibido
     var meta = { duracao: ctx.periodoEstimado || ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: modo === 'historico' ? 'Historico' : 'Zero' };
-    window._macroAtual = { markdown: reply, ctx: ctx, meta: meta, historico: historico ? { abasAnalisadas: historico.abasAnalisadas, totalSeries: historico.totalSeries } : null, criadoEm: new Date().toISOString() };
-    renderMacroMarkdown(reply, meta);
-    showToast('Macrociclo gerado!', 'ok');
+    window._macroAtual = { markdown: ext.markdown, ctx: ctx, meta: meta, plano: ext.plano, historico: historico ? { abasAnalisadas: historico.abasAnalisadas, totalSeries: historico.totalSeries } : null, criadoEm: new Date().toISOString() };
+    renderMacroMarkdown(ext.markdown, meta);
+    showToast(ext.plano ? 'Macrociclo gerado com periodização numérica! Clique em "Salvar macro" para ativar.' : 'Macrociclo gerado!', 'ok');
   } catch(e) {
     var msgErro = e.message || 'erro desconhecido';
     if (/failed to fetch/i.test(msgErro)) msgErro += '<br><br>Provavel causa: bloqueio de chamada externa no arquivo local, proxy da IA inacessivel ou Apps Script nao implantado/sem permissao.';

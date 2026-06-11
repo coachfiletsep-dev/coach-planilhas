@@ -5374,6 +5374,33 @@ function obterDiasCustomizados() {
   return result;
 }
 
+// [FASE 14] Trava de coerência quando a IA distribui os grupos musculares nos dias.
+// Encaixa num split clássico reconhecido pela frequência + regras rígidas (frequência,
+// agrupamento lógico, recuperação, sem fragmentar). Evita splits incoerentes (3 dias de
+// perna, dia só de braço, ombro repetido sem motivo).
+function _regrasSplitCoerente(nDias) {
+  nDias = parseInt(nDias, 10) || 0;
+  var rec = {
+    1: 'full-body',
+    2: 'full-body A/B (corpo inteiro nos 2 dias) ou upper/lower',
+    3: 'full-body 3x (A/B/C) ou push/pull/legs',
+    4: 'upper/lower 2x (superior/inferior/superior/inferior)',
+    5: 'superior/inferior + push/pull/legs (ex.: sup, inf, push, pull, legs) ou Arnold',
+    6: 'push/pull/legs 2x (P/Pu/L/P/Pu/L)'
+  };
+  var alvo = rec[nDias] || ('um split clássico equilibrado para ' + (nDias || 'N') + ' dias');
+  return '\n=== REGRAS DE DISTRIBUIÇÃO MUSCULAR (OBRIGATÓRIO — a IA distribui os grupos) ===\n' +
+    'Para ' + (nDias || 'N') + ' dia(s) de treino, ENCAIXE a divisão num split clássico reconhecido: ' + alvo + '. NÃO invente uma distribuição fora desses padrões.\n' +
+    'Regras rígidas (não viole nenhuma):\n' +
+    '1. FREQUÊNCIA: cada grande grupo (peito, costas, ombro, quadríceps, posterior de coxa, glúteo) deve ser treinado ~2x/semana quando houver >=4 dias. Com 3 dias, 1-2x via full-body ou PPL.\n' +
+    '2. NÃO FRAGMENTAR: PROIBIDO um dia isolado só de músculo pequeno (ex.: "dia só de braço", "dia só de ombro") salvo se o briefing pedir especialização. Bíceps/tríceps acompanham o dia de costas/peito/ombro; não viram dia próprio.\n' +
+    '3. AGRUPAMENTO LÓGICO: agrupe por padrão de movimento — EMPURRAR (peito+ombro+tríceps), PUXAR (costas+bíceps), PERNA (quadríceps+posterior+glúteo+panturrilha) — ou por SUPERIOR/INFERIOR. Não junte músculos sem relação de forma aleatória.\n' +
+    '4. RECUPERAÇÃO: não treine o mesmo grande grupo em dias consecutivos; ~48h entre estímulos do mesmo grupo.\n' +
+    '5. EQUILÍBRIO: não concentre o volume num segmento. NÃO faça 3+ dias de perna, nem deixe um grande grupo de fora da semana, exceto se o briefing pedir.\n' +
+    '6. Cubra TODOS os grandes grupos ao longo da semana e mantenha o nº de exercícios por dia parecido.\n' +
+    'Explique a divisão escolhida (qual split e por quê) no campo "raciocinio" do JSON.\n';
+}
+
 async function confirmarNovoMeso() {
   if (isLoading) { showToast('Aguarde a operação atual terminar', 'warn'); return; }
   window._modoEdicao = false; // novo meso sempre usa escreverNaPlanilha
@@ -5575,6 +5602,16 @@ async function confirmarNovoMeso() {
   if (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length) {
     if (divisaoBriefingMeso) prompt += 'Dias da aba base para referencia: ' + window._diasPermitidosNovoMeso.join(', ') + '. Se a divisao escrita no briefing pedir outra quantidade/estrutura, priorize o briefing.\n';
     else prompt += 'Use SOMENTE estes dias de musculacao: ' + window._diasPermitidosNovoMeso.join(', ') + '.\n';
+  }
+  // [FASE 14] Quando é a IA que distribui os grupos (modo "IA propõe" ou "dias fixos + IA
+  // distribui grupos"), injeta as regras de coerência de split. Nos modos com grupos já
+  // definidos (chips, custom-define, manter divisão atual) NÃO entra — eles já são explícitos.
+  var iaDistribuiGrupos = (splitModoAtual === 'ia') ||
+    (splitModoAtual === 'custom' && typeof splitCustomGruposModo !== 'undefined' && splitCustomGruposModo === 'ia');
+  if (iaDistribuiGrupos && !divisaoBriefingMeso) {
+    var _nDiasSplit = (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length) ||
+      (typeof detectarNumDiasParaSplits === 'function' ? detectarNumDiasParaSplits() : 0) || 0;
+    prompt += _regrasSplitCoerente(_nDiasSplit);
   }
   if (memoriaTecnicaMeso) {
     prompt += '\n=== REGRAS DE DIVISAO E MEMORIA TECNICA ===\n';
@@ -6797,7 +6834,9 @@ function montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCom
     '## Plano numerico (OBRIGATORIO)\n' +
     'Depois de TODO o markdown acima, acrescente um bloco de codigo com a periodizacao em numeros, no formato exato abaixo (uma cerca de codigo iniciada por ```periodizacao). Ele sera lido pelo app para preencher reps/RiR/series semana a semana — entao precisa ser JSON valido.\n' +
     'Regras do JSON: "ancora.aba" = nome da 1a aba/semana coberta pelo plano (as abas se chamam S1, S2, S3...; se nao souber em que semana o aluno esta, use "S1" e o coach ajusta). Liste os blocos NA ORDEM e de forma contigua (sem buracos entre as semanas). Para cada bloco: "granularidade":"dia" quando os dias da semana tem reps diferentes (ondulatorio diario), ou "global" quando a semana inteira tem o mesmo alvo. "varia" lista o que muda ("reps","rir","series"). Em "semanas", use "global":{reps,rir,series} (granularidade global) OU "dias":{"SEG":{reps,rir,series},...} (granularidade dia). Reps como faixa "8-10". Inclua TODAS as semanas de cada bloco.\n' +
-    'Exemplo:\n' +
+    'FREQUENCIA DO ALUNO (critico): este aluno treina ' + ctx.dias + ' dias por semana (divisao: ' + (ctx.divisao || 'a definir') + '). Em blocos com "granularidade":"dia", ENUMERE TODOS os ' + ctx.dias + ' dias de treino reais — NUNCA preencha so 3 dias se o aluno treina 4, 5 ou 6. Use os dias da semana convencionais para a frequencia: 3 dias=SEG,QUA,SEX; 4=SEG,TER,QUI,SEX; 5=SEG,TER,QUA,QUI,SEX; 6=SEG,TER,QUA,QUI,SEX,SAB. Se um bloco tiver reps iguais em todos os dias, pode usar "global" em vez de listar dia a dia.\n' +
+    'ROTACAO quando as zonas de reps nao dividem igual nos dias (ex.: DUP com 3 zonas P/M/L): repita a sequencia de zonas ciclicamente cobrindo TODOS os dias de treino. P=pesada (menos reps, ex.: 4-6), M=media (ex.: 8-12), L=leve (mais reps, ex.: 12-15). Padroes: 3 dias = P M L; 4 dias = P M L P; 5 dias = P M L P M; 6 dias = P M L P M L. Em divisao upper/lower ou push/pull/legs, mantenha a logica do bloco mas ainda assim defina os reps de TODOS os dias de treino. (O coach revisa/ajusta a rotacao depois se quiser.)\n' +
+    'Exemplo (modelo — adapte a frequencia REAL do aluno acima):\n' +
     '```periodizacao\n' +
     '{"ancora":{"aba":"S1"},"blocos":[' +
     '{"id":"Bloco 1","modelo":"linear","granularidade":"global","varia":["reps","rir"],"semanas":[{"n":1,"global":{"reps":"10-12","rir":"3"}},{"n":2,"global":{"reps":"10-12","rir":"2"}},{"n":3,"global":{"reps":"8-10","rir":"1"}},{"n":4,"global":{"reps":"12-15","rir":"3"}}]},' +

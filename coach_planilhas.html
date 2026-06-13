@@ -11270,46 +11270,45 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
 
   // PÁGINA 2 — Análise comparativa
   h += '<div class="page">';
-  h += '<div class="p2h"><div><div class="p2t">Análise comparativa</div><div class="p2s">' + aba.aba + ' vs semana anterior</div></div></div>';
+  h += '<div class="p2h"><div><div class="p2t">Bem-estar e evolução</div><div class="p2s">' + aba.aba + ' vs semana anterior</div></div></div>';
 
-  // ── Tabela dia a dia ──
-  h += '<div class="sec"><div class="st">Volume por dia</div>';
-  h += '<table class="xt"><thead><tr>' +
-    '<th>Dia</th>' +
-    '<th style="text-align:right">VL ' + aba.aba + '</th>' +
-    '<th style="text-align:right;color:#9B9B96">Sem. ant.</th>' +
-    '<th style="text-align:right">Δ VL</th>' +
-    '<th style="text-align:right">Kcal</th>' +
-    '<th style="text-align:right;color:#E57B2B">CI (UA)</th>' +
-  '</tr></thead><tbody>';
-
-  var diasNomesLong = {SEG:'Segunda',TER:'Terça',QUA:'Quarta',QUI:'Quinta',SEX:'Sexta',SAB:'Sábado',DOM:'Domingo'};
+  // ── Bem-estar (pré-treino): só indicadores com algum valor <= 2 na semana (1 = pior) ──
+  var BEM_DEF = {
+    fadiga:   { ic:'🔋', lbl:'Energia/Fadiga', txt:{1:'Sempre cansado',2:'Mais cansado que o normal',3:'Normal',4:'Descansado',5:'Muito descansado'} },
+    sono:     { ic:'😴', lbl:'Sono',           txt:{1:'Insônia',2:'Sono agitado',3:'Dificuldade em dormir',4:'Boa',5:'Muito boa'} },
+    dor:      { ic:'💪', lbl:'Dor muscular',   txt:{1:'Muita dor',2:'Aumento da dor / rigidez',3:'Normal',4:'Se sentindo bem',5:'Se sentindo ótimo'} },
+    estresse: { ic:'🧠', lbl:'Estresse',       txt:{1:'Muito estressado',2:'Se sentindo estressado',3:'Normal',4:'Relaxado',5:'Bem relaxado'} },
+    humor:    { ic:'😊', lbl:'Humor',          txt:{1:'Muito irritado / pra baixo',2:'Impaciente',3:'Pouco interessado',4:'Bom humor',5:'Bastante positivo'} }
+  };
+  var bemOrdem = ['fadiga','sono','dor','estresse','humor'];
+  var bemPior = {};
   diasOrdem.forEach(function(dia) {
-    var d = aba.dias[dia];
-    if (!d || d.totalExercicios === 0) return;
-    var vlD  = vlPorDia[dia]    || 0;
-    var vlDA = vlAntPorDia[dia] || 0;
-    var ci   = ciPorDia[dia]    || 0;
-    var cal  = calPorDia[dia]   || 0;
-    var diff = vlD - vlDA;
-    var diffStr = vlDA > 0
-      ? '<span style="font-weight:700;color:' + (diff>0?'#1D9E75':diff<0?'#E05050':'#9B9B96') + '">' + (diff>0?'+':'') + fmt(diff) + '</span>'
-      : '<span style="color:#BEBCB5">—</span>';
-    var vlDAStr = vlDA > 0 ? fmt(vlDA) : '<span style="color:#BEBCB5">—</span>';
-    var calStr  = cal  > 0 ? cal + ' kcal' : '<span style="color:#BEBCB5">—</span>';
-    var ciStr   = ci   > 0 ? '<span style="font-weight:600;color:#E57B2B">' + ci + '</span>' : '<span style="color:#BEBCB5">—</span>';
-    var status  = d.treinou ? '✓' : '✗';
-    var statusCor = d.treinou ? '#1D9E75' : '#BEBCB5';
-    h += '<tr>' +
-      '<td><span style="font-weight:600;color:' + statusCor + ';margin-right:6px">' + status + '</span>' + diasNomesLong[dia] + '</td>' +
-      '<td style="text-align:right;font-weight:600">' + fmt(vlD) + '</td>' +
-      '<td style="text-align:right;color:#9B9B96">' + vlDAStr + '</td>' +
-      '<td style="text-align:right">' + diffStr + '</td>' +
-      '<td style="text-align:right;color:#6B6B66">' + calStr + '</td>' +
-      '<td style="text-align:right">' + ciStr + '</td>' +
-    '</tr>';
+    var d = aba.dias[dia]; if (!d || !d.preTreino) return;
+    bemOrdem.forEach(function(k) {
+      var v = parseFloat(d.preTreino[k]);
+      if (!v || isNaN(v)) return;
+      if (!bemPior[k] || v < bemPior[k].valor) bemPior[k] = { valor:v, dia:dia };
+    });
   });
-  h += '</tbody></table></div>';
+  var bemAlertas = bemOrdem.filter(function(k) { return bemPior[k] && bemPior[k].valor <= 2; });
+
+  h += '<div class="sec"><div class="st">Bem-estar e recuperação</div>';
+  if (bemAlertas.length) {
+    h += '<div class="pl">';
+    bemAlertas.forEach(function(k) {
+      var def = BEM_DEF[k], p = bemPior[k];
+      h += '<div class="pi" style="background:#FDEEEE">' +
+        '<span class="pb">' + def.ic + '</span>' +
+        '<div style="flex:1"><div class="pn">' + def.lbl + ' — ' + p.valor + '/5</div>' +
+        '<div class="pd">' + (def.txt[p.valor] || '') + ' · ' + (diasNomes[p.dia] || p.dia) + '</div></div>' +
+        '<span class="pt" style="background:#E05050;color:#fff">Atenção</span></div>';
+    });
+    h += '</div>';
+    h += '<div style="font-size:10px;color:#6B6B66;margin-top:2px">Sinais com valor 1–2 na semana (1 = pior). Vale um alô pro aluno.</div>';
+  } else {
+    h += '<div style="font-size:12px;color:#1D9E75;padding:6px 0">✓ Sem sinais de atenção — energia, sono, dor, estresse e humor ok na semana.</div>';
+  }
+  h += '</div>';
 
   // ── Comparativo resumo semanal ──
   var abaAntNome = 'S' + (parseInt(aba.aba.replace('S',''))-1);

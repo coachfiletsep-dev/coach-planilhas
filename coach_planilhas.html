@@ -2031,6 +2031,7 @@ async function init() {
   renderList();
   // Carregar alunos da planilha como fonte de verdade
   await carregarAlunosDaPlanilha();
+  sincronizarPausados();
   restaurarSelecaoInicial();
   sincronizarSeConectado();
 }
@@ -2105,9 +2106,39 @@ function togglePausa(id, ev) {
   if (ev) { ev.stopPropagation(); ev.preventDefault(); }
   var novo = !isPausado(id);
   try { if (novo) localStorage.setItem('pausa_' + id, '1'); else localStorage.removeItem('pausa_' + id); } catch(e) {}
+  // Grava no servidor para os agendamentos automáticos (e os botões em massa) respeitarem
+  try { gsPost({ acao: 'setPausado', alunoId: id, pausado: novo }); } catch(e) {}
   renderList(document.getElementById('search-input').value);
   var nm = (students.find(function(x){ return x.id === id; }) || {}).name || 'Aluno';
   if (typeof showToast === 'function') showToast(novo ? '⏸ ' + nm + ' pausado — ações coletivas vão pular' : '▶ ' + nm + ' retomado', novo ? 'warn' : 'ok');
+}
+
+// Sincroniza a pausa com o servidor: baixa a lista do backend, migra pausas locais antigas
+// e espelha no localStorage (fonte de verdade = backend, para os agendamentos respeitarem).
+async function sincronizarPausados() {
+  try {
+    var allKeys = [];
+    for (var i = 0; i < localStorage.length; i++) { allKeys.push(localStorage.key(i)); }
+    var locais = allKeys.filter(function(k){ return k && k.indexOf('pausa_') === 0 && localStorage.getItem(k) === '1'; })
+                        .map(function(k){ return k.slice(6); });
+    var res = await gsPost({ acao: 'getPausados' });
+    var data = await res.json();
+    var back = (data && data.pausados) ? data.pausados.map(String) : [];
+    var faltando = locais.filter(function(id){ return back.indexOf(String(id)) < 0; });
+    if (faltando.length) {
+      var r2 = await gsPost({ acao: 'migrarPausados', ids: faltando });
+      var d2 = await r2.json();
+      if (d2 && d2.pausados) back = d2.pausados.map(String);
+    }
+    allKeys.forEach(function(k){
+      if (k && k.indexOf('pausa_') === 0) {
+        var id = k.slice(6);
+        if (back.indexOf(String(id)) < 0) { try { localStorage.removeItem(k); } catch(e){} }
+      }
+    });
+    back.forEach(function(id){ try { localStorage.setItem('pausa_' + id, '1'); } catch(e){} });
+    if (typeof renderList === 'function') renderList((document.getElementById('search-input') || {}).value || '');
+  } catch(e) {}
 }
 
 function renderList(filter) {

@@ -10417,7 +10417,7 @@ async function gerarRelatorioMensalAsync(nomeAluno, data, containerEl) {
       '<div class="rm-h">' +
         '<div style="font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#1D9E75;margin-bottom:8px">Relatório Mensal · ' + periodo + '</div>' +
         '<div style="font-family:\'DM Serif Display\',serif;font-size:30px;color:#1a1a18;margin-bottom:4px">' + nomeAluno + '</div>' +
-        '<div style="font-size:12px;color:#6B6B66">Resumo do mês · Coach Felipe Luiz</div>' +
+        '<div style="font-size:12px;color:#6B6B66">Resumo do mês · Felipe Santana</div>' +
       '</div>' +
       '<div class="rm-cards">' +
         '<div class="rm-card"><div class="rm-cv">' + totalTreinos + '</div><div class="rm-cl">Treinos no mês</div></div>' +
@@ -10584,7 +10584,7 @@ async function gerarRelatorioFimMesoAsync(nomeAluno, data, containerEl) {
         '<span style="font-size:9px;font-weight:700;background:#1D9E75;color:#fff;padding:2px 10px;border-radius:99px;letter-spacing:.08em">' + nSemanas + ' SEMANAS</span>' +
       '</div>' +
       '<div style="font-family:\'DM Serif Display\',serif;font-size:26px;color:#fff;margin-bottom:2px">' + nomeAluno + '</div>' +
-      '<div style="font-size:11px;color:rgba(255,255,255,.4)">' + periodo + ' · Coach Felipe Luiz</div>' +
+      '<div style="font-size:11px;color:rgba(255,255,255,.4)">' + periodo + ' · Felipe Santana</div>' +
     '</div>' +
     // CORPO
     '<div style="background:#fff;border:1px solid #ECEAE4;border-top:none;border-radius:0 0 12px 12px;padding:24px 32px">' +
@@ -10729,7 +10729,7 @@ async function gerarRelatorioQuinzenalAsync(nomeAluno, data, containerEl) {
       '<div class="rq-h">' +
         '<div style="font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px">Relatório Quinzenal · ' + abaA.aba + ' → ' + abaB.aba + '</div>' +
         '<div style="font-family:\'DM Serif Display\',serif;font-size:30px;color:#fff;margin-bottom:4px">' + nomeAluno + '</div>' +
-        '<div style="font-size:12px;color:rgba(255,255,255,.45)">Revisão quinzenal de dados · Coach Felipe Luiz</div>' +
+        '<div style="font-size:12px;color:rgba(255,255,255,.45)">Revisão quinzenal de dados · Felipe Santana</div>' +
       '</div>' +
       '<div class="rq-b">' +
         '<div class="rq-cards">' +
@@ -11188,7 +11188,7 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   h += '<div class="p1h"><div class="coach-lbl">Relatório de Treino</div>';
   h += '<div class="a-nome">' + nomeAluno + '</div>';
   h += '<div class="s-lbl">Semana <span class="s-num">' + aba.aba + '</span></div>';
-  h += '<div class="hr"><div class="dt">' + hoje + '</div><div class="cn">Coach Felipe Luiz</div></div></div>';
+  h += '<div class="hr"><div class="dt">' + hoje + '</div><div class="cn">Felipe Santana</div></div></div>';
 
   // Cards
   h += '<div class="cg">';
@@ -11333,7 +11333,7 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   if (totalCal > 0 || calAnt > 0) h += compRow('Calorias', totalCal, calAnt, 'kcal');
   h += '</tbody></table></div>';
 
-  h += '<div class="cm"><div class="cmt">' + msg + '</div><div class="cma">— Coach Felipe Luiz</div></div>';
+  h += '<div class="cm"><div class="cmt">' + msg + '</div><div class="cma">— Felipe Santana</div></div>';
   h += '<div class="pf"><div class="fl">Coach <span>Felipe</span></div><div class="fp">2 / 2</div></div>';
   h += '</div></body></html>';
   return h;
@@ -11578,7 +11578,7 @@ function montarMensagemRelatorio(nomeAluno, relData) {
     diasComProblema.forEach(function(d){ msg += '• ' + d + '\n'; });
   }
 
-  msg += '\n_Parabéns pela semana! Continuamos evoluindo 💪_\n_— Coach Felipe';
+  msg += '\n_Parabéns pela semana! Continuamos evoluindo 💪_\n_— Felipe Santana';
   return msg;
 }
 

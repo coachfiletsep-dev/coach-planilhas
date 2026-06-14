@@ -9045,7 +9045,7 @@ function mostrarPreview(exercicios, nomeAba) {
         .map(function(o){ return '<option value="' + o[0] + '"' + (_tecPreset===o[0]?' selected':'') + '>' + o[1] + '</option>'; }).join('');
       // Categoria do exercício (vai para o app do aluno via "objetivo", offset 2): treino/mobilidade/alongamento/PRI
       var _catCard = categoriaDoExercicioPreview(ex);
-      var _catSelOpts = [['','💪 Força (treino)'],['mobilidade','🧘 Mobilidade (tempo/lados)'],['alongamento','🤸 Alongamento (tempo/lados)'],['pri','🫁 PRI (respiração/postura)']]
+      var _catSelOpts = [['','💪 Força (treino)'],['circuito','🔥 Circuito / HIIT (cronômetro)'],['mobilidade','🧘 Mobilidade (tempo/lados)'],['alongamento','🤸 Alongamento (tempo/lados)'],['pri','🫁 PRI (respiração/postura)']]
         .map(function(o){ return '<option value="' + o[0] + '"' + (_catCard===o[0]?' selected':'') + '>' + o[1] + '</option>'; }).join('');
       editForm.innerHTML =
         '<datalist id="' + dlId + '">' + exSugestoes + '</datalist>' +
@@ -9063,6 +9063,16 @@ function mostrarPreview(exercicios, nomeAba) {
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:4px;">' +
           '<div><label>Card do aluno / categoria</label><select id="pe-card-' + previewIdx + '" style="border-color:' + (_catCard?'#0369A1':'') + '">' + _catSelOpts + '</select></div>' +
           '<div><label>Cadência</label><input id="pe-cad-' + previewIdx + '" type="text" value="' + (ex.cadencia||'') + '" placeholder="Ex: 3-1-2"></div>' +
+        '</div>' +
+        '<div style="margin-top:4px;font-size:10px;color:var(--text2);">' +
+          '🔥 Circuito — presets: ' +
+          '<button type="button" onclick="presetCircuito(' + previewIdx + ',\'tabata\')" style="font-size:10px;padding:2px 7px;border:.5px solid var(--border2);border-radius:6px;background:#FFF1EC;color:#9A3412;cursor:pointer;">Tabata 20/10×8</button> ' +
+          '<button type="button" onclick="presetCircuito(' + previewIdx + ',\'hiit3030\')" style="font-size:10px;padding:2px 7px;border:.5px solid var(--border2);border-radius:6px;background:#FFF1EC;color:#9A3412;cursor:pointer;">HIIT 30/30×8</button> ' +
+          '<button type="button" onclick="presetCircuito(' + previewIdx + ',\'hiit4020\')" style="font-size:10px;padding:2px 7px;border:.5px solid var(--border2);border-radius:6px;background:#FFF1EC;color:#9A3412;cursor:pointer;">HIIT 40/20×6</button> ' +
+          '<button type="button" onclick="presetCircuito(' + previewIdx + ',\'emom\')" style="font-size:10px;padding:2px 7px;border:.5px solid var(--border2);border-radius:6px;background:#FFF1EC;color:#9A3412;cursor:pointer;">EMOM 10×60s</button> ' +
+          '<button type="button" onclick="presetCircuito(' + previewIdx + ',\'amrap\')" style="font-size:10px;padding:2px 7px;border:.5px solid var(--border2);border-radius:6px;background:#FFF1EC;color:#9A3412;cursor:pointer;">AMRAP 10min</button>' +
+          '<input type="hidden" id="pe-circsub-' + previewIdx + '" value="' + (/amrap/i.test(String(ex.objetivo||''))?'amrap':'') + '">' +
+          '<br><span style="opacity:.75;">Séries = voltas · Reps = trabalho (ex: 20s) · Cadência = descanso (ex: 10s). EMOM = descanso 0. AMRAP = Reps vira o tempo total (ex: 600s = 10min) e o aluno conta voltas.</span>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:4px;">' +
           '<div><label>Técnica avançada (última série)</label><select id="pe-tecsel-' + previewIdx + '" onchange="aplicarTecnicaPreset(' + previewIdx + ')">' + _tecSelOpts + '</select></div>' +
@@ -9204,6 +9214,7 @@ function aplicarEdicaoPreview(idx) {
   var rirEl     = document.getElementById('pe-rir-' + idx);
   var tipoEl    = document.getElementById('pe-tipo-' + idx);
   var cardEl    = document.getElementById('pe-card-' + idx);
+  var subEl     = document.getElementById('pe-circsub-' + idx);   // [FASE 21] sub-tipo do circuito (amrap)
   var cadEl     = document.getElementById('pe-cad-' + idx);
   var tecEl     = document.getElementById('pe-tec-' + idx);
   var obsEl     = document.getElementById('pe-obs-' + idx);
@@ -9226,8 +9237,9 @@ function aplicarEdicaoPreview(idx) {
   if (categoria === 'mobilidade')      { objetivoNovo = 'Mobilidade';  tipoCardNovo = 'mobilidade'; }
   else if (categoria === 'alongamento'){ objetivoNovo = 'Alongamento'; tipoCardNovo = 'mobilidade'; }
   else if (categoria === 'pri')        { objetivoNovo = 'PRI';         tipoCardNovo = 'mobilidade'; }
+  else if (categoria === 'circuito')   { objetivoNovo = (((subEl||{}).value)==='amrap') ? 'Circuito AMRAP' : 'Circuito'; tipoCardNovo = 'circuito'; }  // [FASE 21]
   else { // força (treino)
-    if (/^(mobilidade|alongamento|flexibilidade|pri|postural|respirat)/i.test(objetivoNovo)) objetivoNovo = '';
+    if (/^(mobilidade|alongamento|flexibilidade|pri|postural|respirat|circuito|hiit|hirt)/i.test(objetivoNovo)) objetivoNovo = '';
     tipoCardNovo = '';
   }
   window._previewExercicios[idx] = Object.assign({}, ex, {
@@ -9253,7 +9265,33 @@ function categoriaDoExercicioPreview(ex) {
   if (/^\s*(pri|postural|respirat)/i.test(obj)) return 'pri';
   if (/along|flexib/i.test(obj)) return 'alongamento';
   if ((ex && ex.tipo_card === 'mobilidade') || /mobilid|mobility/i.test(obj)) return 'mobilidade';
+  if ((ex && ex.tipo_card === 'circuito') || /circuit|circuito|hiit|hirt|\bmrt\b|tabata|met-?con|emom|amrap/i.test(obj)) return 'circuito';  // [FASE 21]
   return '';
+}
+
+// [FASE 21] Preenche voltas/trabalho/descanso a partir de um preset de circuito e marca a
+// categoria como circuito. Campos livres continuam editáveis depois.
+function presetCircuito(idx, tipo) {
+  var card = document.getElementById('pe-card-' + idx);
+  var ser  = document.getElementById('pe-ser-' + idx);
+  var reps = document.getElementById('pe-reps-' + idx);
+  var cad  = document.getElementById('pe-cad-' + idx);
+  var rir  = document.getElementById('pe-rir-' + idx);
+  var sub  = document.getElementById('pe-circsub-' + idx);
+  if (card) card.value = 'circuito';
+  if (rir) rir.value = '';
+  if (sub) sub.value = (tipo === 'amrap') ? 'amrap' : '';   // AMRAP precisa do count-up no app
+  var P = {
+    tabata:   { ser: 8,  reps: '20s',  cad: '10s' },
+    hiit3030: { ser: 8,  reps: '30s',  cad: '30s' },
+    hiit4020: { ser: 6,  reps: '40s',  cad: '20s' },
+    emom:     { ser: 10, reps: '60s',  cad: '0s'  },   // intervalos de 1 min sem descanso
+    amrap:    { ser: 1,  reps: '600s', cad: '0s'  }    // Reps = tempo total (10min); aluno conta voltas
+  }[tipo];
+  if (!P) return;
+  if (ser)  ser.value  = P.ser;
+  if (reps) reps.value = P.reps;
+  if (cad)  cad.value  = P.cad;
 }
 
 // Preenche o campo de parâmetros com um template ao escolher a técnica no select

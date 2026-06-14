@@ -455,8 +455,7 @@
           <button class="icon-btn" onclick="abrirRelatorio()" title="Relatório do aluno">📊</button>
           <button class="icon-btn" onclick="abrirComparar()" title="Comparar abas">🔀</button>
           <button class="icon-btn" onclick="abrirSalvarTemplate()" title="Salvar aba atual como template">📌</button>
-          <button class="icon-btn" onclick="ativarLinksAluno()" title="Ativar troca automática dos links">🔗</button>
-          <button class="icon-btn" onclick="corrigirLinksAbaAtual()" title="Corrigir links da aba atual">↻</button>
+          <button class="icon-btn" onclick="abrirSubstituicaoExercicios()" title="Substituir exercícios na semana">🔁</button>
           <button class="icon-btn" onclick="gerarLinkAluno()" title="Gerar link do App Aluno">📱</button>
           <button class="btn-ghost" onclick="editarAbaAtual()" style="display:flex;align-items:center;gap:5px;" title="Descrever a correção e a IA aplica">✏️ Editar com IA</button>
           <button class="btn-ghost" onclick="editarAbaManual()" style="display:flex;align-items:center;gap:5px;" title="Editar a aba atual manualmente: trocar, reordenar e ajustar exercícios">✋ Editar manual</button>
@@ -6748,43 +6747,11 @@ async function protegerPlanilhaAluno() {
   }
 }
 
-async function ativarLinksAluno() {
-  var s = students.find(function(x){ return x.id === selectedId; });
-  if (!s) { showToast('Selecione um aluno', 'err'); return; }
-  var sheetId = getSheetId(s.sheet);
-  if (!sheetId) { showToast('Planilha do aluno nao configurada', 'err'); return; }
-  try {
-    var res = await gsPost({ acao: 'configurarTriggerLinksExerciciosPlanilha', spreadsheetId: sheetId });
-    var data = await res.json();
-    if (!data.sucesso) throw new Error(data.erro || ((data.erros || []).join(' | ')) || 'Nao consegui ativar');
-    showToast('Links automáticos ativados para este aluno', 'ok');
-    addMsg('msgs', 'Links automáticos ativados. Agora, ao trocar o exercício na coluna B, o link logo abaixo deve acompanhar.', false);
-  } catch(e) {
-    showToast('Erro ao ativar links: ' + e.message, 'err');
-  }
-}
-
-async function corrigirLinksAbaAtual() {
-  var s = students.find(function(x){ return x.id === selectedId; });
-  if (!s) { showToast('Selecione um aluno', 'err'); return; }
-  var sheetId = getSheetId(s.sheet);
-  if (!sheetId) { showToast('Planilha do aluno nao configurada', 'err'); return; }
-  var aba = window._abaAtual || '';
-  try {
-    var estado = await atualizarAbasDoAlunoAtual();
-    aba = estado.abaAtual || aba;
-  } catch(eAtual) {}
-  if (!aba) { showToast('Nao encontrei a aba atual', 'err'); return; }
-  try {
-    var res = await gsPost({ acao: 'atualizarLinksExercicios', spreadsheetId: sheetId, aba: aba });
-    var data = await res.json();
-    if (!data.sucesso) throw new Error(data.erro || ((data.erros || []).join(' | ')) || 'Nao consegui corrigir');
-    showToast('Links corrigidos na ' + aba + ': ' + (data.atualizados || 0), 'ok');
-    addMsg('msgs', 'Corrigi os links da aba ' + aba + ': ' + (data.atualizados || 0) + ' atualizados' + (data.semLink ? ', ' + data.semLink + ' sem link no banco' : '') + '.', false);
-  } catch(e) {
-    showToast('Erro ao corrigir links: ' + e.message, 'err');
-  }
-}
+// [LIMPEZA 14/06/2026] Removidas as funcoes mortas ativarLinksAluno (1a definicao, chamava o
+// endpoint inexistente configurarTriggerLinksExerciciosPlanilha) e corrigirLinksAbaAtual (chamava
+// atualizarLinksExercicios, tambem inexistente no backend). O auto-link agora e por formula
+// (BD_Links/BD_Criterios, lado backend). Para forcar atualizacao de links use "Atualizar links"
+// (atualizarLinksAluno) ou os botoes em massa. O botao 🔁 agora abre abrirSubstituicaoExercicios.
 
 async function ajustarMacrociclo() {
   var s = students.find(function(x){ return x.id === selectedId; });
@@ -11641,7 +11608,10 @@ async function analisarAjustesPlanilha() {
 // SUBSTITUIR EXERCÍCIO NA ABA (Bugs 2+3 — bugs 2025-05-30)
 // Permite trocar exercícios na planilha após geração, com link YouTube automático
 // ============================================================
-async function ativarLinksAluno() {
+// [RENOMEADO 14/06/2026] Antes chamava-se ativarLinksAluno (havia DUAS funcoes com esse nome; em
+// JS a 2a vencia, entao o botao 🔗 abria este modal de substituicao apesar do titulo dizer "links").
+// Agora tem nome proprio e o botao 🔁 aponta para ca, com titulo "Substituir exercícios na semana".
+async function abrirSubstituicaoExercicios() {
   var s = students.find(function(x){return x.id===selectedId;});
   if (!s) { showToast('Selecione um aluno','err'); return; }
   var sheetId = getSheetId(s.sheet);

@@ -519,6 +519,21 @@
             <div class="ac-label">Atualizar links</div>
             <div class="ac-desc">Sincroniza todos os links da semana com os exercícios atuais</div>
           </button>
+          <button class="ac" onclick="diagnosticarAbasAluno()">
+            <div class="ac-icon">🔍</div>
+            <div class="ac-label">Diagnosticar abas</div>
+            <div class="ac-desc">Lista as semanas (S) e quais têm dados — não altera nada</div>
+          </button>
+          <button class="ac" onclick="removerAbasExcedentesAluno()">
+            <div class="ac-icon">🗑️</div>
+            <div class="ac-label">Remover abas vazias</div>
+            <div class="ac-desc">Apaga abas duplicadas em branco (recusa apagar aba com dados)</div>
+          </button>
+          <button class="ac" onclick="repopularAnteriorAluno()">
+            <div class="ac-icon">♻️</div>
+            <div class="ac-label">Repopular anterior</div>
+            <div class="ac-desc">Preenche o amarelo (anterior) da semana usando a semana passada</div>
+          </button>
           <button class="ac" onclick="analisarAjustesPlanilha()">
             <div class="ac-icon">📊</div>
             <div class="ac-label">Analisar ajustes</div>
@@ -2369,6 +2384,108 @@ async function atualizarLinksAluno() {
   } catch(e) {
     removeLoading('msgs');
     addMsg('msgs', 'Erro ao atualizar links: ' + e.message, false);
+  }
+}
+
+// ============================================================
+// RECUPERACAO (Fase 22B) — diagnosticar / remover abas duplicadas / repopular anterior
+// ============================================================
+// Guarda o ultimo diagnostico do aluno selecionado para o "Remover" sugerir as vazias.
+let _diagAbas = null;
+
+async function diagnosticarAbasAluno() {
+  const s = students.find(function(x){return x.id===selectedId;});
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  const sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
+  addMsg('msgs', 'Diagnosticando abas de ' + s.name + '...', true);
+  addLoading('msgs');
+  try {
+    const res = await gsPost({ diagnosticarAbas: true, spreadsheetId: sheetId });
+    const data = await res.json();
+    removeLoading('msgs');
+    if (data.sucesso) {
+      _diagAbas = { sheetId: sheetId, lista: data.abas };
+      const comDados = data.abas.filter(function(a){return a.temDados;}).map(function(a){return a.aba;});
+      const vazias = data.abas.filter(function(a){return !a.temDados;}).map(function(a){return a.aba;});
+      let msg = '<b>Abas de ' + s.name + ':</b><br>';
+      msg += data.abas.map(function(a){ return (a.temDados ? '✅ ' : '⬜ ') + a.aba + (a.temDados ? ' (tem dados)' : ' (vazia)'); }).join('<br>');
+      msg += '<br><br>Com dados: ' + (comDados.join(', ') || '—');
+      msg += '<br>Vazias: ' + (vazias.join(', ') || '—');
+      msg += '<br><br>Use <b>Remover abas vazias</b> para apagar as duplicadas em branco.';
+      addMsg('msgs', msg, false);
+      showToast('Diagnóstico pronto', 'ok');
+    } else {
+      addMsg('msgs', 'Erro: ' + (data.erro || 'desconhecido'), false);
+    }
+  } catch(e) {
+    removeLoading('msgs');
+    addMsg('msgs', 'Erro ao diagnosticar: ' + e.message, false);
+  }
+}
+
+async function removerAbasExcedentesAluno() {
+  const s = students.find(function(x){return x.id===selectedId;});
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  const sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
+  // Sugestao: se ja diagnosticou este aluno, pre-preenche com as vazias.
+  let sugestao = '';
+  if (_diagAbas && _diagAbas.sheetId === sheetId) {
+    sugestao = _diagAbas.lista.filter(function(a){return !a.temDados;}).map(function(a){return a.aba;}).join(',');
+  }
+  const entrada = prompt('Quais abas apagar? (separe por vírgula, ex.: S22,S23)\n\nDica: rode "Diagnosticar abas" antes. O sistema RECUSA apagar abas com dados.', sugestao);
+  if (entrada === null) return;
+  const nomes = entrada.split(',').map(function(x){return x.trim();}).filter(Boolean);
+  if (!nomes.length) { showToast('Nenhuma aba informada', 'err'); return; }
+  if (!confirm('Apagar definitivamente: ' + nomes.join(', ') + ' ?\n\n(Abas com dados serão puladas automaticamente.)')) return;
+  addMsg('msgs', 'Removendo abas: ' + nomes.join(', ') + '...', true);
+  addLoading('msgs');
+  try {
+    const res = await gsPost({ removerAbasExcedentes: true, abas: nomes, spreadsheetId: sheetId });
+    const data = await res.json();
+    removeLoading('msgs');
+    if (data.sucesso) {
+      let msg = 'Apagadas: ' + (data.apagadas.join(', ') || '—');
+      if (data.puladas && data.puladas.length) msg += '<br>Puladas: ' + data.puladas.join('; ');
+      addMsg('msgs', msg, false);
+      showToast('Abas processadas', 'ok');
+      _diagAbas = null;
+    } else {
+      addMsg('msgs', 'Erro: ' + (data.erro || 'desconhecido'), false);
+    }
+  } catch(e) {
+    removeLoading('msgs');
+    addMsg('msgs', 'Erro ao remover abas: ' + e.message, false);
+  }
+}
+
+async function repopularAnteriorAluno() {
+  const s = students.find(function(x){return x.id===selectedId;});
+  if (!s) { showToast('Selecione um aluno', 'err'); return; }
+  const sheetId = getSheetId(s.sheet);
+  if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
+  const aba = prompt('Repopular o "anterior" (amarelo) de QUAL aba?\n\nEx.: S21 (a semana atual com o amarelo vazio).', window._abaAtual || '');
+  if (aba === null || !aba.trim()) return;
+  const fonte = prompt('De qual aba vêm os dados? (deixe vazio = semana imediatamente anterior)\n\nEx.: S20', '');
+  if (fonte === null) return;
+  addMsg('msgs', 'Repopulando o anterior de ' + aba.trim() + (fonte.trim() ? (' a partir de ' + fonte.trim()) : '') + '...', true);
+  addLoading('msgs');
+  try {
+    const payload = { repopularAnterior: true, aba: aba.trim(), spreadsheetId: sheetId };
+    if (fonte.trim()) payload.abaFonte = fonte.trim();
+    const res = await gsPost(payload);
+    const data = await res.json();
+    removeLoading('msgs');
+    if (data.sucesso) {
+      addMsg('msgs', 'Anterior repopulado em ' + data.alvo + ' (fonte: ' + data.fonte + '). Linhas preenchidas: ' + data.linhasPreenchidas + '.', false);
+      showToast('Anterior repopulado!', 'ok');
+    } else {
+      addMsg('msgs', 'Erro: ' + (data.erro || 'desconhecido'), false);
+    }
+  } catch(e) {
+    removeLoading('msgs');
+    addMsg('msgs', 'Erro ao repopular: ' + e.message, false);
   }
 }
 

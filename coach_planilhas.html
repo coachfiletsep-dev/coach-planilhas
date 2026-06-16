@@ -7665,7 +7665,7 @@ async function abrirRadarCoach(){
     var res=await gsPost({acao:'treinaramHoje', diasSumido:5});
     var data=await res.json();
     if(!data.sucesso){ body.innerHTML='<div style="color:#b91c1c;padding:16px;">Erro: '+_esc(data.erro||'desconhecido')+'</div>'; return; }
-    var hoje=data.hoje||[], sumiram=data.sumiram||[];
+    var hoje=data.hoje||[], iniciaram=data.iniciaram||[], sumiram=data.sumiram||[];
     var h='';
     h+='<div style="font-weight:800;font-size:14px;margin-bottom:8px;">✅ Treinaram hoje ('+hoje.length+')</div>';
     if(hoje.length){
@@ -7676,6 +7676,15 @@ async function abrirRadarCoach(){
       h+='</div>';
     } else {
       h+='<div style="color:var(--text3);margin-bottom:18px;padding:8px;">Ninguém registrou treino hoje ainda.</div>';
+    }
+    // [Fase 23B] Iniciaram o treino hoje mas ainda não salvaram nenhum registro — cutucar.
+    if(iniciaram.length){
+      h+='<div style="font-weight:800;font-size:14px;margin-bottom:8px;">⏱️ Iniciaram mas não registraram hoje ('+iniciaram.length+')</div>';
+      h+='<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:18px;">';
+      iniciaram.forEach(function(x){
+        h+='<div style="display:flex;justify-content:space-between;padding:7px 10px;background:#FFFBEB;border:.5px solid #FDE68A;border-radius:8px;"><span style="font-weight:600;color:#92400E;">'+_esc(x.aluno)+'</span><span style="color:#B45309;font-size:12px;">iniciou '+_esc(x.hora||'')+'</span></div>';
+      });
+      h+='</div>';
     }
     h+='<div style="font-weight:800;font-size:14px;margin-bottom:8px;">🚨 Sumiram (sem treinar há ≥ '+(data.diasSumido||5)+' dias) — '+sumiram.length+'</div>';
     if(sumiram.length){
@@ -7688,7 +7697,7 @@ async function abrirRadarCoach(){
     } else {
       h+='<div style="color:#15803D;padding:8px;">Ninguém sumido. 🎉</div>';
     }
-    h+='<div style="margin-top:16px;font-size:11px;color:var(--text3);">Fonte: registros de treino (Logs_App). Estagnação e fadiga exigem abrir cada aluno (passo futuro).</div>';
+    h+='<div style="margin-top:16px;font-size:11px;color:var(--text3);">Fonte: Logs_App. ✅ Treinaram = salvaram pelo menos 1 registro. ⏱️ Iniciaram = tocaram "Iniciar treino" mas ainda não salvaram (não entram em "Sumiram").</div>';
     body.innerHTML=h;
   }catch(e){ body.innerHTML='<div style="color:#b91c1c;padding:16px;">Erro: '+e.message+'</div>'; }
 }

@@ -10249,6 +10249,7 @@ async function abrirRelatorioTipo(tipo) {
     label.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg2);';
     var cb = document.createElement('input');
     cb.type = 'checkbox'; cb.value = aba;
+    cb.addEventListener('change', _relInvalidar); // [Fase 25] troca de semana invalida o relatorio exibido
     cb.checked = abasSel.indexOf(aba) > -1;
     label.appendChild(cb);
     label.appendChild(document.createTextNode(aba));
@@ -10311,6 +10312,7 @@ async function abrirRelatorio() {
     label.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg2);';
     var cb = document.createElement('input');
     cb.type = 'checkbox'; cb.value = aba;
+    cb.addEventListener('change', _relInvalidar); // [Fase 25] troca de semana invalida o relatorio exibido
     // Selecionar última aba por padrão
     if (aba === abas[abas.length-1]) cb.checked = true;
     label.appendChild(cb);
@@ -10320,6 +10322,13 @@ async function abrirRelatorio() {
 
   document.getElementById('rel-conteudo').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Selecione as semanas e clique em Gerar relatório.</div>';
   document.getElementById('relatorio-modal').style.display = 'flex';
+}
+
+// [Fase 25] Protege contra olhar um relatorio de uma semana achando que e de outra: ao mudar
+// a(s) semana(s) marcada(s), o relatorio exibido e descartado ate clicar em "Gerar relatorio".
+function _relInvalidar(){
+  var c=document.getElementById('rel-conteudo');
+  if(c) c.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">⚠️ Seleção de semana alterada.<br>Clique em <strong>Gerar relatório</strong> para atualizar.</div>';
 }
 
 async function gerarRelatorioHTML() {
@@ -10591,6 +10600,7 @@ async function abrirRelatorioFimMeso() {
     label.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:3px 8px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg2);';
     var cb = document.createElement('input');
     cb.type = 'checkbox'; cb.value = aba;
+    cb.addEventListener('change', _relInvalidar); // [Fase 25] troca de semana invalida o relatorio exibido
     cb.checked = abasSel.indexOf(aba) > -1;
     label.appendChild(cb);
     label.appendChild(document.createTextNode(aba));

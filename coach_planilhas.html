@@ -6858,7 +6858,10 @@ function abrirMacroSalvo() {
   try {
     var macro = JSON.parse(raw);
     window._macroAtual = macro;
-    renderMacroMarkdown(macro.markdown, macro.meta || null);
+    // [Fase 27] Mesmo macros salvos antes do fix mostram a tabela do plano numérico (reconstruída
+    // do _macroAtual.plano guardado), sem precisar regerar.
+    var mdMostrar = _macroMarkdownComPlano(macro.markdown, macro.plano);
+    renderMacroMarkdown(mdMostrar, macro.meta || null);
     showToast('Macrociclo salvo aberto', 'ok');
   } catch(e) {
     showToast('Erro ao abrir macro salvo', 'err');

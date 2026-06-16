@@ -5841,6 +5841,12 @@ async function confirmarNovoMeso() {
         linhaOriginal: macroMesoCtx.bloco.raw
       }) + '\n';
       prompt += 'Interprete objetivo, fase, estrategia, modelo de periodizacao aplicado neste bloco, deload/reavaliacao e prioridades. O treino da planilha deve ser uma aplicacao pratica deste bloco especifico, nao do rotulo geral do macro.\n';
+      // [Fase 29] Macro completo no prompt: a TROCA DE EXERCICIOS e a ENFASE MUSCULAR por periodo
+      // moram na "Logica de progressao"/"Proximo mesociclo" — a linha-resumo do bloco nao basta.
+      if (macroMesoCtx.macro && macroMesoCtx.macro.markdown) {
+        prompt += 'MACROCICLO COMPLETO (consulte a secao "Logica de progressao" -> item de TROCA DE EXERCICIOS previsto para este bloco, e as PRIORIDADES/enfase do periodo em "Proximo mesociclo"):\n';
+        prompt += String(macroMesoCtx.macro.markdown).slice(0, 3500) + '\n';
+      }
     } else {
       prompt += 'Use o macrociclo abaixo como plano-mae do aluno. Escolha o melhor encaixe para o proximo mesociclo de acordo com a proxima aba, historico e briefing:\n';
       prompt += macroMesoCtx.texto + '\n';
@@ -5849,6 +5855,9 @@ async function confirmarNovoMeso() {
       prompt += 'Mesociclos ja gerados a partir do macro: ' + JSON.stringify(macroMesoCtx.macro.mesosGerados).slice(0, 1800) + '\n';
     }
     prompt += 'Ao montar exercicios, volume, intensidade, RIR, deload, cardio e prioridades, respeite a fase e o modelo aplicado no bloco atual. Nao aplique automaticamente o mesmo modelo ao meso inteiro se o bloco pedir transicao, deload ou mudanca de fase.\n';
+    // [Fase 29] Selecao de exercicios + enfase muscular guiadas pelo bloco do macro.
+    prompt += 'SELECAO DE EXERCICIOS E ENFASE MUSCULAR (regra do macro): escolha os exercicios e as VARIACOES (pegada/angulo/maquina/halter/polia/unilateral) conforme o que o macro preve para ESTE bloco/periodo no item "troca de exercicios", e priorize os grupos/enfase indicados para este periodo. Se o periodo anterior usava uma variacao e este bloco pede outra, faca a troca agora (evita acomodacao).\n';
+    prompt += 'AS ESCOLHAS MANUAIS DO COACH PREVALECEM: se o coach fixou a divisao (chips/custom/briefing) ou exercicios especificos, respeite-os exatamente; o macro guia a selecao de exercicios e a enfase DENTRO da divisao escolhida — nunca troque a divisao que o coach fixou nem ignore o briefing.\n';
   }
 
   // Cardio context
@@ -6938,7 +6947,7 @@ async function ajustarMacrociclo() {
       'Mantenha a mesma estrutura em markdown: Diagnostico estrategico, Mapa do macrociclo em tabela, Logica de progressao e Proximo mesociclo sugerido. ' +
       'No FINAL, repita o bloco de codigo ```periodizacao``` com o plano numerico atualizado (mesmo formato JSON de antes: ancora + blocos contiguos + semanas com global ou dias). Retorne apenas a nova versao.';
     var system = getSystemPrompt() + '\n\nVoce revisa periodizacao anual com base em autores classicos e contemporaneos da musculacao, sem citar bibliografia longa se isso nao ajudar a decisao pratica.';
-    var reply = await callClaude([{ role: 'user', content: prompt }], system, 4500);
+    var reply = await callClaude([{ role: 'user', content: prompt }], system, 6500);
     var extAj = _extrairPlanoDoMarkdown(reply);
     var meta = { duracao: ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: 'Ajustado' };
     var planoAnterior = window._macroAtual && window._macroAtual.plano;
@@ -7009,14 +7018,15 @@ function montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCom
 
     '## Plano numerico (OBRIGATORIO)\n' +
     'Depois de TODO o markdown acima, acrescente um bloco de codigo com a periodizacao em numeros, no formato exato abaixo (uma cerca de codigo iniciada por ```periodizacao). Ele sera lido pelo app para preencher reps/RiR/series semana a semana — entao precisa ser JSON valido.\n' +
-    'Regras do JSON: "ancora.aba" = nome da 1a aba/semana coberta pelo plano (as abas se chamam S1, S2, S3...; se nao souber em que semana o aluno esta, use "S1" e o coach ajusta). Liste os blocos NA ORDEM e de forma contigua (sem buracos entre as semanas). Para cada bloco: "granularidade":"dia" quando os dias da semana tem reps diferentes (ondulatorio diario), ou "global" quando a semana inteira tem o mesmo alvo. "varia" lista o que muda ("reps","rir","series"). Em "semanas", use "global":{reps,rir,series} (granularidade global) OU "dias":{"SEG":{reps,rir,series},...} (granularidade dia). Reps como faixa "8-10". Inclua TODAS as semanas de cada bloco.\n' +
+    'Regras do JSON: "ancora.aba" = nome da 1a aba/semana coberta pelo plano (as abas se chamam S1, S2, S3...; se nao souber em que semana o aluno esta, use "S1" e o coach ajusta). Liste os blocos NA ORDEM e de forma contigua (sem buracos entre as semanas). Para cada bloco: "granularidade":"dia" quando os dias da semana tem reps diferentes (ondulatorio diario), ou "global" quando a semana inteira tem o mesmo alvo. Em "semanas", use "global":{reps,rir,series} (granularidade global) OU "dias":{"SEG":{reps,rir,series},...} (granularidade dia). Reps como faixa "8-10"; rir como numero; series = numero de series de trabalho por exercicio naquela semana (ex.: "3" ou "4"). Inclua TODAS as semanas de cada bloco.\n' +
+    'OBRIGATORIO — PRESCRICAO COMPLETA: "varia" SEMPRE inclui os tres: ["reps","rir","series"], e CADA semana/dia preenche os tres campos (reps, rir E series). O macro deve ditar tambem o NUMERO DE SERIES, nao so reps/RiR — assim a copia de semana reescreve a prescricao COMPLETA semana a semana, exatamente como o bloco manda. VARIE as series conforme o volume do bloco: acumulacao/volume = mais series (ex.: 4-5); intensificacao/realizacao/forca = menos series com mais carga (ex.: 2-3); deload = series reduzidas (~-40%, ex.: 2). Se um bloco mantem as series constantes de proposito, repita o mesmo numero em todas as semanas dele (nunca deixe series em branco).\n' +
     'FREQUENCIA DO ALUNO (critico): este aluno treina ' + ctx.dias + ' dias por semana (divisao: ' + (ctx.divisao || 'a definir') + '). Em blocos com "granularidade":"dia", ENUMERE TODOS os ' + ctx.dias + ' dias de treino reais — NUNCA preencha so 3 dias se o aluno treina 4, 5 ou 6. Use os dias da semana convencionais para a frequencia: 3 dias=SEG,QUA,SEX; 4=SEG,TER,QUI,SEX; 5=SEG,TER,QUA,QUI,SEX; 6=SEG,TER,QUA,QUI,SEX,SAB. Se um bloco tiver reps iguais em todos os dias, pode usar "global" em vez de listar dia a dia.\n' +
     'ROTACAO quando as zonas de reps nao dividem igual nos dias (ex.: DUP com 3 zonas P/M/L): repita a sequencia de zonas ciclicamente cobrindo TODOS os dias de treino. P=pesada (menos reps, ex.: 4-6), M=media (ex.: 8-12), L=leve (mais reps, ex.: 12-15). Padroes: 3 dias = P M L; 4 dias = P M L P; 5 dias = P M L P M; 6 dias = P M L P M L. Em divisao upper/lower ou push/pull/legs, mantenha a logica do bloco mas ainda assim defina os reps de TODOS os dias de treino. (O coach revisa/ajusta a rotacao depois se quiser.)\n' +
     'Exemplo (modelo — adapte a frequencia REAL do aluno acima):\n' +
     '```periodizacao\n' +
     '{"ancora":{"aba":"S1"},"blocos":[' +
-    '{"id":"Bloco 1","modelo":"linear","granularidade":"global","varia":["reps","rir"],"semanas":[{"n":1,"global":{"reps":"10-12","rir":"3"}},{"n":2,"global":{"reps":"10-12","rir":"2"}},{"n":3,"global":{"reps":"8-10","rir":"1"}},{"n":4,"global":{"reps":"12-15","rir":"3"}}]},' +
-    '{"id":"Bloco 2","modelo":"ondulatorio_diario","granularidade":"dia","varia":["reps","rir"],"semanas":[{"n":1,"dias":{"SEG":{"reps":"4-6","rir":"2"},"QUA":{"reps":"10-12","rir":"2"},"SEX":{"reps":"12-15","rir":"1"}}}]}' +
+    '{"id":"Bloco 1","modelo":"linear","granularidade":"global","varia":["reps","rir","series"],"semanas":[{"n":1,"global":{"reps":"10-12","rir":"3","series":"4"}},{"n":2,"global":{"reps":"10-12","rir":"2","series":"4"}},{"n":3,"global":{"reps":"8-10","rir":"1","series":"3"}},{"n":4,"global":{"reps":"12-15","rir":"4","series":"2"}}]},' +
+    '{"id":"Bloco 2","modelo":"ondulatorio_diario","granularidade":"dia","varia":["reps","rir","series"],"semanas":[{"n":1,"dias":{"SEG":{"reps":"4-6","rir":"2","series":"5"},"QUA":{"reps":"10-12","rir":"2","series":"4"},"SEX":{"reps":"12-15","rir":"1","series":"3"}}}]}' +
     ']}\n' +
     '```';
   return prompt;
@@ -7067,7 +7077,7 @@ async function gerarMacrociclo(modo) {
 
     var system = getSystemPrompt() + '\n\nVoce tambem e especialista em periodizacao anual, macrociclo adaptativo, deloads, reavaliacao e tomada de decisao baseada em historico.';
     if (avisoHistorico) system += '\nAviso operacional: ' + avisoHistorico;
-    var reply = await callClaude([{ role: 'user', content: montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCompleto) }], system, 4500, null, true);
+    var reply = await callClaude([{ role: 'user', content: montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCompleto) }], system, 6500, null, true);
     var ext = _extrairPlanoDoMarkdown(reply); // separa o bloco ```periodizacao``` do markdown exibido
     var mdFinal = _macroMarkdownComPlano(ext.markdown, ext.plano); // [Fase 27] plano numérico visível
     var meta = { duracao: ctx.periodoEstimado || ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: modo === 'historico' ? 'Historico' : 'Zero' };

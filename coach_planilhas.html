@@ -6332,6 +6332,49 @@ function _extrairPlanoDoMarkdown(md) {
   return out;
 }
 
+// [Fase 27] Renderiza o plano de periodizacao (JSON extraido) como tabela markdown LEGIVEL,
+// pra aparecer sob "Plano numerico" na tela e no PDF (antes o JSON era escondido e sobrava
+// so o titulo vazio).
+function _planoParaMarkdown(plano){
+  if(!plano || !plano.blocos || !plano.blocos.length) return '';
+  var dias=['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
+  var anc=(plano.ancora && plano.ancora.aba) ? plano.ancora.aba : 'S1';
+  var md='## Plano numérico\n';
+  md+='_Âncora: '+anc+' (1ª semana coberta). Estes números alimentam a cópia automática da semana._\n\n';
+  plano.blocos.forEach(function(b){
+    var linhas=[];
+    (b.semanas||[]).forEach(function(s){
+      if(s.dias){
+        dias.forEach(function(d){
+          var v=s.dias[d]; if(!v) return;
+          linhas.push('| '+(s.n||'-')+' | '+d+' | '+(v.reps||'-')+' | '+(v.rir||'-')+' | '+(v.series||'-')+' |');
+        });
+      } else if(s.global){
+        var g=s.global;
+        linhas.push('| '+(s.n||'-')+' | todos | '+(g.reps||'-')+' | '+(g.rir||'-')+' | '+(g.series||'-')+' |');
+      }
+    });
+    if(!linhas.length) return; // bloco sem números (ex.: gap) — não desenha tabela vazia
+    md+='**'+(b.id||'Bloco')+'**'+(b.modelo?' — '+b.modelo:'')+(b.granularidade?' · '+b.granularidade:'')+'\n\n';
+    md+='| Semana | Dia | Reps | RiR | Séries |\n| --- | --- | --- | --- | --- |\n';
+    md+=linhas.join('\n')+'\n\n';
+  });
+  return md.trim();
+}
+
+// Junta o markdown do macro (sem o titulo "Plano numerico" orfao) com a tabela legivel do plano,
+// ou um aviso quando a IA nao retornou o plano.
+function _macroMarkdownComPlano(markdown, plano){
+  var limpo=String(markdown||'').trim();
+  // remove a secao "Plano numerico" orfa (titulo sem conteudo / ou tabela antiga) ate o fim
+  limpo=limpo.replace(/\n?#{1,6}\s*Plano\s+num[ée]rico[\s\S]*$/i,'').trim();
+  limpo=limpo.replace(/\n?\*\*\s*Plano\s+num[ée]rico\s*\*\*[\s\S]*$/i,'').trim();
+  var sec=(plano && plano.blocos && plano.blocos.length)
+    ? _planoParaMarkdown(plano)
+    : '## Plano numérico\n_⚠️ A IA não retornou o plano numérico desta vez. Clique em "Ajustar" para regenerar, ou preencha à mão em "⚙️ Revisar plano"._';
+  return limpo+'\n\n'+sec;
+}
+
 function gerarMacrocicloManual() {
   var ctx = coletarContextoMacro();
   var blocos = [];
@@ -6896,8 +6939,10 @@ async function ajustarMacrociclo() {
     var extAj = _extrairPlanoDoMarkdown(reply);
     var meta = { duracao: ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: 'Ajustado' };
     var planoAnterior = window._macroAtual && window._macroAtual.plano;
-    window._macroAtual = { markdown: extAj.markdown, ctx: ctx, meta: meta, ajuste: ajuste, plano: extAj.plano || planoAnterior, atualizadoEm: new Date().toISOString() };
-    renderMacroMarkdown(extAj.markdown, meta);
+    var planoFinal = extAj.plano || planoAnterior; // se o ajuste não trouxe plano, mantém o anterior
+    var mdFinalAj = _macroMarkdownComPlano(extAj.markdown, planoFinal); // [Fase 27] plano numérico visível
+    window._macroAtual = { markdown: mdFinalAj, ctx: ctx, meta: meta, ajuste: ajuste, plano: planoFinal, atualizadoEm: new Date().toISOString() };
+    renderMacroMarkdown(mdFinalAj, meta);
     showToast(extAj.plano ? 'Macrociclo ajustado (periodização atualizada). Clique em "Salvar macro".' : 'Macrociclo ajustado!', 'ok');
   } catch(e) {
     out.innerHTML = '<div class="macro-empty" style="color:var(--red)">Erro ao ajustar:<br>' + escapeMacroHtml(e.message) + '</div>';
@@ -7021,9 +7066,10 @@ async function gerarMacrociclo(modo) {
     if (avisoHistorico) system += '\nAviso operacional: ' + avisoHistorico;
     var reply = await callClaude([{ role: 'user', content: montarPromptMacrociclo(ctx, historico, memoriaTecnica, usarHistoricoCompleto) }], system, 4500, null, true);
     var ext = _extrairPlanoDoMarkdown(reply); // separa o bloco ```periodizacao``` do markdown exibido
+    var mdFinal = _macroMarkdownComPlano(ext.markdown, ext.plano); // [Fase 27] plano numérico visível
     var meta = { duracao: ctx.periodoEstimado || ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: modo === 'historico' ? 'Historico' : 'Zero' };
-    window._macroAtual = { markdown: ext.markdown, ctx: ctx, meta: meta, plano: ext.plano, historico: historico ? { abasAnalisadas: historico.abasAnalisadas, totalSeries: historico.totalSeries } : null, criadoEm: new Date().toISOString() };
-    renderMacroMarkdown(ext.markdown, meta);
+    window._macroAtual = { markdown: mdFinal, ctx: ctx, meta: meta, plano: ext.plano, historico: historico ? { abasAnalisadas: historico.abasAnalisadas, totalSeries: historico.totalSeries } : null, criadoEm: new Date().toISOString() };
+    renderMacroMarkdown(mdFinal, meta);
     showToast(ext.plano ? 'Macrociclo gerado com periodização numérica! Clique em "Salvar macro" para ativar.' : 'Macrociclo gerado!', 'ok');
   } catch(e) {
     var msgErro = e.message || 'erro desconhecido';

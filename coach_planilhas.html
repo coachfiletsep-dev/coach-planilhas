@@ -11144,6 +11144,18 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
     return { forca: pt, metabolico: null };
   }
 
+  // [Fase 26] Um dia tem pós-treino real quando há tempo/calorias/PSE em força OU metabólico —
+  // cobre o dia SÓ de aeróbio (sem série de carga, mas treinou). Resolve a incongruência de
+  // mostrar kcal/UA num dia marcado como "não treinado".
+  function _temPosReal(d) {
+    if (!d || !d.posTreino) return false;
+    var pt = normPT(d.posTreino), pf = pt.forca, pm = pt.metabolico;
+    function _algum(b){ return b && (b.tempo || b.duracao || b.calorias || b.cal || b.pse || b.fcMedia || b.fc); }
+    return !!(_algum(pf) || _algum(pm));
+  }
+  // Dia "feito" = registrou série com carga OU tem pós-treino real (aeróbio/sessão).
+  function _feito(d) { return !!(d && (d.treinou || _temPosReal(d))); }
+
   var totalExs = 0, totalProg = 0, totalRec = 0, totalVL = 0, totalCI = 0;
   var vlAnt = 0, calAnt = 0, ciAnt = 0, diasRealizadosAnt = 0, diasComTreinoAnt = 0;
   var destaques = [], todosExs = [];
@@ -11153,8 +11165,8 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   diasOrdem.forEach(function(dia) {
     var diaData = aba.dias[dia];
     if (!diaData) return;
-    if (diaData.totalExercicios > 0) diasComTreino++;
-    if (diaData.treinou) diasRealizados++;
+    if (diaData.totalExercicios > 0 || _feito(diaData)) diasComTreino++;
+    if (_feito(diaData)) diasRealizados++;
     // CI e calorias por dia — suporta estrutura flat e nested
     var ciDia = 0, calDia = 0;
     if (diaData.posTreino) {
@@ -11368,13 +11380,14 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
   h += '<div class="sec"><div class="st">Frequência da semana</div><div class="dg">';
   diasOrdem.forEach(function(dia) {
     var d = aba.dias[dia];
-    var cls = !d || d.totalExercicios===0 ? 'off' : d.treinou ? 'ok' : 'no';
-    var ic = d && d.treinou ? '✓' : (d && d.totalExercicios>0 ? '✗' : '·');
+    var feito = _feito(d);
+    var cls = !d || (d.totalExercicios===0 && !feito) ? 'off' : feito ? 'ok' : 'no';
+    var ic = feito ? '✓' : (d && d.totalExercicios>0 ? '✗' : '·');
     var ex = d && d.totalExercicios>0 ? d.totalExercicios+' ex' : '';
 
     // Calorias + CI por dia
     var calLabel = '', ciLabel = '';
-    if (d && d.totalExercicios > 0) {
+    if (d && (d.totalExercicios > 0 || feito)) {
       var ptND = normPT(d.posTreino);
       var pf = ptND.forca, pm = ptND.metabolico;
       var calMusc = (pf && (pf.calorias || pf.cal)) ? parseFloat(pf.calorias || pf.cal)||0 : 0;
@@ -11382,7 +11395,7 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
       var calTotal = calMusc + calAero;
       calLabel = calTotal > 0
         ? '<div class="de" style="color:#9B9B96">' + Math.round(calTotal) + ' kcal</div>'
-        : (d.treinou ? '<div class="de" style="color:#BEBCB5">—</div>' : '');
+        : (feito ? '<div class="de" style="color:#BEBCB5">—</div>' : '');
 
       var tempoF = parseFloat((pf && (pf.tempo || pf.duracao)) || 0);
       var tempoM = parseFloat((pm && (pm.tempo || pm.duracao)) || 0);
@@ -11391,7 +11404,7 @@ function montarRelatorioSemanal(nomeAluno, aba, data) {
       var ciDia = ciF + ciM;
       ciLabel = ciDia > 0
         ? '<div class="de" style="color:#E57B2B;font-weight:500">' + Math.round(ciDia) + ' UA</div>'
-        : (d.treinou ? '<div class="de" style="color:#BEBCB5">—</div>' : '');
+        : (feito ? '<div class="de" style="color:#BEBCB5">—</div>' : '');
     }
 
     h += '<div class="db"><div class="dn">' + diasNomes[dia] + '</div><div class="dc ' + cls + '">' + ic + '</div><div class="de">' + ex + '</div>' + calLabel + ciLabel + '</div>';

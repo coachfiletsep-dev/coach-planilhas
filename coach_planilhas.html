@@ -4571,8 +4571,9 @@ function mmanAddExercicio(dia) {
     '<div style="display:flex;gap:4px;align-items:center;">' +
       '<span class="mman-handle" title="Arraste para reordenar" style="cursor:grab;user-select:none;font-size:14px;color:var(--text3);padding:0 2px;">⠿</span>' +
       '<span class="mman-num" style="font-size:11px;font-weight:700;color:var(--green);min-width:14px;text-align:center;"></span>' +
-      '<select class="mman-grupo" onchange="mmanFillEx(this)" style="' + _MMAN_INP + 'width:110px;">' + mmanGruposOptions() + '</select>' +
-      '<input class="mman-nome" list="' + _uid + '" placeholder="Exercício…" style="' + _MMAN_INP + 'flex:1;">' +
+      '<select class="mman-tipo" onchange="mmanFillEx(this)" title="Filtrar por tipo (musculação, peso do corpo, casa, etc.)" style="' + _MMAN_INP + 'width:98px;">' + mmanTiposOptions() + '</select>' +
+      '<select class="mman-grupo" onchange="mmanFillEx(this)" style="' + _MMAN_INP + 'width:92px;">' + mmanGruposOptions() + '</select>' +
+      '<input class="mman-nome" list="' + _uid + '" placeholder="Exercício…" style="' + _MMAN_INP + 'flex:1;min-width:88px;">' +
       '<datalist id="' + _uid + '"></datalist>' +
       '<button class="icon-btn" title="Remover" onclick="mmanRemoveEx(this)" style="font-size:13px;">✕</button>' +
     '</div>' +
@@ -4614,11 +4615,74 @@ function mmanAddExercicio(dia) {
   mmanRenumerar(dia);
 }
 
+// [FILTRO TIPO] opções do seletor de tipo (mesma lista do classificar_tipos_exercicios.gs)
+var _MMAN_TIPOS = ['MUSCULAÇÃO','PESO DO CORPO','ELÁSTICO','CASA','CORE','MOBILIDADE','COMBINADO','METABÓLICO'];
+function mmanTiposOptions() {
+  return '<option value="">Tipo…</option>' + _MMAN_TIPOS.map(function(t){ return '<option value="' + t + '">' + t + '</option>'; }).join('');
+}
+
+// Normaliza tipo p/ comparação (maiúsculo, sem acento)
+function _normTipo(s) {
+  try { s = String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, ''); } catch(e) { s = String(s || ''); }
+  return s.toUpperCase().trim();
+}
+// Mapa nome->tipo vindo da PLANILHA (coluna "tipo", via bibliotecaDetalhes). Fonte da verdade.
+function _mmanMapaTipos() {
+  var mapa = {};
+  var d = window._bibliotecaDetalhes;
+  if (d) Object.keys(d).forEach(function(g){
+    (d[g] || []).forEach(function(det){
+      if (det && det.tipo) mapa[String(det.nome || '').toUpperCase().trim()] = det.tipo;
+    });
+  });
+  return mapa;
+}
+// Tipo de um exercício: prefere a planilha; se vazio, cai no palpite por palavra-chave
+function _tipoDoExercicio(nome, grupo, mapa) {
+  mapa = mapa || _mmanMapaTipos();
+  var t = mapa[String(nome || '').toUpperCase().trim()];
+  if (t) return t;
+  return _tipoHeuristico(nome, grupo);
+}
+// Espelha o _classificarTipo_ do classificar_tipos_exercicios.gs (fallback enquanto a coluna não está preenchida)
+function _tipoHeuristico(nome, grupo) {
+  var raw = String(nome || '');
+  try { raw = raw.normalize('NFD').replace(/[̀-ͯ]/g, ''); } catch(e) {}
+  var n = ' ' + raw.toUpperCase() + ' ';
+  var g = _normTipo(grupo);
+  var gn = g + ' ' + n;
+  if (/MOBILIDAD|ALONG|\bPRI\b|RESPIRA|POSTURAL|CARS\b|90-90|HOOKLYING/.test(gn)) return 'MOBILIDADE';
+  if (/COMBINAD/.test(g) || / WITH | TO REVERSE| AND PRESS/.test(n)) return 'COMBINADO';
+  if (/METAB|HIIT|TABATA|BURPEE|CIRCUIT|AMRAP|EMOM|SKIPPING|JUMPING JACK|MOUNTAIN CLIMBER/.test(gn)) return 'METABÓLICO';
+  if (g === 'ABDOME' || g === 'CORE' || /\bABDOM|PRANCHA|OBLIQU|HOLLOW|DEAD ?BUG|BIRD ?DOG|RUSSIAN|CRUNCH|PALLOF|AB WHEEL|ROLLOUT|L-SIT|HANGING|FLUTTER|V-?UP|CANIVETE|BOAT/.test(gn)) return 'CORE';
+  if (/MOCHILA|GARRAF|CADEIRA(?! EXTENSORA)(?! FLEXORA)|SOFA|OBJETO|LIVROS|VASSOURA/.test(n)) return 'CASA';
+  if (/ELASTIC|MINI ?BAND|\bBAND\b|SUPERBAND|FAIXA EL/.test(n)) return 'ELÁSTICO';
+  if (/MAQUINA|POLIA|SMITH|\bCABO\b|CROSSOVER|PULLEY|HALTER|BARRA(?! FIXA)| BANCO |ANILHA|LANDMINE|HACK|LEG ?PRESS|EXTENSORA|FLEXORA|PECK|VOADOR|GRAVITRON|APARELHO|CANELEIRA|APOLETE/.test(n)) return 'MUSCULAÇÃO';
+  if (/FLEXAO|PRANCHA|AGACHAMENTO LIVRE|PESO CORPORAL|PESO DO CORPO|BARRA FIXA|MERGULHO|AFUNDO|BULGARO|PONTE|ELEVACAO PELVICA|SUPERMAN|PIKE|ARQUEIRO|DIAMANTE|PISTOL|STEP-?UP|PARALELA|\bDIP\b|COICE|ABDUCAO|FIRE HYDRANT|CLAMSHELL|CONCHA|PANTURRILHA EM PE|GOOD MORNING|NORDIC|CADEIRINHA|WALL SIT/.test(n)) return 'PESO DO CORPO';
+  return 'MUSCULAÇÃO';
+}
+
 function mmanFillEx(sel) {
-  var grupo = sel.value;
-  var dl = sel.closest('.mman-exrow').querySelector('datalist');
-  var lista = (window._bibliotecaBrainering && window._bibliotecaBrainering[grupo]) || [];
-  if (dl) dl.innerHTML = lista.map(function(n){ return '<option value="' + n + '">'; }).join('');
+  var row = sel.closest('.mman-exrow');
+  if (!row) return;
+  var grupoSel = row.querySelector('.mman-grupo');
+  var tipoSel  = row.querySelector('.mman-tipo');
+  var grupo = grupoSel ? grupoSel.value : '';
+  var tipo  = tipoSel ? tipoSel.value : '';
+  var dl = row.querySelector('datalist');
+  var nomes = [];
+  if (grupo) {
+    nomes = (window._bibliotecaBrainering && window._bibliotecaBrainering[grupo]) || [];
+  } else if (window._bibliotecaBrainering) {
+    // Sem grupo: junta todos (permite filtrar só por tipo, ex.: tudo "peso do corpo")
+    Object.keys(window._bibliotecaBrainering).forEach(function(g){ nomes = nomes.concat(window._bibliotecaBrainering[g] || []); });
+  }
+  if (tipo) {
+    var alvo = _normTipo(tipo);
+    var mapa = _mmanMapaTipos();
+    nomes = nomes.filter(function(n){ return _normTipo(_tipoDoExercicio(n, grupo, mapa)) === alvo; });
+  }
+  if (dl) dl.innerHTML = nomes.map(function(n){ return '<option value="' + String(n).replace(/"/g,'&quot;') + '">'; }).join('');
 }
 
 // ====================================================================

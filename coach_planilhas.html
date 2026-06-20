@@ -8920,7 +8920,7 @@ async function confirmarEdicao() {
 // ============================================================
 // editarNaPlanilha — FIX BUG 1: NUNCA cria nova aba, só edita
 // ============================================================
-async function editarNaPlanilha(exercicios, nomeAba, cardio, linhasLimpar, moverResultados) {
+async function editarNaPlanilha(exercicios, nomeAba, cardio, linhasLimpar, moverResultados, confirmarLimpeza) {
   const s = students.find(function(x){return x.id===selectedId;});
   const sheetId = s ? getSheetId(s.sheet) : null;
   exercicios = (Array.isArray(exercicios) ? exercicios : []).map(function(ex) {
@@ -8968,10 +8968,25 @@ async function editarNaPlanilha(exercicios, nomeAba, cardio, linhasLimpar, mover
     if (Array.isArray(cardio) && cardio.length > 0) payload.cardio = cardio;
     if (Array.isArray(linhasLimpar) && linhasLimpar.length > 0) payload.linhasLimpar = linhasLimpar;
     if (Array.isArray(moverResultados) && moverResultados.length > 0) payload.moverResultados = moverResultados;
+    // [FASE 31B] confirmacao do coach para apagar resultado de dia ja treinado
+    if (confirmarLimpeza) payload.confirmarLimpeza = true;
     if (sheetId) payload.spreadsheetId = sheetId;
     const res = await gsPost(payload);
     const data = await res.json();
     removeLoading('msgs');
+    // [FASE 31B] GUARDA: o backend pediu confirmacao porque o(s) dia(s) ja tem treino registrado
+    // do aluno. Nada foi escrito/apagado ainda. Pergunta ao coach e, se confirmar, reenvia.
+    if (data && data.precisaConfirmar) {
+      var _msgConf = (data.mensagem || 'Esse dia ja tem treino registrado do aluno. Trocar/excluir exercicios vai APAGAR os resultados.') +
+                     '\n\nDeseja continuar mesmo assim?';
+      if (window.confirm(_msgConf)) {
+        return await editarNaPlanilha(exercicios, nomeAba, cardio, linhasLimpar, moverResultados, true);
+      } else {
+        addMsg('msgs', '✋ Edição cancelada — os resultados já registrados do aluno foram preservados.', false);
+        showToast('Edição cancelada (dados preservados)', 'ok');
+        return;
+      }
+    }
     if (data.sucesso) {
       addMsg('msgs', '✅ ' + data.escritos + ' exercício(s) corrigido(s) na aba ' + nomeAba + '! Abra a planilha para conferir.', false);
       showToast('Aba corrigida!', 'ok');

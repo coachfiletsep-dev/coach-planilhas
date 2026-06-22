@@ -10408,9 +10408,11 @@ async function enviarRelatorioWhatsapp() {
   var sheetId = getSheetId(s.sheet);
   if (!sheetId) { showToast('Planilha não configurada', 'err'); return; }
 
-  // Verificar se o relatório foi gerado
-  var conteudo = document.getElementById('rel-conteudo');
-  if (!conteudo || !conteudo.textContent.trim() || conteudo.querySelector('[style*="text-align:center"]')) {
+  // [FASE 32 — autorizado por Felipe, 22/06/2026] Verificar se o relatório foi gerado via
+  // flag de estado confiavel. A heuristica antiga procurava qualquer elemento com
+  // text-align:center para detectar o placeholder — mas o PROPRIO relatorio tem varios
+  // elementos centralizados (cards, circulos de frequencia) -> falso positivo bloqueava o envio.
+  if (!window._relGerado) {
     showToast('Gere o relatório antes de enviar', 'err'); return;
   }
 
@@ -10458,6 +10460,7 @@ async function abrirRelatorio() {
     lista.appendChild(label);
   });
 
+  window._relGerado=false; // [FASE 32] modal aberto sem gerar ainda
   document.getElementById('rel-conteudo').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Selecione as semanas e clique em Gerar relatório.</div>';
   document.getElementById('relatorio-modal').style.display = 'flex';
 }
@@ -10465,6 +10468,7 @@ async function abrirRelatorio() {
 // [Fase 25] Protege contra olhar um relatorio de uma semana achando que e de outra: ao mudar
 // a(s) semana(s) marcada(s), o relatorio exibido e descartado ate clicar em "Gerar relatorio".
 function _relInvalidar(){
+  window._relGerado=false; // [FASE 32] troca de semana invalida o estado de "gerado"
   var c=document.getElementById('rel-conteudo');
   if(c) c.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">⚠️ Seleção de semana alterada.<br>Clique em <strong>Gerar relatório</strong> para atualizar.</div>';
 }
@@ -10477,6 +10481,7 @@ async function gerarRelatorioHTML() {
   if (abasSel.length === 0) { showToast('Selecione pelo menos uma semana','err'); return; }
 
   var conteudo = document.getElementById('rel-conteudo');
+  window._relGerado=false; // [FASE 32] so vira true apos render bem-sucedido
   conteudo.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);">⏳ Gerando relatório...</div>';
 
   try {
@@ -10509,6 +10514,7 @@ async function gerarRelatorioHTML() {
       var _preSec = _buildPreTreinoTrendSection(data);
       if (_preSec) conteudo.insertAdjacentHTML('beforeend', _preSec);
     } catch(_e) {}
+    window._relGerado=true; // [FASE 32] relatorio renderizado com sucesso -> libera o envio WhatsApp
   } catch(e) {
     conteudo.innerHTML = '<div style="color:var(--red);padding:20px;">Erro: ' + e.message + '</div>';
   }

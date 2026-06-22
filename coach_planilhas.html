@@ -2279,6 +2279,12 @@ async function runSheetAction(type) {
       const msgs = { seg_qui:'Semana seg → qui criada' + (novaAba?' ('+novaAba+')':'') + ' — faixa seg/ter/qua/qui finalizada!', qui_dom:msgQuiDom, semana_completa:'Semana completa criada' + (novaAba?' ('+novaAba+')':'') + '!', planilha_zero:'Nova aba criada! Use "Novo meso IA" para preencher.' };
       addMsg('msgs', (msgs[type]||'Feito!') + ' Abra a planilha para conferir.', false);
       showToast('Feito!', 'ok');
+      // [FASE 33] a aba foi criada, mas a limpeza/deslocamento dos resultados FALHOU — o peso da
+      // semana passada pode estar aparecendo como atual e o questionário pode estar preenchido.
+      if (data.limpezaFalhou) {
+        addMsg('msgs', '⚠️ ATENÇÃO: a aba foi criada, mas a limpeza dos resultados falhou (' + (data.limpezaErro||'erro') + '). Os pesos da semana passada podem estar aparecendo como atuais. Tente rodar de novo, ou apague a aba e recrie.', false);
+        showToast('Limpeza falhou — confira a aba!', 'err');
+      }
       if ((type === 'seg_qui' || type === 'qui_dom' || type === 'semana_completa') && novaAba) {
         setTimeout(function() {
           addMsg('msgs', '✨ Quer fazer alguma alteração nesta semana? Ex: mudar repetições, trocar exercício, ajustar séries. Digite abaixo ou "não" para manter igual.', false);

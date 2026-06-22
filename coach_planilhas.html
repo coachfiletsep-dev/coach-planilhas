@@ -10416,10 +10416,15 @@ async function enviarRelatorioWhatsapp() {
     showToast('Gere o relatório antes de enviar', 'err'); return;
   }
 
-  if (!confirm('Enviar relatório para ' + s.name + ' via WhatsApp?')) return;
+  // [FASE 32] Enviar exatamente a(s) semana(s) marcada(s) na tela — antes o backend pegava
+  // a aba de maior numero (semana nova vazia) e ignorava a selecao, enviando relatorio errado.
+  var abasSelWa = [];
+  document.getElementById('rel-abas-lista').querySelectorAll('input:checked').forEach(function(cb){ abasSelWa.push(cb.value); });
+
+  if (!confirm('Enviar relatório' + (abasSelWa.length ? ' (' + abasSelWa.join(', ') + ')' : '') + ' para ' + s.name + ' via WhatsApp?')) return;
 
   try {
-    var res = await gsPost({ dispararRelatorio: true, spreadsheetId: sheetId, nomeAluno: s.name });
+    var res = await gsPost({ dispararRelatorio: true, spreadsheetId: sheetId, nomeAluno: s.name, abasSelecionadas: abasSelWa });
     var data = await res.json();
     if (data.sucesso) {
       showToast('✅ Relatório enviado para ' + s.name.split(' ')[0] + ' via WhatsApp!', 'ok');

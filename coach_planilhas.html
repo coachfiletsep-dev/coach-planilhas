@@ -10377,8 +10377,12 @@ async function abrirRelatorioTipo(tipo) {
 
   if (abas.length === 0) { showToast('Nenhuma semana encontrada na planilha', 'err'); return; }
 
-  // Pré-selecionar as últimas N semanas
-  var abasSel = abas.slice(-nSemanas);
+  // [FASE 32] Pré-selecionar N semanas TERMINANDO na semana que terminou (não na semana nova
+  // vazia criada pela automação de domingo). Antes era abas.slice(-nSemanas) = sempre a(s) mais
+  // nova(s), o que abria o relatório na semana vazia (ex. S22 com 0/2 em vez de S21 com 3/3).
+  var _abaPad = await _abaRelatorioPadrao(sheetId, abas);
+  var _idxPad = abas.indexOf(_abaPad); if (_idxPad < 0) _idxPad = abas.length - 1;
+  var abasSel = abas.slice(Math.max(0, _idxPad - nSemanas + 1), _idxPad + 1);
 
   var lista = document.getElementById('rel-abas-lista');
   lista.innerHTML = '';
@@ -10450,6 +10454,8 @@ async function abrirRelatorio() {
   } catch(e) { showToast('Erro ao buscar abas: ' + (e && e.message ? e.message : 'desconhecido'),'err'); return; }
 
   // Renderizar checkboxes de seleção
+  // [FASE 32] padrão = semana que terminou (não a semana nova vazia da automação de domingo)
+  var _abaPad = await _abaRelatorioPadrao(sheetId, abas);
   var lista = document.getElementById('rel-abas-lista');
   lista.innerHTML = '';
   abas.forEach(function(aba) {
@@ -10458,8 +10464,8 @@ async function abrirRelatorio() {
     var cb = document.createElement('input');
     cb.type = 'checkbox'; cb.value = aba;
     cb.addEventListener('change', _relInvalidar); // [Fase 25] troca de semana invalida o relatorio exibido
-    // Selecionar última aba por padrão
-    if (aba === abas[abas.length-1]) cb.checked = true;
+    // [FASE 32] Selecionar a semana que terminou por padrão (antes era abas[length-1] = vazia)
+    if (aba === _abaPad) cb.checked = true;
     label.appendChild(cb);
     label.appendChild(document.createTextNode(aba));
     lista.appendChild(label);
@@ -10468,6 +10474,17 @@ async function abrirRelatorio() {
   window._relGerado=false; // [FASE 32] modal aberto sem gerar ainda
   document.getElementById('rel-conteudo').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px;">Selecione as semanas e clique em Gerar relatório.</div>';
   document.getElementById('relatorio-modal').style.display = 'flex';
+}
+
+// [FASE 32] Busca no backend a semana recomendada para relatorio = a que TERMINOU (pula a
+// semana nova vazia/pendente criada pela automacao de domingo). Fallback: a ultima aba da lista.
+async function _abaRelatorioPadrao(sheetId, abas){
+  try{
+    var r = await gsPost({ abaRelatorioSemanal:true, spreadsheetId: sheetId });
+    var d = await r.json();
+    if(d && d.sucesso && d.aba && abas.indexOf(d.aba)>-1) return d.aba;
+  }catch(e){}
+  return abas.length ? abas[abas.length-1] : '';
 }
 
 // [Fase 25] Protege contra olhar um relatorio de uma semana achando que e de outra: ao mudar

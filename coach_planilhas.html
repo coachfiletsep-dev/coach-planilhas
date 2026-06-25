@@ -7888,7 +7888,9 @@ async function abrirControleMesos(){
         +'<div><span style="font-weight:700;color:'+cor.tx+';">'+(x.due?'🔴 ':'')+_esc(x.nome)+'</span> '
         +'<span style="font-size:10px;color:'+cor.mt+';background:rgba(0,0,0,.05);padding:1px 6px;border-radius:6px;margin-left:4px;">'+_esc(tag)+'</span>'
         +'<div style="font-size:12px;color:'+cor.mt+';margin-top:2px;">'+_esc(x.status||'')+'</div></div>'
-        +'<span style="font-size:12px;color:'+cor.mt+';white-space:nowrap;">'+_esc(x.abaAtual||'')+'</span></div>';
+        +'<div style="text-align:right;white-space:nowrap;"><div style="font-size:12px;color:'+cor.mt+';">'+_esc(x.abaAtual||'')+'</div>'
+        +(x.base==='contagem' ? '<button onclick="definirInicioMeso(\''+x.sid+'\','+(x.semanaAtual||0)+')" style="margin-top:4px;font-size:10px;padding:2px 7px;border:.5px solid '+cor.bd+';background:#fff;color:'+cor.mt+';border-radius:6px;cursor:pointer;">📌 definir início</button>' : '')
+        +'</div></div>';
     }
     var h='';
     h+='<div style="font-weight:800;font-size:14px;margin-bottom:8px;">🔴 Trocar agora / esta semana ('+due.length+')</div>';
@@ -7901,6 +7903,23 @@ async function abrirControleMesos(){
     h+='<div style="margin-top:14px;font-size:11px;color:var(--text3);">"macro" = pelo plano de periodização (último da semana do bloco = trocar). "semanas" = contagem desde o último Novo Meso (≥ '+(data.mesoLen||8)+' semanas = trocar). Quem não tem plano nem início registrado aparece como "sem referência" até o próximo Novo Meso.</div>';
     body.innerHTML=h;
   }catch(e){ body.innerHTML='<div style="color:#b91c1c;padding:16px;">Erro: '+e.message+'</div>'; }
+}
+
+// [Fase 38] Marca manualmente em que semana o meso atual do aluno começou (pros que já estão no
+// meio de um ciclo). A contagem passa a valer pra eles. Depois recarrega o painel.
+async function definirInicioMeso(sid, semanaAtual){
+  var sug = semanaAtual ? ('S'+semanaAtual) : 'S1';
+  var v = prompt('Em que semana o meso ATUAL deste aluno começou? (ex: S20)\nA contagem vai dessa semana até a atual ('+sug+').', sug);
+  if(v===null) return;
+  v = String(v).trim().toUpperCase();
+  if(!/^S?\d+$/.test(v)){ alert('Formato inválido. Use algo como S20.'); return; }
+  if(v.charAt(0)!=='S') v='S'+v;
+  try{
+    var res=await gsPost({acao:'setInicioMeso', spreadsheetId:sid, aba:v});
+    var data=await res.json();
+    if(data.sucesso){ if(typeof showToast==='function') showToast('Início do meso marcado em '+v,'ok'); abrirControleMesos(); }
+    else alert('Erro: '+(data.erro||'desconhecido'));
+  }catch(e){ alert('Erro: '+e.message); }
 }
 
 // Diagnóstico: quais alunos têm plano de periodização salvo (BD_Periodizacao)

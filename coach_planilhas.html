@@ -785,6 +785,7 @@
             </div>
             <div class="macro-saved">
               <button class="btn-ghost" onclick="salvarMacroAtual()">Salvar macro</button>
+              <button class="btn-ghost" onclick="ajustarAncoraMacro()" title="Trocar só a semana inicial (âncora) do macro, sem refazer nada">📍 Ajustar âncora</button>
               <button class="btn-ghost" onclick="abrirMacroSalvo()">Abrir salvo</button>
               <button class="btn-ghost" onclick="exportarMacroPdf()">Exportar PDF</button>
               <button class="btn-ghost" onclick="protegerPlanilhaAluno()">Proteger planilha</button>
@@ -7005,6 +7006,34 @@ async function salvarMacroAtual() {
   } else {
     showToast(durOk ? 'Macrociclo salvo na planilha (durável ✅)!' : 'Macrociclo salvo só no navegador. ⚠️ Planilha do aluno não configurada — sem backup durável.', durOk ? 'ok' : 'err');
   }
+}
+
+// [Fase 39B] Troca SÓ a âncora (semana inicial) do plano do macro atual e re-salva — sem refazer
+// o macro. A periodização mapeia bloco/semana por (nº da aba − nº da âncora); então mudar a âncora
+// realinha o macro inteiro de uma vez. Os rótulos de período no texto (ex: "Jul S1-S4") são só
+// ilustrativos — o que vale pro motor é a âncora.
+async function ajustarAncoraMacro() {
+  if (!window._macroAtual || !window._macroAtual.plano || !(window._macroAtual.plano.blocos || []).length) {
+    showToast('Abra ou gere o macro (com plano numérico) antes de ajustar a âncora.', 'err'); return;
+  }
+  var atual = (window._macroAtual.plano.ancora && window._macroAtual.plano.ancora.aba) || 'S1';
+  var v = prompt('Âncora = a 1ª semana (aba SXX) em que este macro começa a valer para o aluno.\n\nEx: se o macro começa quando ele entrar na S23, digite S23.\nO Bloco 1 cai nessa semana; as semanas anteriores ficam fotocópia (sem o macro).', atual);
+  if (v === null) return;
+  v = String(v).trim().toUpperCase();
+  if (!/^S?\d+$/.test(v)) { showToast('Formato inválido. Use algo como S23.', 'err'); return; }
+  if (v.charAt(0) !== 'S') v = 'S' + v;
+  window._macroAtual.plano.ancora = { aba: v };
+  var s = students.find(function (x) { return x.id === selectedId; });
+  var sheetId = s ? getSheetId(s.sheet) : '';
+  if (!sheetId) { showToast('Planilha do aluno não configurada — não dá pra salvar a âncora.', 'err'); return; }
+  try {
+    var r1 = await gsPost({ acao: 'salvarPlanoPeriodizacao', spreadsheetId: sheetId, plano: window._macroAtual.plano });
+    var d1 = await r1.json();
+    lsSet(chaveMacroSalvoAluno(), JSON.stringify(window._macroAtual));
+    try { await gsPost({ acao: 'salvarMacrociclo', spreadsheetId: sheetId, macro: window._macroAtual }); } catch (e) {}
+    if (d1 && d1.sucesso) showToast('Âncora ajustada para ' + v + ' e plano re-salvo. O Bloco 1 passa a valer a partir de ' + v + '.', 'ok');
+    else showToast('Não consegui salvar: ' + ((d1 && d1.erro) || 'desconhecido'), 'err');
+  } catch (e) { showToast('Erro ao salvar a âncora: ' + e.message, 'err'); }
 }
 
 async function abrirMacroSalvo() {

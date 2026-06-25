@@ -423,7 +423,6 @@
     <div style="flex-shrink:0;padding:.5rem;display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--border);">
       <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
       <button class="add-btn" style="border-style:solid;color:#1D4ED8;border-color:#1D4ED8;" onclick="abrirRadarCoach()" title="Quem treinou hoje e quem sumiu">📡 Radar do dia</button>
-      <button class="add-btn" style="border-style:solid;color:#7C3AED;border-color:#7C3AED;" onclick="abrirControleMesos()" title="Quem está na hora de trocar o meso (macrociclo + contagem)">📅 Controle de mesos</button>
       <button class="add-btn" style="border-style:solid;color:#4285f4;border-color:#4285f4;" onclick="importarBrainering()">📥 Importar Brainering</button>
       <div style="font-size:10px;color:var(--text3);padding:2px 4px;font-weight:600;margin-top:4px;">WHATSAPP</div>
       <button class="add-btn" style="border-style:solid;color:#25D366;border-color:#25D366;" onclick="dispararRelatorios()">📊 Relatórios domingo</button>
@@ -451,6 +450,7 @@
           <div>
             <div class="ph-name" id="ph-name">Letícia  Bernardes Souza_2026</div>
             <div class="ph-meta" id="ph-meta">Ativo</div>
+            <div class="ph-meta" id="ph-meso" style="margin-top:2px;"></div>
           </div>
         </div>
         <div class="ph-actions">
@@ -2241,6 +2241,42 @@ function selectStudent(id) {
     carregarAbasMacrociclo(true);
   }
   var _s = students.find(function(x){return x.id===id;}); if (_s && _s.sheet) verificarDeload(getSheetId(_s.sheet), _s.name);
+  if (s && s.sheet) carregarStatusMeso(getSheetId(s.sheet), s.name);  // [Fase 38] card de meso individual
+}
+
+// [Fase 38] Card de meso do aluno SELECIONADO (no cabeçalho). Abre 1 planilha — rápido.
+async function carregarStatusMeso(sheetId, nome){
+  var el=document.getElementById('ph-meso'); if(!el) return;
+  el._sheetId=sheetId;
+  el.innerHTML='<span style="color:var(--text3);">meso: …</span>';
+  try{
+    var res=await gsPost({acao:'statusMeso', spreadsheetId:sheetId, alunoNome:nome||''});
+    var d=await res.json();
+    if(!d||!d.sucesso){ el.innerHTML=''; return; }
+    var m=d.meso||{};
+    var prox=(m.faltam!=null && m.faltam<=4 && !m.due); // [Fase 38] contagem regressiva (4/3/2/1)
+    var cor=m.due?'#b91c1c':(prox?'#b45309':'var(--text2)');
+    var ic=m.due?'🔴':(prox?'🟠':'📅');
+    var btn=' · <a href="#" onclick="definirInicioMesoSel(\''+sheetId+'\','+(m.semanaAtual||0)+',\''+(nome||'').replace(/\x27/g,'')+'\');return false;" style="color:#7C3AED;text-decoration:none;">📌 '+(m.inicioMeso?'alterar início':'definir início')+'</a>';
+    var mostraBtn=(m.base==='contagem'||m.semRef);
+    el.innerHTML='<span style="color:'+cor+';font-weight:600;">'+ic+' '+_escMs(m.status||'')+'</span>'+(mostraBtn?btn:'');
+  }catch(e){ el.innerHTML=''; }
+}
+function _escMs(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+// [Fase 38] Marca o início do meso do aluno selecionado (manual, individual) e recarrega o card.
+async function definirInicioMesoSel(sid, semanaAtual, nome){
+  var sug=semanaAtual?('S'+semanaAtual):'S1';
+  var v=prompt('Em que semana o meso ATUAL começou? (ex: S20)\nA contagem vai dessa semana até a atual ('+sug+').', sug);
+  if(v===null) return;
+  v=String(v).trim().toUpperCase();
+  if(!/^S?\d+$/.test(v)){ alert('Formato inválido. Use algo como S20.'); return; }
+  if(v.charAt(0)!=='S') v='S'+v;
+  try{
+    var res=await gsPost({acao:'setInicioMeso', spreadsheetId:sid, aba:v});
+    var d=await res.json();
+    if(d&&d.sucesso){ if(typeof showToast==='function') showToast('Início do meso marcado em '+v,'ok'); carregarStatusMeso(sid, nome); }
+    else alert('Erro: '+((d&&d.erro)||'desconhecido'));
+  }catch(e){ alert('Erro: '+e.message); }
 }
 
 function restaurarSelecaoInicial() {

@@ -423,6 +423,7 @@
     <div style="flex-shrink:0;padding:.5rem;display:flex;flex-direction:column;gap:4px;border-top:.5px solid var(--border);">
       <button class="add-btn" onclick="openModal()">＋ Novo aluno</button>
       <button class="add-btn" style="border-style:solid;color:#1D4ED8;border-color:#1D4ED8;" onclick="abrirRadarCoach()" title="Quem treinou hoje e quem sumiu">📡 Radar do dia</button>
+      <button class="add-btn" style="border-style:solid;color:#7C3AED;border-color:#7C3AED;" onclick="abrirControleMesos()" title="Quem está na hora de trocar o meso (macrociclo + contagem)">📅 Controle de mesos</button>
       <button class="add-btn" style="border-style:solid;color:#4285f4;border-color:#4285f4;" onclick="importarBrainering()">📥 Importar Brainering</button>
       <div style="font-size:10px;color:var(--text3);padding:2px 4px;font-weight:600;margin-top:4px;">WHATSAPP</div>
       <button class="add-btn" style="border-style:solid;color:#25D366;border-color:#25D366;" onclick="dispararRelatorios()">📊 Relatórios domingo</button>
@@ -1728,6 +1729,18 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
       <button class="icon-btn" onclick="document.getElementById('radar-modal').style.display='none'" style="font-size:16px;">✕</button>
     </div>
     <div class="modal-body" id="radar-body" style="max-height:70vh;overflow-y:auto;">
+      <div style="text-align:center;color:var(--text3);padding:30px;">⏳ Carregando…</div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="controle-mesos-modal" style="display:none;">
+  <div class="modal" style="width:600px;max-width:95vw;">
+    <div class="modal-header">
+      <span class="modal-title">📅 Controle de mesos</span>
+      <button class="icon-btn" onclick="document.getElementById('controle-mesos-modal').style.display='none'" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body" id="controle-mesos-body" style="max-height:72vh;overflow-y:auto;">
       <div style="text-align:center;color:var(--text3);padding:30px;">⏳ Carregando…</div>
     </div>
   </div>
@@ -7847,6 +7860,45 @@ async function abrirRadarCoach(){
       h+='<div style="color:#15803D;padding:8px;">Ninguém sumido. 🎉</div>';
     }
     h+='<div style="margin-top:16px;font-size:11px;color:var(--text3);">Fonte: Logs_App. ✅ Treinaram = salvaram pelo menos 1 registro. ⏱️ Iniciaram = tocaram "Iniciar treino" mas ainda não salvaram (não entram em "Sumiram").</div>';
+    body.innerHTML=h;
+  }catch(e){ body.innerHTML='<div style="color:#b91c1c;padding:16px;">Erro: '+e.message+'</div>'; }
+}
+
+// [Fase 38] Painel "Controle de mesos": lista cada aluno com bloco/semana do macro (ou contagem
+// de semanas), 🔴 pra quem está na hora de trocar. Varre todas as planilhas (pode levar ~30-60s).
+async function abrirControleMesos(){
+  var modal=document.getElementById('controle-mesos-modal');
+  var body=document.getElementById('controle-mesos-body');
+  if(!modal||!body) return;
+  function _esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  modal.style.display='flex';
+  body.innerHTML='<div style="text-align:center;color:var(--text3);padding:30px;">⏳ Lendo o macrociclo de cada aluno… (pode levar até 1 minuto)</div>';
+  try{
+    var res=await gsPost({acao:'controleMesos'});
+    var data=await res.json();
+    if(!data.sucesso){ body.innerHTML='<div style="color:#b91c1c;padding:16px;">Erro: '+_esc(data.erro||'desconhecido')+'</div>'; return; }
+    var lista=data.mesos||[];
+    var due=lista.filter(function(x){return x.due;});
+    var resto=lista.filter(function(x){return !x.due;});
+    function _linha(x){
+      var cor = x.due ? {bg:'#FEF2F2',bd:'#FCA5A5',tx:'#991B1B',mt:'#b91c1c'}
+                      : {bg:'#F8FAFC',bd:'#E2E8F0',tx:'#0F172A',mt:'#64748B'};
+      var tag = x.base==='plano' ? 'macro' : (x.base==='contagem' ? 'semanas' : (x.base==='sem-semana'?'—':x.base));
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:'+cor.bg+';border:.5px solid '+cor.bd+';border-radius:8px;">'
+        +'<div><span style="font-weight:700;color:'+cor.tx+';">'+(x.due?'🔴 ':'')+_esc(x.nome)+'</span> '
+        +'<span style="font-size:10px;color:'+cor.mt+';background:rgba(0,0,0,.05);padding:1px 6px;border-radius:6px;margin-left:4px;">'+_esc(tag)+'</span>'
+        +'<div style="font-size:12px;color:'+cor.mt+';margin-top:2px;">'+_esc(x.status||'')+'</div></div>'
+        +'<span style="font-size:12px;color:'+cor.mt+';white-space:nowrap;">'+_esc(x.abaAtual||'')+'</span></div>';
+    }
+    var h='';
+    h+='<div style="font-weight:800;font-size:14px;margin-bottom:8px;">🔴 Trocar agora / esta semana ('+due.length+')</div>';
+    h+= due.length ? ('<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:18px;">'+due.map(_linha).join('')+'</div>')
+                   : '<div style="color:#15803D;margin-bottom:18px;padding:8px;">Ninguém na hora de trocar. 🎉</div>';
+    h+='<div style="font-weight:800;font-size:14px;margin-bottom:8px;">⏳ Em andamento ('+resto.length+')</div>';
+    h+= resto.length ? ('<div style="display:flex;flex-direction:column;gap:4px;">'+resto.map(_linha).join('')+'</div>') : '<div style="color:var(--text3);padding:8px;">—</div>';
+    if(data.parcial) h+='<div style="margin-top:12px;color:#b45309;font-size:12px;">⚠️ Lista parcial (tempo). Abra de novo para completar.</div>';
+    if(data.erros&&data.erros.length) h+='<div style="margin-top:8px;color:#b91c1c;font-size:11px;">Erros: '+_esc(data.erros.join(' | '))+'</div>';
+    h+='<div style="margin-top:14px;font-size:11px;color:var(--text3);">"macro" = pelo plano de periodização (último da semana do bloco = trocar). "semanas" = contagem desde o último Novo Meso (≥ '+(data.mesoLen||8)+' semanas = trocar). Quem não tem plano nem início registrado aparece como "sem referência" até o próximo Novo Meso.</div>';
     body.innerHTML=h;
   }catch(e){ body.innerHTML='<div style="color:#b91c1c;padding:16px;">Erro: '+e.message+'</div>'; }
 }

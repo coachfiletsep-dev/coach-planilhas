@@ -6979,32 +6979,55 @@ async function salvarMacroAtual() {
     return;
   }
   window._macroAtual.salvoEm = new Date().toISOString();
-  lsSet(chaveMacroSalvoAluno(), JSON.stringify(window._macroAtual), 7 * 24 * 60);
+  lsSet(chaveMacroSalvoAluno(), JSON.stringify(window._macroAtual)); // [Fase 39] sem TTL: não expira mais no navegador
 
-  // [FASE 12B] Se o macro tem plano de periodizacao (números por semana/dia), grava
-  // automaticamente na planilha do aluno (aba BD_Periodizacao). A partir daí a cópia de
-  // semana segue o macro — sem precisar de nenhum botão a mais.
+  var s = students.find(function (x) { return x.id === selectedId; });
+  var sheetId = s ? getSheetId(s.sheet) : '';
+
+  // [Fase 39] BACKUP DURÁVEL: salva o TEXTO do macrociclo na planilha do aluno (aba BD_Macrociclo).
+  // Nunca expira, sobrevive a troca de navegador/computador (antes vivia só no localStorage, 7 dias).
+  var durOk = false;
+  if (sheetId) {
+    try { var rM = await gsPost({ acao: 'salvarMacrociclo', spreadsheetId: sheetId, macro: window._macroAtual }); var dM = await rM.json(); durOk = !!(dM && dM.sucesso); } catch (e) {}
+  }
+
+  // [FASE 12B] Se o macro tem plano de periodizacao (números por semana/dia), grava na planilha do
+  // aluno (aba BD_Periodizacao). A partir daí a cópia de semana segue o macro automaticamente.
   var plano = window._macroAtual.plano;
   if (plano && plano.blocos && plano.blocos.length) {
-    var s = students.find(function (x) { return x.id === selectedId; });
-    var sheetId = s ? getSheetId(s.sheet) : '';
-    if (!sheetId) { showToast('Macro salvo. (Plano de periodização não enviado: planilha do aluno não configurada.)', 'ok'); return; }
+    if (!sheetId) { showToast('Macro salvo só local — planilha do aluno não configurada (sem backup durável nem periodização).', 'err'); return; }
     try {
       var res = await gsPost({ acao: 'salvarPlanoPeriodizacao', spreadsheetId: sheetId, plano: plano });
       var data = await res.json();
-      if (data && data.sucesso) showToast('Macro salvo e periodização ativada (' + (data.blocos || plano.blocos.length) + ' blocos). A cópia de semana agora segue o macro.', 'ok');
-      else showToast('Macro salvo, mas falhou enviar a periodização: ' + ((data && data.erro) || 'desconhecido'), 'err');
-    } catch (e) { showToast('Macro salvo, mas falha de conexão ao enviar a periodização.', 'err'); }
+      if (data && data.sucesso) showToast('Macro salvo na planilha (durável ✅) + periodização ativada (' + (data.blocos || plano.blocos.length) + ' blocos).', 'ok');
+      else showToast('Macro salvo' + (durOk ? ' (durável ✅)' : '') + ', mas falhou a periodização: ' + ((data && data.erro) || 'desconhecido'), 'err');
+    } catch (e) { showToast('Macro salvo' + (durOk ? ' (durável ✅)' : '') + ', mas falha ao enviar a periodização.', 'err'); }
   } else {
-    showToast('Macrociclo salvo!', 'ok');
+    showToast(durOk ? 'Macrociclo salvo na planilha (durável ✅)!' : 'Macrociclo salvo só no navegador. ⚠️ Planilha do aluno não configurada — sem backup durável.', durOk ? 'ok' : 'err');
   }
 }
 
-function abrirMacroSalvo() {
+async function abrirMacroSalvo() {
+  var macro = null;
   var raw = lsGet(chaveMacroSalvoAluno());
-  if (!raw) { showToast('Nenhum macro salvo para este aluno', 'err'); return; }
+  if (raw) { try { macro = JSON.parse(raw); } catch(e) { macro = null; } }
+  // [Fase 39] FALLBACK DURÁVEL: se o localStorage sumiu/expirou, busca o macro na planilha do aluno.
+  if (!macro || !macro.markdown) {
+    var s = students.find(function(x){ return x.id === selectedId; });
+    var sheetId = s ? getSheetId(s.sheet) : '';
+    if (sheetId) {
+      try {
+        var res = await gsPost({ acao: 'lerMacrociclo', spreadsheetId: sheetId });
+        var d = await res.json();
+        if (d && d.sucesso && d.macro && d.macro.markdown) {
+          macro = d.macro;
+          lsSet(chaveMacroSalvoAluno(), JSON.stringify(macro)); // recache local (sem TTL)
+        }
+      } catch(e) {}
+    }
+  }
+  if (!macro || !macro.markdown) { showToast('Nenhum macro salvo para este aluno', 'err'); return; }
   try {
-    var macro = JSON.parse(raw);
     window._macroAtual = macro;
     // [Fase 27] Mesmo macros salvos antes do fix mostram a tabela do plano numérico (reconstruída
     // do _macroAtual.plano guardado), sem precisar regerar.

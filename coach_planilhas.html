@@ -787,6 +787,7 @@
               <button class="btn-ghost" onclick="salvarMacroAtual()">Salvar macro</button>
               <button class="btn-ghost" onclick="ajustarAncoraMacro()" title="Trocar só a semana inicial (âncora) do macro, sem refazer nada">📍 Ajustar âncora</button>
               <button class="btn-ghost" onclick="abrirMacroSalvo()">Abrir salvo</button>
+              <button class="btn-ghost" onclick="abrirImportarMacro()" title="Colar o JSON de um macro (backup/restauração)">📥 Importar macro</button>
               <button class="btn-ghost" onclick="exportarMacroPdf()">Exportar PDF</button>
               <button class="btn-ghost" onclick="protegerPlanilhaAluno()">Proteger planilha</button>
               <button class="btn-ghost" onclick="toggleGantt()" title="Abrir Gantt de macrociclo">📅 Gantt</button>
@@ -1743,6 +1744,23 @@ troca o facepull da quinta por exercício de rotação externa" style="padding:7
     </div>
     <div class="modal-body" id="controle-mesos-body" style="max-height:72vh;overflow-y:auto;">
       <div style="text-align:center;color:var(--text3);padding:30px;">⏳ Carregando…</div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="import-macro-modal" style="display:none;">
+  <div class="modal" style="width:640px;max-width:95vw;">
+    <div class="modal-header">
+      <span class="modal-title">📥 Importar macro</span>
+      <button class="icon-btn" onclick="document.getElementById('import-macro-modal').style.display='none'" style="font-size:16px;">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:72vh;overflow-y:auto;">
+      <div style="font-size:13px;color:var(--text3);margin-bottom:8px;">Cole abaixo o JSON do macro (backup/restauração). Ele carrega na tela e salva durável na planilha do aluno selecionado.</div>
+      <textarea id="import-macro-text" style="width:100%;height:280px;font-family:monospace;font-size:11px;padding:8px;border:1px solid var(--border);border-radius:8px;" placeholder='{"markdown":"...","plano":{...}}'></textarea>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">
+        <button class="btn-ghost" onclick="document.getElementById('import-macro-modal').style.display='none'">Cancelar</button>
+        <button class="btn-green" onclick="importarMacroConfirmar()">Importar e salvar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -6255,6 +6273,7 @@ function carregarContextoMacroAluno() {
     out.dataset.temResultado = '';
     out.innerHTML = '<div class="macro-empty">Macrociclo pronto para ' + escapeMacroHtml(s.name) + '.<br>Preencha o contexto e escolha criar do zero ou usar historico.</div>';
   }
+  _autoMostrarMacroSalvo(); // [Fase 39C] mostra o último macro salvo automaticamente (sem clicar "Abrir salvo")
 }
 
 function coletarContextoMacro() {
@@ -6580,10 +6599,10 @@ function gerarMacrocicloManual() {
   try { salvarContextoMacro(ctx); } catch (e) {}
   renderMacroMarkdown(md, meta);
   document.getElementById('macro-manual-modal').style.display = 'none';
-  var aviso = planoPeriod && planoPeriod.blocos && planoPeriod.blocos.length
-    ? 'Macrociclo gerado com periodização numérica. Clique em "Salvar macro" — o plano vai pra planilha do aluno e a cópia de semana passa a seguir o macro.'
-    : 'Macrociclo manual gerado. (Sem números por semana/dia: preencha "✏️ Números" nos blocos para a cópia de semana seguir o macro.) Clique em "Salvar macro".';
-  showToast(aviso, 'ok');
+  // [Fase 39D] salva automático (durável) — não depende mais de clicar "Salvar macro".
+  _autoSalvarMacroGerado().then(function(ok){
+    showToast(ok ? 'Macrociclo gerado e salvo automaticamente (durável ✅).' : 'Macrociclo gerado e salvo no navegador. ⚠️ Planilha do aluno não configurada — sem backup durável.', ok ? 'ok' : 'err');
+  });
 }
 
 // ============================================================
@@ -7008,6 +7027,69 @@ async function salvarMacroAtual() {
   }
 }
 
+// [Fase 39E] Importar macro por JSON colado (backup/restauração). Carrega na tela + salva durável.
+function abrirImportarMacro() {
+  if (!selectedId) { showToast('Selecione um aluno primeiro', 'err'); return; }
+  var ta = document.getElementById('import-macro-text'); if (ta) ta.value = '';
+  document.getElementById('import-macro-modal').style.display = 'flex';
+}
+async function importarMacroConfirmar() {
+  var ta = document.getElementById('import-macro-text');
+  var txt = ta ? String(ta.value || '').trim() : '';
+  if (!txt) { showToast('Cole o JSON do macro', 'err'); return; }
+  var macro = null;
+  try { macro = JSON.parse(txt); } catch(e) { showToast('JSON inválido: ' + e.message, 'err'); return; }
+  if (!macro || !macro.markdown) { showToast('JSON sem "markdown" — não parece um macro válido.', 'err'); return; }
+  window._macroAtual = macro;
+  document.getElementById('import-macro-modal').style.display = 'none';
+  try { renderMacroMarkdown(_macroMarkdownComPlano(macro.markdown, macro.plano), macro.meta || null); } catch(e) {}
+  var ok = await _autoSalvarMacroGerado();
+  showToast(ok ? 'Macro importado e salvo (durável ✅). Use "📍 Ajustar âncora" se precisar.' : 'Macro importado e salvo no navegador. ⚠️ Planilha do aluno não configurada — sem backup durável.', ok ? 'ok' : 'err');
+}
+
+// [Fase 39D] Auto-salva o macro assim que é gerado/ajustado — durável (localStorage SEM TTL +
+// planilha do aluno). Resolve a perda de macro gerado e não salvo manualmente (sair da página).
+async function _autoSalvarMacroGerado() {
+  if (!window._macroAtual || !window._macroAtual.markdown) return false;
+  window._macroAtual.salvoEm = new Date().toISOString();
+  lsSet(chaveMacroSalvoAluno(), JSON.stringify(window._macroAtual));
+  var s = students.find(function (x) { return x.id === selectedId; });
+  var sheetId = s ? getSheetId(s.sheet) : '';
+  if (!sheetId) return false;
+  var ok = false;
+  try { var r = await gsPost({ acao: 'salvarMacrociclo', spreadsheetId: sheetId, macro: window._macroAtual }); var d = await r.json(); ok = !!(d && d.sucesso); } catch (e) {}
+  var plano = window._macroAtual.plano;
+  if (plano && plano.blocos && plano.blocos.length) {
+    try { await gsPost({ acao: 'salvarPlanoPeriodizacao', spreadsheetId: sheetId, plano: plano }); } catch (e) {}
+  }
+  return ok;
+}
+
+// [Fase 39C] Mostra o ÚLTIMO macro salvo do aluno automaticamente ao abrir o Macrociclo (sem precisar
+// clicar "Abrir salvo"). localStorage primeiro (instantâneo); se vazio, busca o durável na planilha.
+async function _autoMostrarMacroSalvo() {
+  try {
+    var alvoId = selectedId;
+    var macro = null;
+    var raw = lsGet(chaveMacroSalvoAluno());
+    if (raw) { try { macro = JSON.parse(raw); } catch(e) { macro = null; } }
+    if (!macro || !macro.markdown) {
+      var s = students.find(function(x){ return x.id === selectedId; });
+      var sheetId = s ? getSheetId(s.sheet) : '';
+      if (sheetId) {
+        var res = await gsPost({ acao: 'lerMacrociclo', spreadsheetId: sheetId });
+        var d = await res.json();
+        if (d && d.sucesso && d.macro && d.macro.markdown) { macro = d.macro; lsSet(chaveMacroSalvoAluno(), JSON.stringify(macro)); }
+      }
+    }
+    if (selectedId !== alvoId) return; // trocou de aluno enquanto buscava — não renderiza o errado
+    if (!macro || !macro.markdown) return; // nada salvo — deixa o builder vazio
+    window._macroAtual = macro;
+    var mdMostrar = _macroMarkdownComPlano(macro.markdown, macro.plano);
+    renderMacroMarkdown(mdMostrar, macro.meta || null);
+  } catch(e) {}
+}
+
 // [Fase 39B] Troca SÓ a âncora (semana inicial) do plano do macro atual e re-salva — sem refazer
 // o macro. A periodização mapeia bloco/semana por (nº da aba − nº da âncora); então mudar a âncora
 // realinha o macro inteiro de uma vez. Os rótulos de período no texto (ex: "Jul S1-S4") são só
@@ -7146,7 +7228,7 @@ async function ajustarMacrociclo() {
     var mdFinalAj = _macroMarkdownComPlano(extAj.markdown, planoFinal); // [Fase 27] plano numérico visível
     window._macroAtual = { markdown: mdFinalAj, ctx: ctx, meta: meta, ajuste: ajuste, plano: planoFinal, atualizadoEm: new Date().toISOString() };
     renderMacroMarkdown(mdFinalAj, meta);
-    showToast(extAj.plano ? 'Macrociclo ajustado (periodização atualizada). Clique em "Salvar macro".' : 'Macrociclo ajustado!', 'ok');
+    _autoSalvarMacroGerado().then(function(ok){ showToast(ok ? 'Macrociclo ajustado e salvo automaticamente (durável ✅).' : 'Macrociclo ajustado e salvo no navegador. ⚠️ Sem backup durável (planilha não configurada).', ok ? 'ok' : 'err'); });
   } catch(e) {
     out.innerHTML = '<div class="macro-empty" style="color:var(--red)">Erro ao ajustar:<br>' + escapeMacroHtml(e.message) + '</div>';
     showToast('Erro ao ajustar macro', 'err');
@@ -7274,7 +7356,7 @@ async function gerarMacrociclo(modo) {
     var meta = { duracao: ctx.periodoEstimado || ctx.duracao, dias: ctx.dias + 'x', nivel: ctx.nivel, modo: modo === 'historico' ? 'Historico' : 'Zero' };
     window._macroAtual = { markdown: mdFinal, ctx: ctx, meta: meta, plano: ext.plano, historico: historico ? { abasAnalisadas: historico.abasAnalisadas, totalSeries: historico.totalSeries } : null, criadoEm: new Date().toISOString() };
     renderMacroMarkdown(mdFinal, meta);
-    showToast(ext.plano ? 'Macrociclo gerado com periodização numérica! Clique em "Salvar macro" para ativar.' : 'Macrociclo gerado!', 'ok');
+    _autoSalvarMacroGerado().then(function(ok){ showToast(ok ? 'Macrociclo gerado e salvo automaticamente (durável ✅).' : 'Macrociclo gerado e salvo no navegador. ⚠️ Planilha do aluno não configurada — sem backup durável.', ok ? 'ok' : 'err'); });
   } catch(e) {
     var msgErro = e.message || 'erro desconhecido';
     if (/failed to fetch/i.test(msgErro)) msgErro += '<br><br>Provavel causa: bloqueio de chamada externa no arquivo local, proxy da IA inacessivel ou Apps Script nao implantado/sem permissao.';

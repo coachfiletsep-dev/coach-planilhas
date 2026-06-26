@@ -7097,6 +7097,24 @@ async function _autoMostrarMacroSalvo() {
   } catch(e) {}
 }
 
+// [Fase 39G] Reescreve as faixas de semana "SX-SY" no TEXTO do macro (Mapa + corpo) ao trocar a
+// âncora, pra ficar visual. Calcula a faixa antiga (âncora antiga) e a nova (âncora nova) por bloco
+// e troca a string EXATA. Só mexe em padrões "SX-SY" contíguos da âncora — não toca o resto do texto.
+function _reescreverFaixasNoTexto(markdown, plano, ancOld, ancNew){
+  try{
+    if(!markdown || !plano || !plano.blocos) return markdown;
+    var txt=String(markdown), g=0;
+    plano.blocos.forEach(function(b){
+      var n=(b.semanas||[]).length; if(!n) return;
+      var oldR='S'+(ancOld+g)+'-S'+(ancOld+g+n-1);
+      var newR='S'+(ancNew+g)+'-S'+(ancNew+g+n-1);
+      g+=n;
+      if(oldR!==newR){ txt=txt.split(oldR).join(newR); txt=txt.split(oldR.replace('-','–')).join(newR); }
+    });
+    return txt;
+  }catch(e){ return markdown; }
+}
+
 // [Fase 39B] Troca SÓ a âncora (semana inicial) do plano do macro atual e re-salva — sem refazer
 // o macro. A periodização mapeia bloco/semana por (nº da aba − nº da âncora); então mudar a âncora
 // realinha o macro inteiro de uma vez. Os rótulos de período no texto (ex: "Jul S1-S4") são só
@@ -7106,12 +7124,16 @@ async function ajustarAncoraMacro() {
     showToast('Abra ou gere o macro (com plano numérico) antes de ajustar a âncora.', 'err'); return;
   }
   var atual = (window._macroAtual.plano.ancora && window._macroAtual.plano.ancora.aba) || 'S1';
+  var ancOld = parseInt(String(atual).replace(/\D/g, ''), 10) || 1;
   var v = prompt('Âncora = a 1ª semana (aba SXX) em que este macro começa a valer para o aluno.\n\nEx: se o macro começa quando ele entrar na S23, digite S23.\nO Bloco 1 cai nessa semana; as semanas anteriores ficam fotocópia (sem o macro).', atual);
   if (v === null) return;
   v = String(v).trim().toUpperCase();
   if (!/^S?\d+$/.test(v)) { showToast('Formato inválido. Use algo como S23.', 'err'); return; }
   if (v.charAt(0) !== 'S') v = 'S' + v;
+  var ancNew = parseInt(String(v).replace(/\D/g, ''), 10) || 1;
   window._macroAtual.plano.ancora = { aba: v };
+  // [Fase 39G] atualiza também as faixas "SX-SY" no TEXTO do macro (Mapa + corpo).
+  try { window._macroAtual.markdown = _reescreverFaixasNoTexto(window._macroAtual.markdown, window._macroAtual.plano, ancOld, ancNew); } catch(e) {}
   // [Fase 39F] re-renderiza na hora: a tabela do plano passa a mostrar as abas reais (S23, S24…).
   try { renderMacroMarkdown(_macroMarkdownComPlano(window._macroAtual.markdown, window._macroAtual.plano), window._macroAtual.meta || null); } catch(e) {}
   var s = students.find(function (x) { return x.id === selectedId; });

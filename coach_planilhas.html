@@ -3350,11 +3350,21 @@ function montarResumoHistoricoMacroApp(abasLidas) {
 async function lerHistoricoMacrocicloRobusto(sheetId, abasSelecionadas) {
   var erros = [];
   try {
+    // [FASE 41] O backend agora devolve LINHAS CRUAS por aba ({sucesso, abas:[{aba,linhas}]}).
+    // Resumimos com o MESMO pipeline da fallback (montarAbaPeriodizacaoApp + montarResumoHistoricoMacroApp)
+    // => shape identico ao da Sheets API, sem depender do Google conectado no navegador.
     var resHist = await gsPost({ lerHistoricoMacrociclo: true, spreadsheetId: sheetId, limiteAbas: 12, abasSelecionadas: abasSelecionadas });
     var txtHist = await resHist.text();
-    var historico = JSON.parse(txtHist);
-    if (!historico.sucesso) throw new Error(historico.erro || 'Nao foi possivel ler o historico');
-    return historico;
+    var dataHist = JSON.parse(txtHist);
+    if (!dataHist.sucesso) throw new Error(dataHist.erro || 'Nao foi possivel ler o historico');
+    if (!dataHist.abas || !dataHist.abas.length) throw new Error('Backend nao retornou abas com dados.');
+    var abasBackend = dataHist.abas.map(function(a) {
+      var abaData = montarAbaPeriodizacaoApp(a.aba, a.linhas || []);
+      return { aba: a.aba, exercicios: abaData.exercicios || [] };
+    });
+    var resumoBk = montarResumoHistoricoMacroApp(abasBackend);
+    resumoBk.fonte = 'apps_script';
+    return resumoBk;
   } catch(gsErr) {
     erros.push('Apps Script: ' + (gsErr && gsErr.message ? gsErr.message : gsErr));
   }

@@ -7106,10 +7106,15 @@ function _reescreverFaixasNoTexto(markdown, plano, ancOld, ancNew){
     var txt=String(markdown), g=0;
     plano.blocos.forEach(function(b){
       var n=(b.semanas||[]).length; if(!n) return;
-      var oldR='S'+(ancOld+g)+'-S'+(ancOld+g+n-1);
       var newR='S'+(ancNew+g)+'-S'+(ancNew+g+n-1);
+      // O texto pode estar na âncora salva (ancOld) OU na base padrão S1 (a IA gera S1 por padrão,
+      // e um ajuste anterior pode não ter reescrito o texto). Tenta as duas bases pra pegar os dois casos.
+      var bases=(ancOld===1)?[1]:[ancOld,1];
+      bases.forEach(function(base){
+        var oldR='S'+(base+g)+'-S'+(base+g+n-1);
+        if(oldR!==newR){ txt=txt.split(oldR).join(newR); txt=txt.split(oldR.replace('-','–')).join(newR); }
+      });
       g+=n;
-      if(oldR!==newR){ txt=txt.split(oldR).join(newR); txt=txt.split(oldR.replace('-','–')).join(newR); }
     });
     return txt;
   }catch(e){ return markdown; }

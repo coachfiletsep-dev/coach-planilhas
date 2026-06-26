@@ -6507,23 +6507,30 @@ function _planoParaMarkdown(plano){
   if(!plano || !plano.blocos || !plano.blocos.length) return '';
   var dias=['SEG','TER','QUA','QUI','SEX','SAB','DOM'];
   var anc=(plano.ancora && plano.ancora.aba) ? plano.ancora.aba : 'S1';
+  // [Fase 39F] mostra as ABAS REAIS (S23, S24…) a partir da âncora, não "Semana 1,2…".
+  var ancNum=parseInt(String(anc).replace(/\D/g,''),10)||1;
   var md='## Plano numérico\n';
-  md+='_Âncora: '+anc+' (1ª semana coberta). Estes números alimentam a cópia automática da semana._\n\n';
+  md+='_Âncora: '+anc+' = 1ª semana do plano. As semanas abaixo já são as abas reais do aluno (mude a âncora em "📍 Ajustar âncora")._\n\n';
+  var gIdx=0; // índice global da semana (0-based) a partir da âncora — casa com a cópia automática
   plano.blocos.forEach(function(b){
-    var linhas=[];
+    var linhas=[], primeira=null, ultima=null;
     (b.semanas||[]).forEach(function(s){
+      var aba='S'+(ancNum+gIdx);
+      if(primeira===null) primeira=aba; ultima=aba;
       if(s.dias){
         dias.forEach(function(d){
           var v=s.dias[d]; if(!v) return;
-          linhas.push('| '+(s.n||'-')+' | '+d+' | '+(v.reps||'-')+' | '+(v.rir||'-')+' | '+(v.series||'-')+' |');
+          linhas.push('| '+aba+' | '+d+' | '+(v.reps||'-')+' | '+(v.rir||'-')+' | '+(v.series||'-')+' |');
         });
       } else if(s.global){
         var g=s.global;
-        linhas.push('| '+(s.n||'-')+' | todos | '+(g.reps||'-')+' | '+(g.rir||'-')+' | '+(g.series||'-')+' |');
+        linhas.push('| '+aba+' | todos | '+(g.reps||'-')+' | '+(g.rir||'-')+' | '+(g.series||'-')+' |');
       }
+      gIdx++; // 1 semana = 1 aba, mesmo no bloco por dia (casa com _indicePlanoDaAba_)
     });
     if(!linhas.length) return; // bloco sem números (ex.: gap) — não desenha tabela vazia
-    md+='**'+(b.id||'Bloco')+'**'+(b.modelo?' — '+b.modelo:'')+(b.granularidade?' · '+b.granularidade:'')+'\n\n';
+    var faixa=primeira?(' ('+primeira+(ultima!==primeira?'–'+ultima:'')+')'):'';
+    md+='**'+(b.id||'Bloco')+'**'+faixa+(b.modelo?' — '+b.modelo:'')+(b.granularidade?' · '+b.granularidade:'')+'\n\n';
     md+='| Semana | Dia | Reps | RiR | Séries |\n| --- | --- | --- | --- | --- |\n';
     md+=linhas.join('\n')+'\n\n';
   });
@@ -7105,6 +7112,8 @@ async function ajustarAncoraMacro() {
   if (!/^S?\d+$/.test(v)) { showToast('Formato inválido. Use algo como S23.', 'err'); return; }
   if (v.charAt(0) !== 'S') v = 'S' + v;
   window._macroAtual.plano.ancora = { aba: v };
+  // [Fase 39F] re-renderiza na hora: a tabela do plano passa a mostrar as abas reais (S23, S24…).
+  try { renderMacroMarkdown(_macroMarkdownComPlano(window._macroAtual.markdown, window._macroAtual.plano), window._macroAtual.meta || null); } catch(e) {}
   var s = students.find(function (x) { return x.id === selectedId; });
   var sheetId = s ? getSheetId(s.sheet) : '';
   if (!sheetId) { showToast('Planilha do aluno não configurada — não dá pra salvar a âncora.', 'err'); return; }

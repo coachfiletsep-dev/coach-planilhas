@@ -4759,7 +4759,7 @@ function _tipoHeuristico(nome, grupo) {
   if (/COMBINAD/.test(g) || / WITH | TO REVERSE| AND PRESS/.test(n)) return 'COMBINADO';
   if (/METAB|HIIT|TABATA|BURPEE|CIRCUIT|AMRAP|EMOM|SKIPPING|JUMPING JACK|MOUNTAIN CLIMBER/.test(gn)) return 'METABÓLICO';
   if (g === 'ABDOME' || g === 'CORE' || /\bABDOM|PRANCHA|OBLIQU|HOLLOW|DEAD ?BUG|BIRD ?DOG|RUSSIAN|CRUNCH|PALLOF|AB WHEEL|ROLLOUT|L-SIT|HANGING|FLUTTER|V-?UP|CANIVETE|BOAT/.test(gn)) return 'CORE';
-  if (/MOCHILA|GARRAF|CADEIRA(?! EXTENSORA)(?! FLEXORA)|SOFA|OBJETO|LIVROS|VASSOURA/.test(n)) return 'CASA';
+  if (/MOCHILA|GARRAF|CADEIRA(?! EXTENSORA)(?! FLEXORA)(?! ABDUTORA)(?! ADUTORA)(?! ROMANA)|SOFA|OBJETO|LIVROS|VASSOURA/.test(n)) return 'CASA';
   if (/ELASTIC|MINI ?BAND|\bBAND\b|SUPERBAND|FAIXA EL/.test(n)) return 'ELÁSTICO';
   if (/MAQUINA|POLIA|SMITH|\bCABO\b|CROSSOVER|PULLEY|HALTER|BARRA(?! FIXA)| BANCO |ANILHA|LANDMINE|HACK|LEG ?PRESS|EXTENSORA|FLEXORA|PECK|VOADOR|GRAVITRON|APARELHO|CANELEIRA|APOLETE/.test(n)) return 'MUSCULAÇÃO';
   if (/FLEXAO|PRANCHA|AGACHAMENTO LIVRE|PESO CORPORAL|PESO DO CORPO|BARRA FIXA|MERGULHO|AFUNDO|BULGARO|PONTE|ELEVACAO PELVICA|SUPERMAN|PIKE|ARQUEIRO|DIAMANTE|PISTOL|STEP-?UP|PARALELA|\bDIP\b|COICE|ABDUCAO|FIRE HYDRANT|CLAMSHELL|CONCHA|PANTURRILHA EM PE|GOOD MORNING|NORDIC|CADEIRINHA|WALL SIT/.test(n)) return 'PESO DO CORPO';
@@ -4784,7 +4784,11 @@ function mmanFillEx(sel) {
   if (tipo) {
     var alvo = _normTipo(tipo);
     var mapa = _mmanMapaTipos();
-    nomes = nomes.filter(function(n){ return _normTipo(_tipoDoExercicio(n, grupo, mapa)) === alvo; });
+    var baseNomes = nomes.slice(); // lista antes do filtro de tipo
+    var filtrados = nomes.filter(function(n){ return _normTipo(_tipoDoExercicio(n, grupo, mapa)) === alvo; });
+    // Grupo escolhido tem PRIORIDADE: se o filtro de tipo esvaziaria um grupo populado
+    // (ex.: ABDOME é todo CORE; filtrar por MUSCULAÇÃO dava lista vazia), mantém o grupo inteiro.
+    nomes = (grupo && filtrados.length === 0 && baseNomes.length > 0) ? baseNomes : filtrados;
   }
   if (dl) dl.innerHTML = nomes.map(function(n){ return '<option value="' + String(n).replace(/"/g,'&quot;') + '">'; }).join('');
 }
@@ -5729,6 +5733,55 @@ function _regrasSplitCoerente(nDias) {
     'Explique a divisão escolhida (qual split e por quê) no campo "raciocinio" do JSON.\n';
 }
 
+// [FASE 41B — autorizado por Felipe, 26/06/2026] Deriva o tipo de split classico a partir do
+// NOME de um split selecionado por chips (ou de qualquer texto). Usado para injetar o mapa
+// explicito tambem nos modos que NAO passam por detectarDivisaoBriefingNovoMeso.
+function _tipoSplitDoNome(nome) {
+  var n = String(nome || '').toLowerCase();
+  if (!n) return null;
+  if (/push.*pull.*leg|\bppl\b|empurrar.*puxar.*pern|pern.*empurrar.*puxar/.test(n)) return 'push_pull_legs';
+  if (/upper.*lower|superior.*inferior|inferior.*superior/.test(n)) return 'upper_lower';
+  if (/full.?body|corpo\s*inteiro/.test(n)) return 'full_body';
+  return null;
+}
+
+// [FASE 41B — autorizado por Felipe, 26/06/2026] MAPA EXPLICITO da divisao classica. O bug era
+// que o app passava so o ROTULO ("push/pull/legs") e a IA punha BICEPS e FACEPULL no dia PUSH.
+// Aqui dizemos EXATAMENTE onde cada grupo entra: biceps e deltoide posterior/facepull -> PULL;
+// triceps e peito -> PUSH; perna so em LEGS. Injetado em QUALQUER modo (briefing, chips, custom
+// ou texto livre) sempre que um split classico for pedido.
+function _mapaSplitClassico(tipo, nDias) {
+  nDias = parseInt(nDias, 10) || 0;
+  var head = '\n=== MAPA OBRIGATÓRIO DA DIVISÃO PEDIDA (o coach escolheu esta divisão — siga ao pé da letra) ===\n';
+  if (tipo === 'push_pull_legs') {
+    return head +
+      'Dia PUSH (empurrar): SOMENTE PEITO, OMBRO (deltoide ANTERIOR e LATERAL) e TRÍCEPS.\n' +
+      'Dia PULL (puxar): SOMENTE COSTAS/DORSAL, TRAPÉZIO, DELTOIDE POSTERIOR (FACEPULL, crucifixo inverso, YTW, scaption) e BÍCEPS/ANTEBRAÇO.\n' +
+      'Dia LEGS (pernas): SOMENTE QUADRÍCEPS, POSTERIOR DE COXA, GLÚTEO, ADUTOR/ABDUTOR e PANTURRILHA.\n' +
+      'REGRAS DURAS (não viole nenhuma):\n' +
+      '• BÍCEPS e qualquer ROSCA → SÓ no dia PULL. PROIBIDO no PUSH.\n' +
+      '• FACEPULL, crucifixo inverso e qualquer trabalho de DELTOIDE POSTERIOR → SÓ no dia PULL. PROIBIDO no PUSH (mesmo sendo "ombro", o posterior é movimento de PUXAR).\n' +
+      '• TRÍCEPS e PEITO → SÓ no PUSH. Deltoide LATERAL (elevação lateral) pode no PUSH.\n' +
+      'Exemplo de PUSH coerente: supino + desenvolvimento + elevação lateral + crucifixo/cross + tríceps.\n' +
+      'Exemplo de PULL coerente: puxada/barra fixa + remada + facepull (posterior de ombro) + rosca direta + rosca alternada.\n' +
+      (nDias >= 6 ? 'São 2 ciclos PPL na semana (P/Pu/L/P/Pu/L): o 2º ciclo deve VARIAR os exercícios/variações em relação ao 1º (outros ângulos, pegadas, máquina vs. livre), mantendo os MESMOS grupos por dia.\n' : '') +
+      'Antes de fechar o JSON, percorra cada dia: nenhum bíceps/rosca nem deltoide-posterior/facepull no PUSH; nenhum peito/tríceps no PULL; nenhum exercício de perna em dia upper.\n';
+  }
+  if (tipo === 'upper_lower') {
+    return head +
+      'Dia UPPER (superior): PEITO, COSTAS, OMBRO, BÍCEPS e TRÍCEPS — empurrar e puxar juntos. SEM perna.\n' +
+      'Dia LOWER (inferior): QUADRÍCEPS, POSTERIOR DE COXA, GLÚTEO, ADUTOR/ABDUTOR e PANTURRILHA. SEM peito/costas/ombro/braço (core é exceção).\n' +
+      (nDias >= 4 ? 'Com 4+ dias são 2 ciclos U/L: o 2º ciclo varia os exercícios/variações em relação ao 1º, mantendo os grupos.\n' : '') +
+      'Antes de fechar o JSON, confirme: nenhum exercício de perna em dia UPPER e nenhum de tronco/braço em dia LOWER.\n';
+  }
+  if (tipo === 'full_body') {
+    return head +
+      'Cada dia é FULL BODY: inclua ao menos 1 exercício de EMPURRAR (peito/ombro/tríceps), 1 de PUXAR (costas/bíceps) e 1-2 de PERNA (quadríceps/posterior/glúteo) por sessão.\n' +
+      'Entre os dias da semana, VARIE os exercícios/variações de cada grupo (não repita o mesmo exercício todo dia).\n';
+  }
+  return '';
+}
+
 async function confirmarNovoMeso() {
   if (isLoading) { showToast('Aguarde a operação atual terminar', 'warn'); return; }
   window._modoEdicao = false; // novo meso sempre usa escreverNaPlanilha
@@ -5941,6 +5994,26 @@ async function confirmarNovoMeso() {
       (typeof detectarNumDiasParaSplits === 'function' ? detectarNumDiasParaSplits() : 0) || 0;
     prompt += _regrasSplitCoerente(_nDiasSplit);
   }
+  // [FASE 41B] MAPA EXPLICITO do split classico (PPL / upper-lower / full-body) injetado em
+  // QUALQUER modo (briefing, chips, custom ou texto livre). Resolve o bug do "biceps e facepull
+  // no dia PUSH": antes o app passava so o rotulo e, dependendo do modo, a validacao por dia nem
+  // rodava. Agora a IA recebe o mapa que diz onde cada grupo entra.
+  var _tipoClassico = (divisaoBriefingMeso && divisaoBriefingMeso.tipo) ||
+    _tipoSplitDoNome(splitSelecionadoMeso && splitSelecionadoMeso.nome) ||
+    (function(){ var _d = detectarDivisaoBriefingNovoMeso(instrucoes); return _d ? _d.tipo : null; })();
+  if (_tipoClassico) {
+    var _nDiasMapa = (window._diasPermitidosNovoMeso && window._diasPermitidosNovoMeso.length) ||
+      (divisaoBriefingMeso && divisaoBriefingMeso.diasEsperados) ||
+      (typeof detectarNumDiasParaSplits === 'function' ? detectarNumDiasParaSplits() : 0) || 0;
+    prompt += _mapaSplitClassico(_tipoClassico, _nDiasMapa);
+  }
+  // [FASE 41B] VARIACAO E AMPLITUDE DA BIBLIOTECA. Resolve o "so coloca prancha frontal":
+  // obriga a IA a usar a amplitude da biblioteca e variar de verdade (core/acessorios) entre os
+  // dias. Referencia "nomes exatos da biblioteca / conforme existirem" para nao inventar nomes.
+  prompt += '\n=== VARIAÇÃO E AMPLITUDE DA BIBLIOTECA (OBRIGATÓRIO) ===\n' +
+    'Use a AMPLITUDE da biblioteca. NÃO repita o mesmo exercício em dias diferentes da semana (salvo 1 básico estratégico, justificado no "raciocinio"). Em PPL/upper-lower de 2 ciclos, o 2º ciclo troca as variações do 1º.\n' +
+    'CORE/ABDÔMEN: a biblioteca tem MUITAS opções — varie de verdade entre os dias (use nomes EXATOS da biblioteca, conforme existirem: prancha frontal, prancha lateral, dead bug, ab wheel/roda abdominal, elevação de pernas/joelhos, anti-rotação/pallof no cabo, crunch na polia, etc.). É PROIBIDO usar prancha frontal como única opção de core na semana inteira.\n' +
+    'ACESSÓRIOS/ISOLADORES: alterne pegadas, ângulos e implementos (halter/polia/máquina/unilateral) entre os dias e em relação ao meso anterior, para evitar acomodação.\n';
   if (memoriaTecnicaMeso) {
     prompt += '\n=== REGRAS DE DIVISAO E MEMORIA TECNICA ===\n';
     prompt += 'Modo da divisao: ' + divisaoModoMeso + '.\n';
